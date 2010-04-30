@@ -7,9 +7,42 @@
 #include "graph_list.h"
 #include "common.h"
 
+#define UPDATE_INTERVAL 10
+
 static graph_list_t *graph_list = NULL;
 static size_t graph_list_length = 0;
 static time_t gl_last_update = 0;
+
+static void gl_clear_entry (graph_list_t *gl) /* {{{ */
+{
+  if (gl == NULL)
+    return;
+
+  free (gl->host);
+  free (gl->plugin);
+  free (gl->plugin_instance);
+  free (gl->type);
+  free (gl->type_instance);
+
+  gl->host = NULL;
+  gl->plugin = NULL;
+  gl->plugin_instance = NULL;
+  gl->type = NULL;
+  gl->type_instance = NULL;
+} /* }}} void gl_clear_entry */
+
+static void gl_clear (void)
+{
+  size_t i;
+
+  for (i = 0; i < graph_list_length; i++)
+    gl_clear_entry (graph_list + i);
+
+  free (graph_list);
+  graph_list = NULL;
+  graph_list_length = 0;
+  gl_last_update = 0;
+} /* }}} void gl_clear */
 
 static int gl_add_copy (graph_list_t *gl) /* {{{ */
 {
@@ -166,8 +199,10 @@ int gl_update (void) /* {{{ */
 
   now = time (NULL);
 
-  if ((gl_last_update + 2) >= now)
+  if ((gl_last_update + UPDATE_INTERVAL) >= now)
     return (0);
+
+  gl_clear ();
 
   memset (&gl, 0, sizeof (gl));
   gl.host = NULL;

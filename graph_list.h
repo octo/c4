@@ -16,6 +16,5 @@ typedef int (*gl_callback) (const graph_list_t *, void *);
 int gl_update (void);
 int gl_foreach (gl_callback callback, void *user_data);
 
-
 #endif /* GRAPH_LIST_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
