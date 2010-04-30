@@ -1,0 +1,201 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <errno.h>
+
+#include "graph_list.h"
+#include "common.h"
+
+static graph_list_t *graph_list = NULL;
+static size_t graph_list_length = 0;
+static time_t gl_last_update = 0;
+
+static int gl_add_copy (graph_list_t *gl) /* {{{ */
+{
+  graph_list_t *ptr;
+  int status;
+
+  if (gl == NULL)
+    return (EINVAL);
+
+  ptr = realloc (graph_list, sizeof (*graph_list) * (graph_list_length + 1));
+  if (ptr == NULL)
+    return (ENOMEM);
+  graph_list = ptr;
+
+  ptr = graph_list + graph_list_length;
+  memset (ptr, 0, sizeof (*ptr));
+  ptr->host = NULL;
+  ptr->plugin = NULL;
+  ptr->plugin_instance = NULL;
+  ptr->type = NULL;
+  ptr->type_instance = NULL;
+
+#define DUP_OR_BREAK(member) do {                    \
+  ptr->member = NULL;                                \
+  if (gl->member != NULL)                            \
+  {                                                  \
+    ptr->member = strdup (gl->member);               \
+    if (ptr->member == NULL)                         \
+      break;                                         \
+  }                                                  \
+} while (0)
+
+  status = ENOMEM;
+  do
+  {
+    DUP_OR_BREAK(host);
+    DUP_OR_BREAK(plugin);
+    DUP_OR_BREAK(plugin_instance);
+    DUP_OR_BREAK(type);
+    DUP_OR_BREAK(type_instance);
+
+    status = 0;
+  } while (0);
+
+#undef DUP_OR_BREAK
+
+  if (status != 0)
+  {
+    free (ptr->host);
+    free (ptr->plugin);
+    free (ptr->plugin_instance);
+    free (ptr->type);
+    free (ptr->type_instance);
+    return (status);
+  }
+
+  graph_list_length++;
+  return (0);
+} /* }}} int gl_add_copy */
+
+static int callback_type (const char *type, void *user_data) /* {{{ */
+{
+  graph_list_t *gl;
+  int status;
+
+  if ((type == NULL) || (user_data == NULL))
+    return (EINVAL);
+
+  gl = user_data;
+  if ((gl->type != NULL) || (gl->type_instance != NULL))
+    return (EINVAL);
+
+  gl->type = strdup (type);
+  if (gl->type == NULL)
+    return (ENOMEM);
+
+  gl->type_instance = strchr (gl->type, '-');
+  if (gl->type_instance != NULL)
+  {
+    *gl->type_instance = 0;
+    gl->type_instance++;
+  }
+
+  status = gl_add_copy (gl);
+
+  free (gl->type);
+  gl->type = NULL;
+  gl->type_instance = NULL;
+
+  return (status);
+} /* }}} int callback_type */
+
+static int callback_plugin (const char *plugin, void *user_data) /* {{{ */
+{
+  graph_list_t *gl;
+  int status;
+
+  if ((plugin == NULL) || (user_data == NULL))
+    return (EINVAL);
+
+  gl = user_data;
+  if ((gl->plugin != NULL) || (gl->plugin_instance != NULL))
+    return (EINVAL);
+
+  gl->plugin = strdup (plugin);
+  if (gl->plugin == NULL)
+    return (ENOMEM);
+
+  gl->plugin_instance = strchr (gl->plugin, '-');
+  if (gl->plugin_instance != NULL)
+  {
+    *gl->plugin_instance = 0;
+    gl->plugin_instance++;
+  }
+
+  status = foreach_type (gl->host, plugin, callback_type, gl);
+
+  free (gl->plugin);
+  gl->plugin = NULL;
+  gl->plugin_instance = NULL;
+
+  return (status);
+} /* }}} int callback_plugin */
+
+static int callback_host (const char *host, void *user_data) /* {{{ */
+{
+  graph_list_t *gl;
+  int status;
+
+  if ((host == NULL) || (user_data == NULL))
+    return (EINVAL);
+
+  gl = user_data;
+  if (gl->host != NULL)
+    return (EINVAL);
+
+  gl->host = strdup (host);
+  if (gl->host == NULL)
+    return (ENOMEM);
+
+  status =  foreach_plugin (host, callback_plugin, gl);
+
+  free (gl->host);
+  gl->host = NULL;
+
+  return (status);
+} /* }}} int callback_host */
+
+int gl_update (void) /* {{{ */
+{
+  time_t now;
+  graph_list_t gl;
+  int status;
+
+  now = time (NULL);
+
+  if ((gl_last_update + 2) >= now)
+    return (0);
+
+  memset (&gl, 0, sizeof (gl));
+  gl.host = NULL;
+  gl.plugin = NULL;
+  gl.plugin_instance = NULL;
+  gl.type = NULL;
+  gl.type_instance = NULL;
+
+  /* TODO: Free old list */
+
+  status = foreach_host (callback_host, &gl);
+  return (status);
+} /* }}} int gl_update */
+
+int gl_foreach (gl_callback callback, void *user_data) /* {{{ */
+{
+  size_t i;
+
+  for (i = 0; i < graph_list_length; i++)
+  {
+    int status;
+
+    status = (*callback) (graph_list + i, user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_foreach */
+
+/* vim: set sw=2 sts=2 et fdm=marker : */
