@@ -16,6 +16,8 @@
 #include "graph_list.h"
 #include "utils_params.h"
 
+#include "action_list_graphs.h"
+
 struct str_array_s
 {
   char **ptr;
@@ -72,7 +74,7 @@ static int array_add (const char *entry, void *user_data) /* {{{ */
   return (0);
 } /* }}} int array_add */
 
-static int print_graph (const graph_list_t *gl, void *user_data)
+static int print_graph (const graph_list_t *gl, void *user_data) /* {{{ */
 {
   if (gl == NULL)
     return (EINVAL);
@@ -130,6 +132,10 @@ static int handle_request (void) /* {{{ */
   if (action == NULL)
   {
     return (action_usage ());
+  }
+  else if (strcmp ("list_graphs", action) == 0)
+  {
+    return (action_list_graphs ());
   }
   else if (strcmp ("hello", action) == 0)
   {
