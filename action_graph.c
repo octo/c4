@@ -38,6 +38,23 @@ struct graph_def_s
 };
 typedef struct graph_def_s graph_def_t;
 
+static void graph_def_free (graph_def_t *gd)
+{
+  size_t i;
+
+  if (gd == NULL)
+    return;
+
+  for (i = 0; i < gd->data_sources_num; i++)
+  {
+    free (gd->data_sources[i].file);
+    free (gd->data_sources[i].name);
+    free (gd->data_sources[i].legend);
+  }
+  free (gd->data_sources);
+  free (gd);
+} /* }}} void graph_def_free */
+
 static int graph_def_add_ds (graph_def_t *gd, /* {{{ */
     const char *file,
     const char *in_ds_name, size_t ds_name_len)
@@ -212,7 +229,7 @@ int action_graph (void) /* {{{ */
         (unsigned long) i, gd->data_sources[i].name, gd->data_sources[i].file);
   }
 
-  /* FIXME: Free gd */
+  graph_def_free (gd);
 
   return (0);
 } /* }}} int action_graph */
