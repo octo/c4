@@ -18,13 +18,32 @@
 
 #include "action_list_graphs.h"
 
+struct action_s
+{
+  const char *name;
+  int (*callback) (void);
+};
+typedef struct action_s action_t;
+
+#if 0
 struct str_array_s
 {
   char **ptr;
   size_t size;
 };
 typedef struct str_array_s str_array_t;
+#endif
 
+static int action_usage (void);
+
+static const action_t actions[] =
+{
+  { "list_graphs", action_list_graphs },
+  { "usage",       action_usage }
+};
+static const size_t actions_num = sizeof (actions) / sizeof (actions[0]);
+
+#if 0
 static str_array_t *array_alloc (void) /* {{{ */
 {
   str_array_t *a;
@@ -73,51 +92,23 @@ static int array_add (const char *entry, void *user_data) /* {{{ */
   a->size++;
   return (0);
 } /* }}} int array_add */
-
-static int print_graph (const graph_list_t *gl, void *user_data) /* {{{ */
-{
-  if (gl == NULL)
-    return (EINVAL);
-
-  printf ("host = %s; plugin = %s;", gl->host, gl->plugin);
-  if (gl->plugin_instance != NULL)
-    printf (" plugin_instance = %s;", gl->plugin_instance);
-  printf (" type = %s;", gl->type);
-  if (gl->type_instance != NULL)
-    printf (" type_instance = %s;", gl->type_instance);
-  printf ("\n");
-
-  return (0);
-} /* }}} int print_graph */
-
-static int get_graphs_list (char ***ret_graphs, /* {{{ */
-    size_t *ret_graphs_num)
-{
-  gl_update ();
-  gl_foreach (print_graph, /* user_data = */ NULL);
-
-  return (0);
-} /* }}} int get_graphs_list */
-
-static int action_hello (void) /* {{{ */
-{
-  printf ("Content-Type: text/plain\n\n");
-
-  get_graphs_list (NULL, NULL);
-
-  return (0);
-} /* }}} int action_hello */
+#endif
 
 static int action_usage (void) /* {{{ */
 {
+  size_t i;
+
   printf ("Content-Type: text/plain\n\n");
 
-  fputs ("Usage:\n"
+  printf ("Usage:\n"
       "\n"
       "  Available actions:\n"
-      "\n"
-      "    * hello\n"
-      "\n", stdout);
+      "\n");
+
+  for (i = 0; i < actions_num; i++)
+    printf ("  * %s\n", actions[i].name);
+
+  printf ("\n");
 
   return (0);
 } /* }}} int action_usage */
@@ -133,16 +124,16 @@ static int handle_request (void) /* {{{ */
   {
     return (action_usage ());
   }
-  else if (strcmp ("list_graphs", action) == 0)
-  {
-    return (action_list_graphs ());
-  }
-  else if (strcmp ("hello", action) == 0)
-  {
-    return (action_hello ());
-  }
   else
   {
+    size_t i;
+
+    for (i = 0; i < actions_num; i++)
+    {
+      if (strcmp (action, actions[i].name) == 0)
+        return ((*actions[i].callback) ());
+    }
+
     return (action_usage ());
   }
 } /* }}} int handle_request */
