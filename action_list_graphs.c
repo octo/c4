@@ -7,8 +7,9 @@
 #include <fcgi_stdio.h>
 
 #include "graph_list.h"
+#include "utils_params.h"
 
-static int print_graph (const graph_list_t *gl, void *user_data) /* {{{ */
+static int print_graph_json (const graph_list_t *gl, void *user_data) /* {{{ */
 {
   _Bool *first;
 
@@ -39,19 +40,63 @@ static int print_graph (const graph_list_t *gl, void *user_data) /* {{{ */
   printf ("}");
 
   return (0);
-} /* }}} int print_graph */
+} /* }}} int print_graph_json */
 
-int action_list_graphs (void) /* {{{ */
+static int print_graph_html (const graph_list_t *gl,
+    void __attribute__((unused)) *user_data)
+{
+  if (gl == NULL)
+    return (EINVAL);
+
+  printf ("<li>%s/%s", gl->host, gl->plugin);
+  if (gl->plugin_instance != NULL)
+    printf ("-%s", gl->plugin_instance);
+  printf ("/%s", gl->type);
+  if (gl->type_instance != NULL)
+    printf ("-%s", gl->type_instance);
+  printf ("</li>\n");
+
+  return (0);
+}
+
+static int list_graphs_json (void) /* {{{ */
 {
   _Bool first = 1;
 
-  printf ("Content-Type: text/plain\n\n");
+  printf ("Content-Type: application/json\n\n");
+
+  printf ("[\n");
+  gl_foreach (print_graph_json, /* user_data = */ &first);
+  printf ("\n]");
+
+  return (0);
+} /* }}} int list_graphs_json */
+
+static int list_graphs_html (void) /* {{{ */
+{
+  printf ("Content-Type: text/html\n\n");
+
+  printf ("<ul>\n");
+  gl_foreach (print_graph_html, /* user_data = */ NULL);
+  printf ("</ul>\n");
+
+  return (0);
+} /* }}} int list_graphs_html */
+
+int action_list_graphs (void) /* {{{ */
+{
+  const char *format;
 
   gl_update ();
 
-  printf ("[\n");
-  gl_foreach (print_graph, /* user_data = */ &first);
-  printf ("\n]");
+  format = param ("format");
+  if (format == NULL)
+    format = "html";
+
+  if (strcmp ("json", format) == 0)
+    return (list_graphs_json ());
+  else
+    return (list_graphs_html ());
 } /* }}} int action_list_graphs */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
