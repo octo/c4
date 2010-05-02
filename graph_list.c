@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "graph_list.h"
 #include "common.h"
@@ -12,6 +13,45 @@
 static graph_list_t *graph_list = NULL;
 static size_t graph_list_length = 0;
 static time_t gl_last_update = 0;
+
+/* "Safe" version of strcmp(3): Either or both pointers may be NULL. */
+static int strcmp_s (const char *s1, const char *s2) /* {{{ */
+{
+  if ((s1 == NULL) && (s2 == NULL))
+    return (0);
+  else if (s1 == NULL)
+    return (1);
+  else if (s2 == NULL)
+    return (-1);
+  assert ((s1 != NULL) && (s2 != NULL));
+
+  return (strcmp (s1, s2));
+} /* }}} int strcmp_s */
+
+static int gl_compare (const void *p0, const void *p1) /* {{{ */
+{
+  const graph_list_t *gl0 = p0;
+  const graph_list_t *gl1 = p1;
+  int status;
+
+  status = strcmp (gl0->host, gl1->host);
+  if (status != 0)
+    return (status);
+
+  status = strcmp (gl0->plugin, gl1->plugin);
+  if (status != 0)
+    return (status);
+
+  status = strcmp_s (gl0->plugin_instance, gl1->plugin_instance);
+  if (status != 0)
+    return (status);
+
+  status = strcmp (gl0->type, gl1->type);
+  if (status != 0)
+    return (status);
+
+  return (strcmp_s (gl0->type_instance, gl1->type_instance));
+} /* }}} int gl_compare */
 
 static void gl_clear_entry (graph_list_t *gl) /* {{{ */
 {
@@ -31,7 +71,7 @@ static void gl_clear_entry (graph_list_t *gl) /* {{{ */
   gl->type_instance = NULL;
 } /* }}} void gl_clear_entry */
 
-static void gl_clear (void)
+static void gl_clear (void) /* {{{ */
 {
   size_t i;
 
@@ -211,9 +251,11 @@ int gl_update (void) /* {{{ */
   gl.type = NULL;
   gl.type_instance = NULL;
 
-  /* TODO: Free old list */
-
   status = foreach_host (callback_host, &gl);
+
+  if (graph_list_length > 1)
+    qsort (graph_list, graph_list_length, sizeof (*graph_list), gl_compare);
+
   return (status);
 } /* }}} int gl_update */
 
