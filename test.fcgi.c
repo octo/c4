@@ -16,6 +16,7 @@
 #include "graph_list.h"
 #include "utils_params.h"
 
+#include "action_graph.h"
 #include "action_list_graphs.h"
 
 struct action_s
@@ -38,6 +39,7 @@ static int action_usage (void);
 
 static const action_t actions[] =
 {
+  { "graph",       action_graph },
   { "list_graphs", action_list_graphs },
   { "usage",       action_usage }
 };

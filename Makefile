@@ -15,12 +15,14 @@ graph_list.o: graph_list.c graph_list.h
 
 utils_params.o: utils_params.c utils_params.h
 
+action_graph.o: action_graph.c action_graph.h
+
 action_list_graphs.o: action_list_graphs.c action_list_graphs.h
 
 test: test.c utils_params.o
 
 test.fcgi: LDLIBS = -lfcgi
-test.fcgi: test.fcgi.c common.o graph_list.o utils_params.o action_list_graphs.o
+test.fcgi: test.fcgi.c common.o graph_list.o utils_params.o action_graph.o action_list_graphs.o
 
 .PHONY: clean
 
