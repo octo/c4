@@ -26,15 +26,6 @@ struct action_s
 };
 typedef struct action_s action_t;
 
-#if 0
-struct str_array_s
-{
-  char **ptr;
-  size_t size;
-};
-typedef struct str_array_s str_array_t;
-#endif
-
 static int action_usage (void);
 
 static const action_t actions[] =
@@ -45,56 +36,6 @@ static const action_t actions[] =
 };
 static const size_t actions_num = sizeof (actions) / sizeof (actions[0]);
 
-#if 0
-static str_array_t *array_alloc (void) /* {{{ */
-{
-  str_array_t *a;
-
-  a = malloc (sizeof (*a));
-  if (a == NULL)
-    return (NULL);
-
-  memset (a, 0, sizeof (*a));
-  a->ptr = NULL;
-  a->size = 0;
-
-  return (a);
-} /* }}} str_array_t *array_alloc */
-
-static void array_free (str_array_t *a) /* {{{ */
-{
-  if (a == NULL)
-    return;
-
-  free (a->ptr);
-  a->ptr = NULL;
-  a->size = 0;
-
-  free (a);
-} /* }}} void array_free */
-
-static int array_add (const char *entry, void *user_data) /* {{{ */
-{
-  str_array_t *a = user_data;
-  char **ptr;
-
-  if ((entry == NULL) || (a == NULL))
-    return (EINVAL);
-
-  ptr = realloc (a->ptr, sizeof (*a->ptr) * (a->size + 1));
-  if (ptr == NULL)
-    return (ENOMEM);
-  a->ptr = ptr;
-  ptr = a->ptr + a->size;
-
-  *ptr = strdup (entry);
-  if (*ptr == NULL)
-    return (ENOMEM);
-
-  a->size++;
-  return (0);
-} /* }}} int array_add */
-#endif
 
 static int action_usage (void) /* {{{ */
 {

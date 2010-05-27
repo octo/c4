@@ -6,9 +6,7 @@
 #include <inttypes.h>
 #include <dirent.h> /* for PATH_MAX */
 #include <assert.h>
-
-#include <fcgiapp.h>
-#include <fcgi_stdio.h>
+#include <math.h>
 
 #include <rrd.h>
 
@@ -16,6 +14,10 @@
 #include "action_graph.h"
 #include "graph_list.h"
 #include "utils_params.h"
+#include "utils_array.h"
+
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
 
 struct data_source_s
 {
@@ -35,10 +37,12 @@ struct graph_def_s
   size_t data_sources_num;
 
   _Bool stack;
+
+  int def_num;
 };
 typedef struct graph_def_s graph_def_t;
 
-static void graph_def_free (graph_def_t *gd)
+static void graph_def_free (graph_def_t *gd) /* {{{ */
 {
   size_t i;
 
@@ -54,6 +58,58 @@ static void graph_def_free (graph_def_t *gd)
   free (gd->data_sources);
   free (gd);
 } /* }}} void graph_def_free */
+
+static int hsv_to_rgb (double *hsv, double *rgb) /* {{{ */
+{
+  double c = hsv[2] * hsv[1];
+  double h = hsv[0] / 60.0;
+  double x = c * (1.0 - fabs (fmod (h, 2.0) - 1));
+  double m = hsv[2] - c;
+
+  rgb[0] = 0.0;
+  rgb[1] = 0.0;
+  rgb[2] = 0.0;
+
+       if ((0.0 <= h) && (h < 1.0)) { rgb[0] = 1.0; rgb[1] = x; rgb[2] = 0.0; }
+  else if ((1.0 <= h) && (h < 2.0)) { rgb[0] = x; rgb[1] = 1.0; rgb[2] = 0.0; }
+  else if ((2.0 <= h) && (h < 3.0)) { rgb[0] = 0.0; rgb[1] = 1.0; rgb[2] = x; }
+  else if ((3.0 <= h) && (h < 4.0)) { rgb[0] = 0.0; rgb[1] = x; rgb[2] = 1.0; }
+  else if ((4.0 <= h) && (h < 5.0)) { rgb[0] = x; rgb[1] = 0.0; rgb[2] = 1.0; }
+  else if ((5.0 <= h) && (h < 6.0)) { rgb[0] = 1.0; rgb[1] = 0.0; rgb[2] = x; }
+
+  rgb[0] += m;
+  rgb[1] += m;
+  rgb[2] += m;
+
+  return (0);
+} /* }}} int hsv_to_rgb */
+
+static uint32_t rgb_to_uint32 (double *rgb) /* {{{ */
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+
+  r = (uint8_t) (255.0 * rgb[0]);
+  g = (uint8_t) (255.0 * rgb[1]);
+  b = (uint8_t) (255.0 * rgb[2]);
+
+  return ((((uint32_t) r) << 16)
+      | (((uint32_t) g) << 8)
+      | ((uint32_t) b));
+} /* }}} uint32_t rgb_to_uint32 */
+
+static uint32_t get_random_color (void) /* {{{ */
+{
+  double hsv[3] = { 0.0, 1.0, 1.0 };
+  double rgb[3] = { 0.0, 0.0, 0.0 };
+
+  hsv[0] = 360.0 * ((double) rand ()) / (((double) RAND_MAX) + 1.0);
+
+  hsv_to_rgb (hsv, rgb);
+
+  return (rgb_to_uint32 (rgb));
+} /* }}} uint32_t get_random_color */
 
 static int graph_def_add_ds (graph_def_t *gd, /* {{{ */
     const char *file,
@@ -85,7 +141,7 @@ static int graph_def_add_ds (graph_def_t *gd, /* {{{ */
   }
 
   ds->legend = NULL;
-  ds->color = 0xff0000;
+  ds->color = get_random_color ();
 
   gd->data_sources_num++;
 
@@ -160,10 +216,152 @@ static graph_def_t *graph_def_from_gl (const graph_list_t *gl) /* {{{ */
         gl->type, gl->type_instance);
   rrd_file[sizeof (rrd_file) - 1] = 0;
 
-  printf ("rrd_file = %s;\n", rrd_file);
-
   return (graph_def_from_rrd_file (rrd_file));
 } /* }}} graph_def_t *graph_def_from_gl */
+
+static int draw_graph_ds (graph_def_t *gd, /* {{{ */
+    size_t index, str_array_t *args)
+{
+  data_source_t *ds;
+
+  assert (index < gd->data_sources_num);
+
+  ds = gd->data_sources + index;
+
+  /* CDEFs */
+  array_append_format (args, "DEF:def_%04zu_min=%s:%s:MIN",
+      index, ds->file, ds->name);
+  array_append_format (args, "DEF:def_%04zu_avg=%s:%s:AVERAGE",
+      index, ds->file, ds->name);
+  array_append_format (args, "DEF:def_%04zu_max=%s:%s:MAX",
+      index, ds->file, ds->name);
+  /* VDEFs */
+  array_append_format (args, "VDEF:vdef_%04zu_min=def_%04zu_min,MINIMUM",
+      index, index);
+  array_append_format (args, "VDEF:vdef_%04zu_avg=def_%04zu_avg,AVERAGE",
+      index, index);
+  array_append_format (args, "VDEF:vdef_%04zu_max=def_%04zu_max,MAXIMUM",
+      index, index);
+  array_append_format (args, "VDEF:vdef_%04zu_lst=def_%04zu_avg,LAST",
+      index, index);
+
+  /* Graph part */
+  array_append_format (args, "LINE1:def_%04zu_avg#%06x:%s", index, ds->color,
+      (ds->legend != NULL) ? ds->legend : ds->name);
+  array_append_format (args, "GPRINT:vdef_%04zu_min:%%lg min,", index);
+  array_append_format (args, "GPRINT:vdef_%04zu_avg:%%lg avg,", index);
+  array_append_format (args, "GPRINT:vdef_%04zu_max:%%lg max,", index);
+  array_append_format (args, "GPRINT:vdef_%04zu_lst:%%lg last\\l", index);
+
+  return (0);
+} /* }}} int draw_graph_ds */
+
+static void emulate_graph (int argc, char **argv) /* {{{ */
+{
+  int i;
+
+  printf ("rrdtool \\\n");
+  for (i = 0; i < argc; i++)
+  {
+    if (i < (argc - 1))
+      printf ("  \"%s\" \\\n", argv[i]);
+    else
+      printf ("  \"%s\"\n", argv[i]);
+  }
+} /* }}} void emulate_graph */
+
+static int ag_info_print (rrd_info_t *info)
+{
+  if (info->type == RD_I_VAL)
+    printf ("[info] %s = %g;\n", info->key, info->value.u_val);
+  else if (info->type == RD_I_CNT)
+    printf ("[info] %s = %lu;\n", info->key, info->value.u_cnt);
+  else if (info->type == RD_I_STR)
+    printf ("[info] %s = %s;\n", info->key, info->value.u_str);
+  else if (info->type == RD_I_INT)
+    printf ("[info] %s = %i;\n", info->key, info->value.u_int);
+  else if (info->type == RD_I_BLO)
+    printf ("[info] %s = [blob, %lu bytes];\n", info->key, info->value.u_blo.size);
+  else
+    printf ("[info] %s = [unknown type %#x];\n", info->key, info->type);
+
+  return (0);
+} /* }}} int ag_info_print */
+
+static int output_graph (rrd_info_t *info)
+{
+  rrd_info_t *img;
+
+  for (img = info; img != NULL; img = img->next)
+    if ((strcmp ("image", img->key) == 0)
+        && (img->type == RD_I_BLO))
+      break;
+
+  if (img == NULL)
+    return (ENOENT);
+
+  printf ("Content-Type: image/png\n"
+      "Content-Length: %lu\n"
+      "\n",
+      img->value.u_blo.size);
+  fwrite (img->value.u_blo.ptr, img->value.u_blo.size,
+      /* nmemb = */ 1, stdout);
+
+  return (0);
+} /* }}} int output_graph */
+
+static int draw_graph (graph_def_t *gd) /* {{{ */
+{
+  str_array_t *args;
+  rrd_info_t *info;
+  size_t i;
+
+  args = array_create ();
+  if (args == NULL)
+    return (ENOMEM);
+
+  array_append (args, "graph");
+  array_append (args, "-");
+  array_append (args, "--imgformat");
+  array_append (args, "PNG");
+
+  for (i = 0; i < gd->data_sources_num; i++)
+    draw_graph_ds (gd, i, args);
+
+  rrd_clear_error ();
+  info = rrd_graph_v (array_argc (args), array_argv (args));
+  if ((info == NULL) || rrd_test_error ())
+  {
+    printf ("Content-Type: text/plain\n\n");
+    printf ("rrd_graph_v failed: %s\n", rrd_get_error ());
+    emulate_graph (array_argc (args), array_argv (args));
+  }
+  else
+  {
+    int status;
+
+    status = output_graph (info);
+    if (status != 0)
+    {
+      rrd_info_t *ptr;
+
+      printf ("Content-Type: text/plain\n\n");
+      printf ("output_graph failed. Maybe the \"image\" info was not found?\n\n");
+
+      for (ptr = info; ptr != NULL; ptr = ptr->next)
+      {
+        ag_info_print (ptr);
+      }
+    }
+  }
+
+  if (info != NULL)
+    rrd_info_free (info);
+
+  array_destroy (args);
+
+  return (0);
+} /* }}} int draw_graph */
 
 static int init_gl (graph_list_t *gl) /* {{{ */
 {
@@ -203,7 +401,6 @@ int action_graph (void) /* {{{ */
   graph_list_t gl;
   graph_def_t *gd;
   int status;
-  size_t i;
 
   memset (&gl, 0, sizeof (gl));
   status = init_gl (&gl);
@@ -214,8 +411,6 @@ int action_graph (void) /* {{{ */
     return (status);
   }
 
-  printf ("Content-Type: text/plain\n\n"
-      "Hello, this is %s\n", __func__);
   gd = graph_def_from_gl (&gl);
   if (gd == NULL)
   {
@@ -223,12 +418,7 @@ int action_graph (void) /* {{{ */
     return (0);
   }
 
-  for (i = 0; i < gd->data_sources_num; i++)
-  {
-    printf ("data source %lu: %s @ %s\n",
-        (unsigned long) i, gd->data_sources[i].name, gd->data_sources[i].file);
-  }
-
+  draw_graph (gd);
   graph_def_free (gd);
 
   return (0);

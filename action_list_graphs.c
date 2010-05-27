@@ -6,6 +6,7 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
+#include "action_list_graphs.h"
 #include "graph_list.h"
 #include "utils_params.h"
 
@@ -48,13 +49,24 @@ static int print_graph_html (const graph_list_t *gl,
   if (gl == NULL)
     return (EINVAL);
 
-  printf ("<li>%s/%s", gl->host, gl->plugin);
+  printf ("<li>");
+
+  printf ("<a href=\"%s?action=graph;", getenv ("SCRIPT_NAME"));
+  printf ("host=%s;plugin=%s;", gl->host, gl->plugin);
+  if (gl->plugin_instance != NULL)
+    printf ("plugin_instance=%s;", gl->plugin_instance);
+  printf ("type=%s;", gl->type);
+  if (gl->type_instance != NULL)
+    printf ("type_instance=%s;", gl->type_instance);
+  printf ("\">");
+
+  printf ("%s/%s", gl->host, gl->plugin);
   if (gl->plugin_instance != NULL)
     printf ("-%s", gl->plugin_instance);
   printf ("/%s", gl->type);
   if (gl->type_instance != NULL)
     printf ("-%s", gl->type_instance);
-  printf ("</li>\n");
+  printf ("</a></li>\n");
 
   return (0);
 }
