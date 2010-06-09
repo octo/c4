@@ -10,6 +10,7 @@
 
 #include "graph_list.h"
 #include "common.h"
+#include "utils_params.h"
 
 /*
  * Defines
@@ -671,23 +672,99 @@ static int callback_host (const char *host, void *user_data) /* {{{ */
   return (status);
 } /* }}} int callback_host */
 
+static const char *get_part_from_param (const char *prim_key, /* {{{ */
+    const char *sec_key)
+{
+  const char *val;
+
+  val = param (prim_key);
+  if (val != NULL)
+    return (val);
+  
+  return (param (sec_key));
+} /* }}} const char *get_part_from_param */
+
 /*
  * Global functions
  */
-int gl_instance_get_ident (graph_instance_t *inst, /* {{{ */
+int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {
   if ((inst == NULL) || (buffer == NULL) || (buffer_size < 1))
     return (EINVAL);
 
-  snprintf (buffer, buffer_size, "%s/%s-%s/%s-%s",
-      inst->select.host,
-      inst->select.plugin, inst->select.plugin_instance,
-      inst->select.type, inst->select.type_instance);
-  buffer[buffer_size - 1] = 0;
+  buffer[0] = 0;
+
+#define COPY_FIELD(field) do {                                  \
+  if (strcmp (cfg->select.field, inst->select.field) == 0)      \
+  {                                                             \
+    strlcat (buffer, #field, buffer_size);                      \
+    strlcat (buffer, "=", buffer_size);                         \
+    strlcat (buffer, cfg->select.field, buffer_size);           \
+  }                                                             \
+  else                                                          \
+  {                                                             \
+    strlcat (buffer, "graph_", buffer_size);                    \
+    strlcat (buffer, #field, buffer_size);                      \
+    strlcat (buffer, "=", buffer_size);                         \
+    strlcat (buffer, cfg->select.field, buffer_size);           \
+    strlcat (buffer, ";", buffer_size);                         \
+    strlcat (buffer, "inst_", buffer_size);                     \
+    strlcat (buffer, #field, buffer_size);                      \
+    strlcat (buffer, "=", buffer_size);                         \
+    strlcat (buffer, inst->select.field, buffer_size);          \
+  }                                                             \
+} while (0)
+
+  COPY_FIELD(host);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(plugin);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(plugin_instance);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(type);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(type_instance);
+
+#undef COPY_FIELD
 
   return (0);
-} /* }}} int gl_instance_get_ident */
+} /* }}} int gl_instance_get_params */
+
+graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
+{
+  const char *host = get_part_from_param ("inst_host", "host");
+  const char *plugin = get_part_from_param ("inst_plugin", "plugin");
+  const char *plugin_instance = get_part_from_param ("inst_plugin_instance", "plugin_instance");
+  const char *type = get_part_from_param ("inst_type", "type");
+  const char *type_instance = get_part_from_param ("inst_type_instance", "type_instance");
+  graph_instance_t *inst;
+
+  if (cfg == NULL)
+    cfg = graph_get_selected ();
+
+  if (cfg == NULL)
+    return (NULL);
+
+  if ((host == NULL)
+      || (plugin == NULL) || (plugin_instance == NULL)
+      || (type == NULL) || (type_instance == NULL))
+    return (NULL);
+
+  for (inst = cfg->instances; inst != NULL; inst = inst->next)
+  {
+    if ((strcmp (inst->select.host, host) != 0)
+        || (strcmp (inst->select.plugin, plugin) != 0)
+        || (strcmp (inst->select.plugin_instance, plugin_instance) != 0)
+        || (strcmp (inst->select.type, type) != 0)
+        || (strcmp (inst->select.type_instance, type_instance) != 0))
+      continue;
+
+    return (inst);
+  }
+
+  return (NULL);
+} /* }}} graph_instance_t *inst_get_selected */
 
 int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
     void *user_data)
@@ -709,6 +786,35 @@ int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
   return (0);
 } /* }}} int gl_graph_get_all */
 
+graph_config_t *graph_get_selected (void) /* {{{ */
+{
+  const char *host = get_part_from_param ("graph_host", "host");
+  const char *plugin = get_part_from_param ("graph_plugin", "plugin");
+  const char *plugin_instance = get_part_from_param ("graph_plugin_instance", "plugin_instance");
+  const char *type = get_part_from_param ("graph_type", "type");
+  const char *type_instance = get_part_from_param ("graph_type_instance", "type_instance");
+  graph_config_t *cfg;
+
+  if ((host == NULL)
+      || (plugin == NULL) || (plugin_instance == NULL)
+      || (type == NULL) || (type_instance == NULL))
+    return (NULL);
+
+  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
+  {
+    if ((strcmp (cfg->select.host, host) != 0)
+        || (strcmp (cfg->select.plugin, plugin) != 0)
+        || (strcmp (cfg->select.plugin_instance, plugin_instance) != 0)
+        || (strcmp (cfg->select.type, type) != 0)
+        || (strcmp (cfg->select.type_instance, type_instance) != 0))
+      continue;
+
+    return (cfg);
+  }
+
+  return (NULL);
+} /* }}} graph_config_t *graph_get_selected */
+
 int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
     gl_inst_callback callback, void *user_data)
 {
@@ -728,6 +834,32 @@ int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
 
   return (0);
 } /* }}} int gl_graph_instance_get_all */
+
+int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
+    char *buffer, size_t buffer_size)
+{
+  if ((cfg == NULL) || (buffer == NULL) || (buffer_size < 1))
+    return (EINVAL);
+
+  buffer[0] = 0;
+  strlcat (buffer, cfg->select.host, buffer_size);
+  strlcat (buffer, "/", buffer_size);
+  strlcat (buffer, cfg->select.plugin, buffer_size);
+  if (cfg->select.plugin_instance[0] != 0)
+  {
+    strlcat (buffer, "-", buffer_size);
+    strlcat (buffer, cfg->select.plugin_instance, buffer_size);
+  }
+  strlcat (buffer, "/", buffer_size);
+  strlcat (buffer, cfg->select.type, buffer_size);
+  if (cfg->select.type_instance[0] != 0)
+  {
+    strlcat (buffer, "-", buffer_size);
+    strlcat (buffer, cfg->select.type_instance, buffer_size);
+  }
+
+  return (0);
+} /* }}} int gl_graph_get_title */
 
 int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
     void *user_data)

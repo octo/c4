@@ -25,16 +25,21 @@ typedef int (*gl_inst_callback) (graph_config_t *cfg,
 int gl_graph_get_all (gl_cfg_callback callback,
     void *user_data);
 
+graph_config_t *graph_get_selected (void);
+
 int gl_graph_instance_get_all (graph_config_t *cfg,
     gl_inst_callback callback, void *user_data);
+
+graph_instance_t *inst_get_selected (graph_config_t *cfg);
 
 int gl_instance_get_all (gl_inst_callback callback,
     void *user_data);
 
-int gl_instance_get_ident (graph_instance_t *inst,
+int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);
 
-
+int gl_graph_get_title (graph_config_t *cfg,
+    char *buffer, size_t buffer_size);
 
 
 struct graph_list_s
