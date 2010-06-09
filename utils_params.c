@@ -215,4 +215,45 @@ const char *param (const char *key) /* {{{ */
   return (parameter_lookup (key));
 } /* }}} const char *param */
 
+int uri_escape (char *dst, const char *src, size_t size) /* {{{ */
+{
+  size_t in;
+  size_t out;
+
+  in = 0;
+  out = 0;
+  while (42)
+  {
+    if (src[in] == 0)
+    {
+      dst[out] = 0;
+      return (0);
+    }
+    else if ((src[in] < 32)
+        || (src[in] == '&')
+        || (src[in] == ';')
+        || (src[in] >= 128))
+    {
+      char esc[4];
+
+      if ((size - out) < 4)
+        break;
+      
+      snprintf (esc, sizeof (esc), "%%%02x", (unsigned int) src[in]);
+      dst[out] = esc[0];
+      dst[out+1] = esc[1];
+      dst[out+2] = esc[2];
+
+      out += 3;
+      in++;
+    }
+    else
+    {
+      dst[out] = src[in];
+      out++;
+      in++;
+    }
+  } /* while (42) */
+} /* }}} int uri_escape */
+
 /* vim: set sw=2 sts=2 et fdm=marker : */
