@@ -709,7 +709,7 @@ int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
   return (0);
 } /* }}} int gl_graph_get_all */
 
-int gl_graph_instance_get_all (graph_config_t *cfg,
+int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
     gl_inst_callback callback, void *user_data)
 {
   graph_instance_t *inst;
