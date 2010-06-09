@@ -1,6 +1,9 @@
 #ifndef GRAPH_LIST_H
 #define GRAPH_LIST_H 1
 
+struct graph_ident_s;
+typedef struct graph_ident_s graph_ident_t;
+
 struct graph_list_s
 {
   char *host;
