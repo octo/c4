@@ -12,5 +12,8 @@ int foreach_type (const char *host, const char *plugin,
 int foreach_plugin (const char *host, callback_plugin_t, void *user_data);
 int foreach_host (callback_host_t, void *user_data);
 
+size_t c_strlcat (char *dst, const char *src, size_t size);
+#define strlcat c_strlcat
+
 #endif /* COMMON_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

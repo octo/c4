@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <assert.h>
 
 #include "common.h"
 
@@ -141,5 +142,34 @@ int foreach_host (callback_host_t callback, /* {{{ */
 {
   return (foreach_dir (DATA_DIR, callback, user_data));
 } /* }}} int foreach_host */
+
+size_t c_strlcat (char *dst, const char *src, size_t size) /* {{{ */
+{
+  size_t retval;
+  size_t dst_len;
+  size_t src_len;
+
+  dst_len = strlen (dst);
+  src_len = strlen (src);
+  retval = dst_len + src_len;
+
+  if ((dst_len + 1) >= size)
+    return (retval);
+
+  dst  += dst_len;
+  size -= dst_len;
+  assert (size >= 2);
+
+  /* Result will be truncated. */
+  if (src_len >= size)
+    src_len = size - 1;
+
+  memcpy (dst, src, src_len);
+  dst[src_len] = 0;
+
+  return (retval);
+} /* }}} size_t c_strlcat */
+
+
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
