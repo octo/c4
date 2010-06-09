@@ -43,16 +43,16 @@ static int print_graph_json (const graph_list_t *gl, void *user_data) /* {{{ */
   return (0);
 } /* }}} int print_graph_json */
 
-static int print_graph_inst_html (__attribute__((unused)) graph_config_t *cfg, /* {{{ */
+static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
     __attribute__((unused)) void *user_data)
 {
   char buffer[1024];
 
   memset (buffer, 0, sizeof (buffer));
-  gl_instance_get_ident (inst, buffer, sizeof (buffer));
+  gl_instance_get_params (cfg, inst, buffer, sizeof (buffer));
 
-  printf ("<li>%s</li>\n", buffer);
+  printf ("<li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n", buffer, buffer);
 
   return (0);
 } /* }}} int print_graph_inst_html */
@@ -60,7 +60,12 @@ static int print_graph_inst_html (__attribute__((unused)) graph_config_t *cfg, /
 static int print_graph_html (graph_config_t *cfg, /* {{{ */
     __attribute__((unused)) void *user_data)
 {
-  printf ("<li>%p\n<ul>\n", (void *) cfg);
+  char buffer[1024];
+
+  memset (buffer, 0, sizeof (buffer));
+  gl_graph_get_title (cfg, buffer, sizeof (buffer));
+
+  printf ("<li>%s\n<ul>\n", buffer);
   gl_graph_instance_get_all (cfg, print_graph_inst_html, /* user_data = */ NULL);
   printf ("</ul>\n");
 
