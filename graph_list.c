@@ -33,7 +33,7 @@ struct graph_ident_s /* {{{ */
 
 struct graph_instance_s;
 typedef struct graph_instance_s graph_instance_t;
-struct graph_instance_s
+struct graph_instance_s /* {{{ */
 {
   graph_ident_t select;
 
@@ -41,11 +41,11 @@ struct graph_instance_s
   size_t files_num;
 
   graph_instance_t *next;
-};
+}; /* }}} struct graph_instance_s */
 
 struct graph_config_s;
 typedef struct graph_config_s graph_config_t;
-struct graph_config_s
+struct graph_config_s /* {{{ */
 {
   graph_ident_t select;
 
@@ -55,7 +55,7 @@ struct graph_config_s
   graph_instance_t *instances;
 
   graph_config_t *next;
-};
+}; /* }}} struct graph_config_s */
 
 /*
  * Global variables
