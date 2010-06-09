@@ -31,8 +31,6 @@ struct graph_ident_s /* {{{ */
   char *type_instance;
 }; /* }}} struct graph_ident_s */
 
-struct graph_instance_s;
-typedef struct graph_instance_s graph_instance_t;
 struct graph_instance_s /* {{{ */
 {
   graph_ident_t select;
@@ -43,8 +41,6 @@ struct graph_instance_s /* {{{ */
   graph_instance_t *next;
 }; /* }}} struct graph_instance_s */
 
-struct graph_config_s;
-typedef struct graph_config_s graph_config_t;
 struct graph_config_s /* {{{ */
 {
   graph_ident_t select;
@@ -69,6 +65,8 @@ static time_t gl_last_update = 0;
 /*
  * Private functions
  */
+/* FIXME: These "print_*" functions are used for debugging. They should be
+ * removed at some point. */
 static int print_files (const graph_instance_t *inst) /* {{{ */
 {
   size_t i;
@@ -119,7 +117,6 @@ static int print_graphs (void) /* {{{ */
 
   return (0);
 } /* }}} int print_graphs */
-
 
 /* "Safe" version of strcmp(3): Either or both pointers may be NULL. */
 static int strcmp_s (const char *s1, const char *s2) /* {{{ */
@@ -418,6 +415,7 @@ static int FIXME_graph_create_from_file (const graph_ident_t *file) /* {{{ */
   return (0);
 } /* }}} int FIXME_graph_create_from_file */
 
+/* FIXME: Actually read the config file here. */
 static int read_graph_config (void) /* {{{ */
 {
   if (graph_config_head != NULL)
@@ -676,13 +674,92 @@ static int callback_host (const char *host, void *user_data) /* {{{ */
 /*
  * Global functions
  */
+int gl_instance_get_ident (graph_instance_t *inst, /* {{{ */
+    char *buffer, size_t buffer_size)
+{
+  if ((inst == NULL) || (buffer == NULL) || (buffer_size < 1))
+    return (EINVAL);
+
+  snprintf (buffer, buffer_size, "%s/%s-%s/%s-%s",
+      inst->select.host,
+      inst->select.plugin, inst->select.plugin_instance,
+      inst->select.type, inst->select.type_instance);
+  buffer[buffer_size - 1] = 0;
+
+  return (0);
+} /* }}} int gl_instance_get_ident */
+
+int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
+    void *user_data)
+{
+  graph_config_t *cfg;
+
+  if (callback == NULL)
+    return (EINVAL);
+
+  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
+  {
+    int status;
+
+    status = (*callback) (cfg, user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_graph_get_all */
+
+int gl_graph_instance_get_all (graph_config_t *cfg,
+    gl_inst_callback callback, void *user_data)
+{
+  graph_instance_t *inst;
+
+  if ((cfg == NULL) || (callback == NULL))
+    return (EINVAL);
+
+  for (inst = cfg->instances; inst != NULL; inst = inst->next)
+  {
+    int status;
+
+    status = (*callback) (cfg, inst, user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_graph_instance_get_all */
+
+int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
+    void *user_data)
+{
+  graph_config_t *cfg;
+
+  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
+  {
+    graph_instance_t *inst;
+
+    for (inst = cfg->instances; inst != NULL; inst = inst->next)
+    {
+      int status;
+
+      status = (*callback) (cfg, inst, user_data);
+      if (status != 0)
+        return (status);
+    }
+  }
+
+  return (0);
+} /* }}} int gl_instance_get_all */
+
 int gl_update (void) /* {{{ */
 {
   time_t now;
   graph_ident_t gl;
   int status;
 
+  /*
   printf ("Content-Type: text/plain\n\n");
+  */
 
   read_graph_config ();
 
@@ -702,7 +779,7 @@ int gl_update (void) /* {{{ */
 
   status = foreach_host (callback_host, &gl);
 
-  print_graphs ();
+  /* print_graphs (); */
 
   if (graph_list_length > 1)
     qsort (graph_list, graph_list_length, sizeof (*graph_list), gl_compare);

@@ -43,33 +43,29 @@ static int print_graph_json (const graph_list_t *gl, void *user_data) /* {{{ */
   return (0);
 } /* }}} int print_graph_json */
 
-static int print_graph_html (const graph_list_t *gl,
-    void __attribute__((unused)) *user_data)
+static int print_graph_inst_html (__attribute__((unused)) graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    __attribute__((unused)) void *user_data)
 {
-  if (gl == NULL)
-    return (EINVAL);
+  char buffer[1024];
 
-  printf ("<li>");
+  memset (buffer, 0, sizeof (buffer));
+  gl_instance_get_ident (inst, buffer, sizeof (buffer));
 
-  printf ("<a href=\"%s?action=graph;", getenv ("SCRIPT_NAME"));
-  printf ("host=%s;plugin=%s;", gl->host, gl->plugin);
-  if (gl->plugin_instance != NULL)
-    printf ("plugin_instance=%s;", gl->plugin_instance);
-  printf ("type=%s;", gl->type);
-  if (gl->type_instance != NULL)
-    printf ("type_instance=%s;", gl->type_instance);
-  printf ("\">");
-
-  printf ("%s/%s", gl->host, gl->plugin);
-  if (gl->plugin_instance != NULL)
-    printf ("-%s", gl->plugin_instance);
-  printf ("/%s", gl->type);
-  if (gl->type_instance != NULL)
-    printf ("-%s", gl->type_instance);
-  printf ("</a></li>\n");
+  printf ("<li>%s</li>\n", buffer);
 
   return (0);
-}
+} /* }}} int print_graph_inst_html */
+
+static int print_graph_html (graph_config_t *cfg, /* {{{ */
+    __attribute__((unused)) void *user_data)
+{
+  printf ("<li>%p\n<ul>\n", (void *) cfg);
+  gl_graph_instance_get_all (cfg, print_graph_inst_html, /* user_data = */ NULL);
+  printf ("</ul>\n");
+
+  return (0);
+} /* }}} int print_graph_html */
 
 static int list_graphs_json (void) /* {{{ */
 {
@@ -89,7 +85,7 @@ static int list_graphs_html (void) /* {{{ */
   printf ("Content-Type: text/html\n\n");
 
   printf ("<ul>\n");
-  gl_foreach (print_graph_html, /* user_data = */ NULL);
+  gl_graph_get_all (print_graph_html, /* user_data = */ NULL);
   printf ("</ul>\n");
 
   return (0);
