@@ -800,6 +800,14 @@ int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int gl_graph_get_title */
 
+graph_ident_t *gl_graph_get_selector (graph_config_t *cfg) /* {{{ */
+{
+  if (cfg == NULL)
+    return (NULL);
+
+  return (ident_clone (cfg->select));
+} /* }}} graph_ident_t *gl_graph_get_selector */
+
 int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
     void *user_data)
 {

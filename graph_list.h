@@ -30,6 +30,8 @@ graph_config_t *graph_get_selected (void);
 int gl_graph_get_title (graph_config_t *cfg,
     char *buffer, size_t buffer_size);
 
+graph_ident_t *gl_graph_get_selector (graph_config_t *cfg);
+
 int gl_graph_instance_get_all (graph_config_t *cfg,
     gl_inst_callback callback, void *user_data);
 
