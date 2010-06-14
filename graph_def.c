@@ -3,7 +3,12 @@
 #include <errno.h>
 
 #include "graph_def.h"
+#include "graph_config.h"
 #include "common.h"
+#include "oconfig.h"
+
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
 
 /*
  * Data structures
@@ -13,6 +18,7 @@ struct graph_def_s
   graph_ident_t *select;
 
   char *ds_name;
+  char *legend;
   uint32_t color;
 
   graph_def_t *next;
@@ -21,6 +27,25 @@ struct graph_def_s
 /*
  * Private functions
  */
+#define DEF_CONFIG_FIELD(field) \
+static int def_config_##field (const oconfig_item_t *ci, graph_ident_t *ident) \
+{                                                                              \
+  char *tmp = NULL;                                                            \
+  int status = graph_config_get_string (ci, &tmp);                             \
+  if (status != 0)                                                             \
+    return (status);                                                           \
+  ident_set_##field (ident, tmp);                                              \
+  free (tmp);                                                                  \
+  return (0);                                                                  \
+} /* }}} int def_config_field */
+
+DEF_CONFIG_FIELD (host);
+DEF_CONFIG_FIELD (plugin);
+DEF_CONFIG_FIELD (plugin_instance);
+DEF_CONFIG_FIELD (type);
+DEF_CONFIG_FIELD (type_instance);
+
+#undef DEF_CONFIG_FIELD
 
 /*
  * Public functions
@@ -45,6 +70,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
     return (NULL);
   }
   memset (ret, 0, sizeof (*ret));
+  ret->legend = NULL;
 
   ret->ds_name = strdup (ds_name);
   if (ret->ds_name == NULL)
@@ -69,7 +95,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
 
   ident_destroy (selector);
   return (ret);
-}; /* }}} graph_def_t *def_create */
+} /* }}} graph_def_t *def_create */
 
 void def_destroy (graph_def_t *def) /* {{{ */
 {
@@ -88,6 +114,57 @@ void def_destroy (graph_def_t *def) /* {{{ */
 
   def_destroy (next);
 } /* }}} void def_destroy */
+
+int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
+{
+  graph_ident_t *ident;
+  char *ds_name = NULL;
+  char *legend = NULL;
+  graph_def_t *def;
+  int i;
+
+  ident = gl_graph_get_selector (cfg);
+  if (ident == NULL)
+    return (ENOMEM);
+
+  for (i = 0; i < ci->children_num; i++)
+  {
+    oconfig_item_t *child;
+
+#define HANDLE_FIELD(name,field) \
+    else if (strcasecmp (name, child->key) == 0) \
+      def_config_##field (child, ident)
+
+    child = ci->children + i;
+    if (strcasecmp ("DSName", child->key) == 0)
+      graph_config_get_string (child, &ds_name);
+    else if (strcasecmp ("Legend", child->key) == 0)
+      graph_config_get_string (child, &legend);
+    HANDLE_FIELD ("Host", host);
+    HANDLE_FIELD ("Plugin", plugin);
+    HANDLE_FIELD ("PluginInstance", plugin_instance);
+    HANDLE_FIELD ("Type", type);
+    HANDLE_FIELD ("TypeInstance", type_instance);
+
+#undef HANDLE_FIELD
+  }
+
+  def = def_create (cfg, ident, ds_name);
+  if (def == NULL)
+  {
+    fprintf (stderr, "def_config: def_create failed (ds_name = %s)\n",
+        (ds_name != NULL) ? ds_name : "(null)");
+    ident_destroy (ident);
+    return (EINVAL);
+  }
+
+  def->legend = legend;
+
+  ident_destroy (ident);
+  free (ds_name);
+
+  return (gl_graph_add_def (cfg, def));
+} /* }}} int def_config */
 
 int def_append (graph_def_t *head, graph_def_t *def) /* {{{ */
 {
@@ -189,7 +266,8 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
 
   /* Graph part */
   array_append_format (args, "LINE1:def_%04i_avg#%06"PRIx32":%s",
-      index, def->color, def->ds_name);
+      index, def->color,
+      (def->legend != NULL) ? def->legend : def->ds_name);
   array_append_format (args, "GPRINT:vdef_%04i_min:%%lg min,", index);
   array_append_format (args, "GPRINT:vdef_%04i_avg:%%lg avg,", index);
   array_append_format (args, "GPRINT:vdef_%04i_max:%%lg max,", index);

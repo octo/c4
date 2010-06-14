@@ -1,20 +1,23 @@
 #ifndef GRAPH_DEF_H
 #define GRAPH_DEF_H 1
 
-#include "graph_ident.h"
-#include "utils_array.h"
-#include "graph_list.h"
-
 struct graph_def_s;
 typedef struct graph_def_s graph_def_t;
 
 typedef int (*def_callback_t) (graph_def_t *def,
     void *user_data);
 
+#include "graph_ident.h"
+#include "graph_list.h"
+#include "utils_array.h"
+#include "oconfig.h"
+
 graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident,
     const char *ds_name);
 
 void def_destroy (graph_def_t *def);
+
+int def_config (graph_config_t *cfg, const oconfig_item_t *ci);
 
 int def_append (graph_def_t *head, graph_def_t *def);
 

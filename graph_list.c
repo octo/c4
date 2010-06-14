@@ -616,40 +616,15 @@ static int gl_clear_instances (void) /* {{{ */
 /*
  * Config functions
  */
-static int config_get_string (const oconfig_item_t *ci, /* {{{ */
-    char **ret_str)
-{
-  char *tmp;
-
-  if ((ci->values_num != 1) || (ci->values[0].type != OCONFIG_TYPE_STRING))
-    return (EINVAL);
-
-  tmp = strdup (ci->values[0].value.string);
-  if (tmp == NULL)
-    return (ENOMEM);
-
-  free (*ret_str);
-  *ret_str = tmp;
-
-  return (0);
-} /* }}} int config_get_string */
-
-/*
- * Global functions
- */
-int graph_config_add (const oconfig_item_t *ci) /* {{{ */
+static graph_ident_t *graph_config_get_selector (const oconfig_item_t *ci) /* {{{ */
 {
   char *host = NULL;
   char *plugin = NULL;
   char *plugin_instance = NULL;
   char *type = NULL;
   char *type_instance = NULL;
-  graph_config_t *cfg = NULL;
+  graph_ident_t *ret;
   int i;
-
-  cfg = graph_create (/* selector = */ NULL);
-  if (cfg == NULL)
-    return (ENOMEM);
 
   for (i = 0; i < ci->children_num; i++)
   {
@@ -658,29 +633,62 @@ int graph_config_add (const oconfig_item_t *ci) /* {{{ */
     child = ci->children + i;
 
     if (strcasecmp ("Host", child->key) == 0)
-      config_get_string (child, &host);
+      graph_config_get_string (child, &host);
     else if (strcasecmp ("Plugin", child->key) == 0)
-      config_get_string (child, &plugin);
+      graph_config_get_string (child, &plugin);
     else if (strcasecmp ("PluginInstance", child->key) == 0)
-      config_get_string (child, &plugin_instance);
+      graph_config_get_string (child, &plugin_instance);
     else if (strcasecmp ("Type", child->key) == 0)
-      config_get_string (child, &type);
+      graph_config_get_string (child, &type);
     else if (strcasecmp ("TypeInstance", child->key) == 0)
-      config_get_string (child, &type_instance);
-    else if (strcasecmp ("Title", child->key) == 0)
-      config_get_string (child, &cfg->title);
-    else if (strcasecmp ("VerticalLabel", child->key) == 0)
-      config_get_string (child, &cfg->vertical_label);
-    /* TODO: DEFs! */
+      graph_config_get_string (child, &type_instance);
+    /* else: ignore all other directives here. */
   } /* for */
 
-  cfg->select = ident_create (host, plugin, plugin_instance,
-      type, type_instance);
-  if (cfg->select == NULL)
-  {
-    graph_destroy (cfg);
+  ret = ident_create (host, plugin, plugin_instance, type, type_instance);
+
+  free (host);
+  free (plugin);
+  free (plugin_instance);
+  free (type);
+  free (type_instance);
+
+  return (ret);
+} /* }}} int graph_config_get_selector */
+
+/*
+ * Global functions
+ */
+
+int graph_config_add (const oconfig_item_t *ci) /* {{{ */
+{
+  graph_ident_t *select;
+  graph_config_t *cfg = NULL;
+  int i;
+
+  select = graph_config_get_selector (ci);
+  if (select == NULL)
     return (EINVAL);
-  }
+
+  cfg = graph_create (/* selector = */ NULL);
+  if (cfg == NULL)
+    return (ENOMEM);
+
+  cfg->select = select;
+
+  for (i = 0; i < ci->children_num; i++)
+  {
+    oconfig_item_t *child;
+
+    child = ci->children + i;
+
+    if (strcasecmp ("Title", child->key) == 0)
+      graph_config_get_string (child, &cfg->title);
+    else if (strcasecmp ("VerticalLabel", child->key) == 0)
+      graph_config_get_string (child, &cfg->vertical_label);
+    else if (strcasecmp ("DEF", child->key) == 0)
+      def_config (cfg, child);
+  } /* for */
 
   graph_append (&graph_config_staging, cfg);
 
@@ -888,6 +896,21 @@ graph_ident_t *gl_graph_get_selector (graph_config_t *cfg) /* {{{ */
 
   return (ident_clone (cfg->select));
 } /* }}} graph_ident_t *gl_graph_get_selector */
+
+int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
+{
+  if ((cfg == NULL) || (def == NULL))
+    return (EINVAL);
+
+  if (cfg->defs == NULL)
+  {
+    cfg->defs = def;
+    return (0);
+  }
+
+  return (def_append (cfg->defs, def));
+} /* }}} int gl_graph_add_def */
+
 
 int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
     void *user_data)
