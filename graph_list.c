@@ -599,10 +599,25 @@ static int gl_instance_get_rrdargs_cb (graph_def_t *def, void *user_data) /* {{{
   return (0);
 } /* }}} int gl_instance_get_rrdargs_cb */
 
+static int gl_clear_instances (void) /* {{{ */
+{
+  graph_config_t *cfg;
+
+  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
+  {
+    instance_destroy (cfg->instances);
+    cfg->instances = NULL;
+  }
+
+  return (0);
+} /* }}} int gl_clear_instances */
+
+
 /*
  * Config functions
  */
-static int config_get_string (const oconfig_item_t *ci, char **ret_str)
+static int config_get_string (const oconfig_item_t *ci, /* {{{ */
+    char **ret_str)
 {
   char *tmp;
 
@@ -622,7 +637,7 @@ static int config_get_string (const oconfig_item_t *ci, char **ret_str)
 /*
  * Global functions
  */
-int graph_config_add (const oconfig_item_t *ci)
+int graph_config_add (const oconfig_item_t *ci) /* {{{ */
 {
   char *host = NULL;
   char *plugin = NULL;
@@ -949,8 +964,6 @@ graph_ident_t *gl_instance_get_selector (graph_instance_t *inst) /* {{{ */
   return (ident_clone (inst->select));
 } /* }}} graph_ident_t *gl_instance_get_selector */
 
-/* DELETEME */
-
 int gl_update (void) /* {{{ */
 {
   time_t now;
@@ -975,6 +988,7 @@ int gl_update (void) /* {{{ */
   gl.type = NULL;
   gl.type_instance = NULL;
 
+  gl_clear_instances ();
   status = foreach_host (callback_host, &gl);
 
   gl_last_update = now;
