@@ -9,6 +9,7 @@
 
 #include "graph_list.h"
 #include "graph_ident.h"
+#include "graph_def.h"
 #include "common.h"
 #include "utils_params.h"
 
@@ -22,9 +23,6 @@
 
 #define ANY_TOKEN "/any/"
 #define ALL_TOKEN "/all/"
-
-#define IS_ANY(str) (((str) != NULL) && (strcmp (ANY_TOKEN, (str)) == 0))
-#define IS_ALL(str) (((str) != NULL) && (strcmp (ALL_TOKEN, (str)) == 0))
 
 /*
  * Data types
@@ -49,28 +47,14 @@ struct graph_instance_s /* {{{ */
   graph_instance_t *next;
 }; /* }}} struct graph_instance_s */
 
-struct graph_def_s;
-typedef struct graph_def_s graph_def_t;
-struct graph_def_s /* {{{ */
-{
-  graph_ident_t *select;
-
-  char *name;
-  char *legend;
-  double scale;
-  _Bool nan_to_zero;
-  _Bool draw_area;
-  uint32_t color;
-
-  graph_def_t *next;
-}; /* }}} struct graph_def_s */
-
 struct graph_config_s /* {{{ */
 {
   graph_ident_t *select;
 
   char *title;
   char *vertical_label;
+
+  graph_def_t *defs;
 
   graph_instance_t *instances;
 
@@ -178,25 +162,6 @@ static void instance_destroy (graph_instance_t *inst) /* {{{ */
 
   instance_destroy (next);
 } /* }}} void instance_destroy */
-
-static void graph_destroy (graph_config_t *cfg) /* {{{ */
-{
-  graph_config_t *next;
-
-  if (cfg == NULL)
-    return;
-
-  next = cfg->next;
-
-  ident_destroy (cfg->select);
-
-  free (cfg->title);
-  free (cfg->vertical_label);
-
-  instance_destroy (cfg->instances);
-
-  graph_destroy (next);
-} /* }}} void graph_destroy */
 
 /*
  * Copy part of an identifier. If the "template" value is ANY_TOKEN, "value" is
@@ -311,26 +276,45 @@ static int graph_append (graph_config_t *cfg) /* {{{ */
   return (0);
 } /* }}} int graph_append */
 
-static int graph_create_from_file (const graph_ident_t *file) /* {{{ */
+static graph_config_t *graph_create (const graph_ident_t *selector) /* {{{ */
 {
   graph_config_t *cfg;
 
   cfg = malloc (sizeof (*cfg));
   if (cfg == NULL)
-    return (ENOMEM);
+    return (NULL);
   memset (cfg, 0, sizeof (*cfg));
 
-  cfg->select = ident_clone (file);
+  cfg->select = ident_clone (selector);
 
   cfg->title = NULL;
   cfg->vertical_label = NULL;
+  cfg->defs = NULL;
   cfg->instances = NULL;
   cfg->next = NULL;
 
-  graph_append (cfg);
+  return (cfg);
+} /* }}} int graph_create */
 
-  return (graph_add_file (cfg, file));
-} /* }}} int graph_create_from_file */
+static void graph_destroy (graph_config_t *cfg) /* {{{ */
+{
+  graph_config_t *next;
+
+  if (cfg == NULL)
+    return;
+
+  next = cfg->next;
+
+  ident_destroy (cfg->select);
+
+  free (cfg->title);
+  free (cfg->vertical_label);
+
+  def_destroy (cfg->defs);
+  instance_destroy (cfg->instances);
+
+  graph_destroy (next);
+} /* }}} void graph_destroy */
 
 static int register_file (const graph_ident_t *file) /* {{{ */
 {
@@ -356,7 +340,11 @@ static int register_file (const graph_ident_t *file) /* {{{ */
   }
 
   if (num_graphs == 0)
-    graph_create_from_file (file);
+  {
+    cfg = graph_create (file);
+    graph_append (cfg);
+    graph_add_file (cfg, file);
+  }
 
   return (0);
 } /* }}} int register_file */
@@ -849,9 +837,23 @@ int gl_instance_get_rrdargs (graph_config_t *cfg, /* {{{ */
 
   for (i = 0; i < inst->files_num; i++)
   {
+    graph_def_t *def;
     int status;
 
-    status = gl_ident_get_rrdargs (cfg, inst, inst->files[i], args);
+    def = def_search (cfg->defs, inst->files[i]);
+    if (def == NULL)
+    {
+      def = def_create (cfg, inst->files[i]);
+      if (def == NULL)
+        return (-1);
+
+      if (cfg->defs == NULL)
+        cfg->defs = def;
+      else
+        def_append (cfg->defs, def);
+    }
+
+    status = def_get_rrdargs (def, inst->files[i], args);
     if (status != 0)
       return (status);
   }
