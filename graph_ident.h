@@ -9,8 +9,10 @@ graph_ident_t *ident_create (const char *host,
     const char *type, const char *type_instance);
 graph_ident_t *ident_clone (const graph_ident_t *ident);
 
+#define IDENT_FLAG_REPLACE_ALL 0x01
+#define IDENT_FLAG_REPLACE_ANY 0x02
 graph_ident_t *ident_copy_with_selector (const graph_ident_t *selector,
-    const graph_ident_t *ident, _Bool keep_all_selector);
+    const graph_ident_t *ident, unsigned int flags);
 
 void ident_destroy (graph_ident_t *ident);
 

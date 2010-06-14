@@ -28,32 +28,29 @@ struct graph_ident_s /* {{{ */
  * Private functions
  */
 static char *part_copy_with_selector (const char *selector, /* {{{ */
-    const char *part, _Bool keep_all_selector)
+    const char *part, unsigned int flags)
 {
   if ((selector == NULL) || (part == NULL))
     return (NULL);
 
-  if (IS_ANY (part))
+  if ((flags & IDENT_FLAG_REPLACE_ANY) && IS_ANY (part))
     return (NULL);
 
-  if (!keep_all_selector && IS_ALL (part))
+  if ((flags & IDENT_FLAG_REPLACE_ALL) && IS_ALL (part))
     return (NULL);
 
-  /* ANY in the graph selection => concrete value in the instance. */
-  if (IS_ANY (selector))
+  /* Replace the ANY and ALL flags if requested and if the selecter actually
+   * *is* that flag. */
+  if ((flags & IDENT_FLAG_REPLACE_ANY) && IS_ANY (selector))
     return (strdup (part));
 
-  if (IS_ALL (selector))
-  {
-    if (keep_all_selector)
-      return (strdup (ALL_TOKEN));
-    else
-      return (strdup (part));
-  }
+  if ((flags & IDENT_FLAG_REPLACE_ALL) && IS_ALL (selector))
+    return (strdup (part));
 
   if (strcmp (selector, part) != 0)
     return (NULL);
 
+  /* Otherwise (no replacement), return a copy of the selector. */
   return (strdup (selector));
 } /* }}} char *part_copy_with_selector */
 
@@ -129,7 +126,7 @@ graph_ident_t *ident_create (const char *host, /* {{{ */
   return (ret);
 } /* }}} graph_ident_t *ident_create */
 
-graph_ident_t *ident_clone (const graph_ident_t *ident)
+graph_ident_t *ident_clone (const graph_ident_t *ident) /* {{{ */
 {
   return (ident_create (ident->host,
         ident->plugin, ident->plugin_instance,
@@ -137,7 +134,7 @@ graph_ident_t *ident_clone (const graph_ident_t *ident)
 } /* }}} graph_ident_t *ident_clone */
 
 graph_ident_t *ident_copy_with_selector (const graph_ident_t *selector, /* {{{ */
-    const graph_ident_t *ident, _Bool keep_all_selector)
+    const graph_ident_t *ident, unsigned int flags)
 {
   graph_ident_t *ret;
 
@@ -155,8 +152,7 @@ graph_ident_t *ident_copy_with_selector (const graph_ident_t *selector, /* {{{ *
   ret->type_instance = NULL;
 
 #define COPY_PART(p) do {                                  \
-  ret->p = part_copy_with_selector (selector->p, ident->p, \
-      keep_all_selector);                                  \
+  ret->p = part_copy_with_selector (selector->p, ident->p, flags); \
   if (ret->p == NULL)                                      \
   {                                                        \
     free (ret->host);                                      \

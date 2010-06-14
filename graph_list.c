@@ -217,7 +217,7 @@ static graph_instance_t *instance_create (graph_config_t *cfg, /* {{{ */
   memset (i, 0, sizeof (*i));
 
   i->select = ident_copy_with_selector (cfg->select, file,
-      /* keep_all_selector = */ 1);
+      IDENT_FLAG_REPLACE_ANY);
 
   i->files = NULL;
   i->files_num = 0;
