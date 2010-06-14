@@ -20,6 +20,8 @@ struct graph_def_s
   char *ds_name;
   char *legend;
   uint32_t color;
+  _Bool stack;
+  _Bool area;
 
   graph_def_t *next;
 };
@@ -206,6 +208,13 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
       graph_config_get_string (child, &def->legend);
     else if (strcasecmp ("Color", child->key) == 0)
       def_config_color (child, &def->color);
+    else if (strcasecmp ("Stack", child->key) == 0)
+      graph_config_get_bool (child, &def->stack);
+    else if (strcasecmp ("Area", child->key) == 0)
+      graph_config_get_bool (child, &def->area);
+    else
+      fprintf (stderr, "def_config: Ignoring unknown config option \"%s\"",
+          child->key);
   }
 
   return (gl_graph_add_def (cfg, def));
@@ -310,9 +319,11 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
       index, index);
 
   /* Graph part */
-  array_append_format (args, "LINE1:def_%04i_avg#%06"PRIx32":%s",
+  array_append_format (args, "%s:def_%04i_avg#%06"PRIx32":%s%s",
+      def->area ? "AREA" : "LINE1",
       index, def->color,
-      (def->legend != NULL) ? def->legend : def->ds_name);
+      (def->legend != NULL) ? def->legend : def->ds_name,
+      def->stack ? ":STACK" : "");
   array_append_format (args, "GPRINT:vdef_%04i_min:%%lg min,", index);
   array_append_format (args, "GPRINT:vdef_%04i_avg:%%lg avg,", index);
   array_append_format (args, "GPRINT:vdef_%04i_max:%%lg max,", index);
