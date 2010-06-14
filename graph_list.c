@@ -61,6 +61,13 @@ struct graph_config_s /* {{{ */
   graph_config_t *next;
 }; /* }}} struct graph_config_s */
 
+struct def_callback_data_s
+{
+  graph_instance_t *inst;
+  str_array_t *args;
+};
+typedef struct def_callback_data_s def_callback_data_t;
+
 /*
  * Global variables
  */
@@ -532,77 +539,113 @@ static const char *get_part_from_param (const char *prim_key, /* {{{ */
   return (param (sec_key));
 } /* }}} const char *get_part_from_param */
 
-int gl_ident_get_rrdargs (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst,
-    graph_ident_t *ident,
-    str_array_t *args)
+/* Create one DEF for each data source in the file. Called by
+ * "gl_inst_get_default_defs" for each file. */
+static graph_def_t *gl_ident_get_default_defs (graph_config_t *cfg, /* {{{ */
+    graph_ident_t *ident, graph_def_t *def_head)
 {
+  graph_def_t *defs = NULL;
   char *file;
   char **dses = NULL;
   size_t dses_num = 0;
   int status;
   size_t i;
 
-  if ((cfg == NULL) || (inst == NULL) || (ident == NULL) || (args == NULL))
-    return (EINVAL);
+  if ((cfg == NULL) || (ident == NULL))
+    return (def_head);
 
   file = ident_to_file (ident);
   if (file == NULL)
   {
-    DEBUG ("gl_ident_get_rrdargs: ident_to_file returned NULL.\n");
-    return (-1);
+    DEBUG ("gl_ident_get_default_defs: ident_to_file returned NULL.\n");
+    return (def_head);
   }
 
-  DEBUG ("gl_ident_get_rrdargs: file = %s;\n", file);
+  DEBUG ("gl_ident_get_default_defs: file = %s;\n", file);
 
   status = ds_list_from_rrd_file (file, &dses_num, &dses);
   if (status != 0)
   {
     free (file);
-    return (status);
+    return (def_head);
   }
 
   for (i = 0; i < dses_num; i++)
   {
-    int index;
+    graph_def_t *def;
 
-    DEBUG ("gl_ident_get_rrdargs: ds[%lu] = %s;\n", (unsigned long) i, dses[i]);
+    def = def_search (def_head, ident, dses[i]);
+    if (def != NULL)
+      continue;
 
-    index = array_argc (args);
+    def = def_create (cfg, ident, dses[i]);
+    if (def == NULL)
+      continue;
 
-    /* CDEFs */
-    array_append_format (args, "DEF:def_%04i_min=%s:%s:MIN",
-        index, file, dses[i]);
-    array_append_format (args, "DEF:def_%04i_avg=%s:%s:AVERAGE",
-        index, file, dses[i]);
-    array_append_format (args, "DEF:def_%04i_max=%s:%s:MAX",
-        index, file, dses[i]);
-    /* VDEFs */
-    array_append_format (args, "VDEF:vdef_%04i_min=def_%04i_min,MINIMUM",
-        index, index);
-    array_append_format (args, "VDEF:vdef_%04i_avg=def_%04i_avg,AVERAGE",
-        index, index);
-    array_append_format (args, "VDEF:vdef_%04i_max=def_%04i_max,MAXIMUM",
-        index, index);
-    array_append_format (args, "VDEF:vdef_%04i_lst=def_%04i_avg,LAST",
-        index, index);
-
-    /* Graph part */
-    array_append_format (args, "LINE1:def_%04i_avg#%06"PRIx32":%s",
-        index, get_random_color (), dses[i]);
-    array_append_format (args, "GPRINT:vdef_%04i_min:%%lg min,", index);
-    array_append_format (args, "GPRINT:vdef_%04i_avg:%%lg avg,", index);
-    array_append_format (args, "GPRINT:vdef_%04i_max:%%lg max,", index);
-    array_append_format (args, "GPRINT:vdef_%04i_lst:%%lg last\\l", index);
+    if (defs == NULL)
+      defs = def;
+    else
+      def_append (defs, def);
 
     free (dses[i]);
   }
-  free (dses);
 
+  free (dses);
   free (file);
 
+  return (defs);
+} /* }}} int gl_ident_get_default_defs */
+
+/* Create one or more DEFs for each file in the graph instance. The number
+ * depends on the number of data sources in each of the files. Called from
+ * "gl_instance_get_rrdargs" if no DEFs are available from the configuration.
+ * */
+static graph_def_t *gl_inst_get_default_defs (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst)
+{
+  graph_def_t *defs = NULL;
+  size_t i;
+
+  if ((cfg == NULL) || (inst == NULL))
+    return (NULL);
+
+  for (i = 0; i < inst->files_num; i++)
+  {
+    graph_def_t *def;
+
+    def = gl_ident_get_default_defs (cfg, inst->files[i], defs);
+    if (def == NULL)
+      continue;
+
+    if (defs == NULL)
+      defs = def;
+    else
+      def_append (defs, def);
+  }
+
+  return (defs);
+} /* }}} graph_def_t *gl_inst_get_default_defs */
+
+/* Called with each DEF in turn. Calls "def_get_rrdargs" with every appropriate
+ * file / DEF pair. */
+static int gl_instance_get_rrdargs_cb (graph_def_t *def, void *user_data) /* {{{ */
+{
+  def_callback_data_t *data = user_data;
+  graph_instance_t *inst = data->inst;
+  str_array_t *args = data->args;
+
+  size_t i;
+
+  for (i = 0; i < inst->files_num; i++)
+  {
+    if (!def_matches (def, inst->files[i]))
+      continue;
+
+    def_get_rrdargs (def, inst->files[i], args);
+  }
+
   return (0);
-} /* }}} int gl_ident_get_rrdargs */
+} /* }}} int gl_instance_get_rrdargs_cb */
 
 /*
  * Global functions
@@ -830,7 +873,9 @@ int gl_instance_get_rrdargs (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
     str_array_t *args)
 {
-  size_t i;
+  def_callback_data_t data = { inst, args };
+  graph_def_t *default_defs;
+  int status;
 
   if ((cfg == NULL) || (inst == NULL) || (args == NULL))
     return (EINVAL);
@@ -841,30 +886,24 @@ int gl_instance_get_rrdargs (graph_config_t *cfg, /* {{{ */
     array_append (args, cfg->title);
   }
 
-  for (i = 0; i < inst->files_num; i++)
+  if (cfg->defs == NULL)
   {
-    graph_def_t *def;
-    int status;
+    default_defs = gl_inst_get_default_defs (cfg, inst);
 
-    def = def_search (cfg->defs, inst->files[i]);
-    if (def == NULL)
-    {
-      def = def_create (cfg, inst->files[i]);
-      if (def == NULL)
-        return (-1);
+    if (default_defs == NULL)
+      return (-1);
 
-      if (cfg->defs == NULL)
-        cfg->defs = def;
-      else
-        def_append (cfg->defs, def);
-    }
+    status = def_foreach (default_defs, gl_instance_get_rrdargs_cb, &data);
 
-    status = def_get_rrdargs (def, inst->files[i], args);
-    if (status != 0)
-      return (status);
+    if (default_defs != NULL)
+      def_destroy (default_defs);
+  }
+  else
+  {
+    status = def_foreach (cfg->defs, gl_instance_get_rrdargs_cb, &data);
   }
 
-  return (0);
+  return (status);
 } /* }}} int gl_instance_get_rrdargs */
 
 graph_ident_t *gl_instance_get_selector (graph_instance_t *inst) /* {{{ */
