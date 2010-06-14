@@ -12,6 +12,8 @@ struct graph_def_s
 {
   graph_ident_t *select;
 
+  uint32_t color;
+
   graph_def_t *next;
 };
 
@@ -38,6 +40,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident) /* {{{ */
     return (NULL);
   }
   memset (ret, 0, sizeof (*ret));
+  ret->color = get_random_color ();
   ret->next = NULL;
 
   ret->select = ident_copy_with_selector (selector, ident,
@@ -154,7 +157,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
 
     /* Graph part */
     array_append_format (args, "LINE1:def_%04i_avg#%06"PRIx32":%s",
-        index, get_random_color (), dses[i]);
+        index, def->color, dses[i]);
     array_append_format (args, "GPRINT:vdef_%04i_min:%%lg min,", index);
     array_append_format (args, "GPRINT:vdef_%04i_avg:%%lg avg,", index);
     array_append_format (args, "GPRINT:vdef_%04i_max:%%lg max,", index);
