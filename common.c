@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -7,6 +9,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <assert.h>
+#include <math.h>
 
 #include <rrd.h>
 
@@ -244,5 +247,57 @@ int ds_list_from_rrd_file (char *file, /* {{{ */
 
   return (0);
 } /* }}} int ds_list_from_rrd_file */
+
+static int hsv_to_rgb (double *hsv, double *rgb) /* {{{ */
+{
+  double c = hsv[2] * hsv[1];
+  double h = hsv[0] / 60.0;
+  double x = c * (1.0 - fabs (fmod (h, 2.0) - 1));
+  double m = hsv[2] - c;
+
+  rgb[0] = 0.0;
+  rgb[1] = 0.0;
+  rgb[2] = 0.0;
+
+       if ((0.0 <= h) && (h < 1.0)) { rgb[0] = 1.0; rgb[1] = x; rgb[2] = 0.0; }
+  else if ((1.0 <= h) && (h < 2.0)) { rgb[0] = x; rgb[1] = 1.0; rgb[2] = 0.0; }
+  else if ((2.0 <= h) && (h < 3.0)) { rgb[0] = 0.0; rgb[1] = 1.0; rgb[2] = x; }
+  else if ((3.0 <= h) && (h < 4.0)) { rgb[0] = 0.0; rgb[1] = x; rgb[2] = 1.0; }
+  else if ((4.0 <= h) && (h < 5.0)) { rgb[0] = x; rgb[1] = 0.0; rgb[2] = 1.0; }
+  else if ((5.0 <= h) && (h < 6.0)) { rgb[0] = 1.0; rgb[1] = 0.0; rgb[2] = x; }
+
+  rgb[0] += m;
+  rgb[1] += m;
+  rgb[2] += m;
+
+  return (0);
+} /* }}} int hsv_to_rgb */
+
+static uint32_t rgb_to_uint32 (double *rgb) /* {{{ */
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+
+  r = (uint8_t) (255.0 * rgb[0]);
+  g = (uint8_t) (255.0 * rgb[1]);
+  b = (uint8_t) (255.0 * rgb[2]);
+
+  return ((((uint32_t) r) << 16)
+      | (((uint32_t) g) << 8)
+      | ((uint32_t) b));
+} /* }}} uint32_t rgb_to_uint32 */
+
+uint32_t get_random_color (void) /* {{{ */
+{
+  double hsv[3] = { 0.0, 1.0, 1.0 };
+  double rgb[3] = { 0.0, 0.0, 0.0 };
+
+  hsv[0] = 360.0 * ((double) rand ()) / (((double) RAND_MAX) + 1.0);
+
+  hsv_to_rgb (hsv, rgb);
+
+  return (rgb_to_uint32 (rgb));
+} /* }}} uint32_t get_random_color */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <time.h>
 #include <errno.h>
@@ -791,13 +793,36 @@ int gl_ident_get_rrdargs (graph_config_t *cfg, /* {{{ */
 
   for (i = 0; i < dses_num; i++)
   {
-    int id;
+    int index;
 
     GL_DEBUG ("gl_ident_get_rrdargs: ds[%lu] = %s;\n", (unsigned long) i, dses[i]);
 
-    id = array_argc (args);
-    array_append_format (args, "DEF:avg%i=%s:%s:AVERAGE", id, file, dses[i]);
-    array_append_format (args, "LINE1:avg%i#ff0000:%s\\l", id, file);
+    index = array_argc (args);
+
+    /* CDEFs */
+    array_append_format (args, "DEF:def_%04i_min=%s:%s:MIN",
+        index, file, dses[i]);
+    array_append_format (args, "DEF:def_%04i_avg=%s:%s:AVERAGE",
+        index, file, dses[i]);
+    array_append_format (args, "DEF:def_%04i_max=%s:%s:MAX",
+        index, file, dses[i]);
+    /* VDEFs */
+    array_append_format (args, "VDEF:vdef_%04i_min=def_%04i_min,MINIMUM",
+        index, index);
+    array_append_format (args, "VDEF:vdef_%04i_avg=def_%04i_avg,AVERAGE",
+        index, index);
+    array_append_format (args, "VDEF:vdef_%04i_max=def_%04i_max,MAXIMUM",
+        index, index);
+    array_append_format (args, "VDEF:vdef_%04i_lst=def_%04i_avg,LAST",
+        index, index);
+
+    /* Graph part */
+    array_append_format (args, "LINE1:def_%04i_avg#%06"PRIx32":%s",
+        index, get_random_color (), dses[i]);
+    array_append_format (args, "GPRINT:vdef_%04i_min:%%lg min,", index);
+    array_append_format (args, "GPRINT:vdef_%04i_avg:%%lg avg,", index);
+    array_append_format (args, "GPRINT:vdef_%04i_max:%%lg max,", index);
+    array_append_format (args, "GPRINT:vdef_%04i_lst:%%lg last\\l", index);
 
     free (dses[i]);
   }

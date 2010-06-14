@@ -1,6 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H 1
 
+#include <stdint.h>
+#include <inttypes.h>
+
 #define DATA_DIR "/var/lib/collectd/rrd"
 
 #include "graph_list.h"
@@ -19,6 +22,8 @@ size_t c_strlcat (char *dst, const char *src, size_t size);
 
 int ds_list_from_rrd_file (char *file,
     size_t *ret_dses_num, char ***ret_dses);
+
+uint32_t get_random_color (void);
 
 #endif /* COMMON_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
