@@ -12,6 +12,8 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident);
 
 void def_destroy (graph_def_t *def);
 
+int def_append (graph_def_t *head, graph_def_t *def);
+
 graph_def_t *def_search (graph_def_t *head, graph_ident_t *ident);
 
 int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident,

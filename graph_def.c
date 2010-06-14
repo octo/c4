@@ -69,6 +69,22 @@ void def_destroy (graph_def_t *def) /* {{{ */
   def_destroy (next);
 } /* }}} void def_destroy */
 
+int def_append (graph_def_t *head, graph_def_t *def) /* {{{ */
+{
+  graph_def_t *ptr;
+
+  if ((head == NULL) || (def == NULL))
+    return (EINVAL);
+
+  ptr = head;
+  while (ptr->next != NULL)
+    ptr = ptr->next;
+
+  ptr->next = def;
+
+  return (0);
+} /* }}} int def_append */
+
 graph_def_t *def_search (graph_def_t *head, graph_ident_t *ident) /* {{{ */
 {
   graph_def_t *ptr;
