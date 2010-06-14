@@ -69,6 +69,57 @@ static int def_config_color (const oconfig_item_t *ci, uint32_t *ret_color) /* {
   return (0);
 } /* }}} int def_config_color */
 
+static graph_def_t *def_config_get_obj (graph_config_t *cfg, /* {{{ */
+    const oconfig_item_t *ci)
+{
+  graph_ident_t *ident;
+  char *ds_name = NULL;
+  graph_def_t *def;
+  int i;
+
+  ident = gl_graph_get_selector (cfg);
+  if (ident == NULL)
+  {
+    fprintf (stderr, "def_config_get_obj: gl_graph_get_selector failed");
+    return (NULL);
+  }
+
+  for (i = 0; i < ci->children_num; i++)
+  {
+    oconfig_item_t *child;
+
+#define HANDLE_FIELD(name,field) \
+    else if (strcasecmp (name, child->key) == 0) \
+      def_config_##field (child, ident)
+
+    child = ci->children + i;
+    if (strcasecmp ("DSName", child->key) == 0)
+      graph_config_get_string (child, &ds_name);
+
+    HANDLE_FIELD ("Host", host);
+    HANDLE_FIELD ("Plugin", plugin);
+    HANDLE_FIELD ("PluginInstance", plugin_instance);
+    HANDLE_FIELD ("Type", type);
+    HANDLE_FIELD ("TypeInstance", type_instance);
+
+#undef HANDLE_FIELD
+  }
+
+  def = def_create (cfg, ident, ds_name);
+  if (def == NULL)
+  {
+    fprintf (stderr, "def_config_get_obj: def_create failed\n");
+    ident_destroy (ident);
+    free (ds_name);
+    return (NULL);
+  }
+
+  ident_destroy (ident);
+  free (ds_name);
+
+  return (def);
+} /* }}} graph_def_t *def_config_get_obj */
+
 /*
  * Public functions
  */
@@ -139,57 +190,23 @@ void def_destroy (graph_def_t *def) /* {{{ */
 
 int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
 {
-  graph_ident_t *ident;
-  char *ds_name = NULL;
-  char *legend = NULL;
-  uint32_t color = 0x01000000;
   graph_def_t *def;
   int i;
 
-  ident = gl_graph_get_selector (cfg);
-  if (ident == NULL)
-    return (ENOMEM);
+  def = def_config_get_obj (cfg, ci);
+  if (def == NULL)
+    return (EINVAL);
 
   for (i = 0; i < ci->children_num; i++)
   {
     oconfig_item_t *child;
 
-#define HANDLE_FIELD(name,field) \
-    else if (strcasecmp (name, child->key) == 0) \
-      def_config_##field (child, ident)
-
     child = ci->children + i;
-    if (strcasecmp ("DSName", child->key) == 0)
-      graph_config_get_string (child, &ds_name);
-    else if (strcasecmp ("Legend", child->key) == 0)
-      graph_config_get_string (child, &legend);
+    if (strcasecmp ("Legend", child->key) == 0)
+      graph_config_get_string (child, &def->legend);
     else if (strcasecmp ("Color", child->key) == 0)
-      def_config_color (child, &color);
-
-    HANDLE_FIELD ("Host", host);
-    HANDLE_FIELD ("Plugin", plugin);
-    HANDLE_FIELD ("PluginInstance", plugin_instance);
-    HANDLE_FIELD ("Type", type);
-    HANDLE_FIELD ("TypeInstance", type_instance);
-
-#undef HANDLE_FIELD
+      def_config_color (child, &def->color);
   }
-
-  def = def_create (cfg, ident, ds_name);
-  if (def == NULL)
-  {
-    fprintf (stderr, "def_config: def_create failed (ds_name = %s)\n",
-        (ds_name != NULL) ? ds_name : "(null)");
-    ident_destroy (ident);
-    return (EINVAL);
-  }
-
-  def->legend = legend;
-  if (color < 0x01000000)
-    def->color = color;
-
-  ident_destroy (ident);
-  free (ds_name);
 
   return (gl_graph_add_def (cfg, def));
 } /* }}} int def_config */
