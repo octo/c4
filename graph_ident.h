@@ -1,6 +1,9 @@
 #ifndef GRAPH_IDENT_H
 #define GRAPH_IDENT_H 1
 
+#define ANY_TOKEN "/any/"
+#define ALL_TOKEN "/all/"
+
 struct graph_ident_s;
 typedef struct graph_ident_s graph_ident_t;
 
@@ -21,6 +24,14 @@ const char *ident_get_plugin (graph_ident_t *ident);
 const char *ident_get_plugin_instance (graph_ident_t *ident);
 const char *ident_get_type (graph_ident_t *ident);
 const char *ident_get_type_instance (graph_ident_t *ident);
+
+int ident_set_host (graph_ident_t *ident, const char *host);
+int ident_set_plugin (graph_ident_t *ident, const char *plugin);
+int ident_set_plugin_instance (graph_ident_t *ident,
+    const char *plugin_instance);
+int ident_set_type (graph_ident_t *ident, const char *type);
+int ident_set_type_instance (graph_ident_t *ident,
+    const char *type_instance);
 
 int ident_compare (const graph_ident_t *i0,
     const graph_ident_t *i1);

@@ -1,13 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <errno.h>
 #include <limits.h> /* PATH_MAX */
 
 #include "graph_ident.h"
 #include "common.h"
-
-#define ANY_TOKEN "/any/"
-#define ALL_TOKEN "/all/"
 
 #define IS_ANY(str) (((str) != NULL) && (strcasecmp (ANY_TOKEN, (str)) == 0))
 #define IS_ALL(str) (((str) != NULL) && (strcasecmp (ALL_TOKEN, (str)) == 0))
@@ -199,6 +197,7 @@ void ident_destroy (graph_ident_t *ident) /* {{{ */
   free (ident);
 } /* }}} void ident_destroy */
 
+/* ident_get_* methods {{{ */
 const char *ident_get_host (graph_ident_t *ident) /* {{{ */
 {
   if (ident == NULL)
@@ -238,6 +237,95 @@ const char *ident_get_type_instance (graph_ident_t *ident) /* {{{ */
 
   return (ident->type_instance);
 } /* }}} char *ident_get_type_instance */
+/* }}} ident_get_* methods */
+
+/* ident_set_* methods {{{ */
+int ident_set_host (graph_ident_t *ident, const char *host) /* {{{ */
+{
+  char *tmp;
+
+  if ((ident == NULL) || (host == NULL))
+    return (EINVAL);
+
+  tmp = strdup (host);
+  if (tmp == NULL)
+    return (ENOMEM);
+
+  free (ident->host);
+  ident->host = tmp;
+
+  return (0);
+} /* }}} int ident_set_host */
+
+int ident_set_plugin (graph_ident_t *ident, const char *plugin) /* {{{ */
+{
+  char *tmp;
+
+  if ((ident == NULL) || (plugin == NULL))
+    return (EINVAL);
+
+  tmp = strdup (plugin);
+  if (tmp == NULL)
+    return (ENOMEM);
+
+  free (ident->plugin);
+  ident->plugin = tmp;
+
+  return (0);
+} /* }}} int ident_set_plugin */
+
+int ident_set_plugin_instance (graph_ident_t *ident, const char *plugin_instance) /* {{{ */
+{
+  char *tmp;
+
+  if ((ident == NULL) || (plugin_instance == NULL))
+    return (EINVAL);
+
+  tmp = strdup (plugin_instance);
+  if (tmp == NULL)
+    return (ENOMEM);
+
+  free (ident->plugin_instance);
+  ident->plugin_instance = tmp;
+
+  return (0);
+} /* }}} int ident_set_plugin_instance */
+
+int ident_set_type (graph_ident_t *ident, const char *type) /* {{{ */
+{
+  char *tmp;
+
+  if ((ident == NULL) || (type == NULL))
+    return (EINVAL);
+
+  tmp = strdup (type);
+  if (tmp == NULL)
+    return (ENOMEM);
+
+  free (ident->type);
+  ident->type = tmp;
+
+  return (0);
+} /* }}} int ident_set_type */
+
+int ident_set_type_instance (graph_ident_t *ident, const char *type_instance) /* {{{ */
+{
+  char *tmp;
+
+  if ((ident == NULL) || (type_instance == NULL))
+    return (EINVAL);
+
+  tmp = strdup (type_instance);
+  if (tmp == NULL)
+    return (ENOMEM);
+
+  free (ident->type_instance);
+  ident->type_instance = tmp;
+
+  return (0);
+} /* }}} int ident_set_type_instance */
+
+/* }}} ident_set_* methods */
 
 int ident_compare (const graph_ident_t *i0, /* {{{ */
     const graph_ident_t *i1)
