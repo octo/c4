@@ -10,6 +10,7 @@
 #include "graph_list.h"
 #include "graph_ident.h"
 #include "graph_def.h"
+#include "graph_config.h"
 #include "common.h"
 #include "utils_params.h"
 
@@ -72,6 +73,7 @@ typedef struct def_callback_data_s def_callback_data_t;
  * Global variables
  */
 static graph_config_t *graph_config_head = NULL;
+static graph_config_t *graph_config_staging = NULL;
 
 static time_t gl_last_update = 0;
 
@@ -267,20 +269,24 @@ static int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{
   return (instance_add_file (inst, file));
 } /* }}} int graph_add_file */
 
-static int graph_append (graph_config_t *cfg) /* {{{ */
+static int graph_append (graph_config_t **head, /* {{{ */
+    graph_config_t *cfg)
 {
   graph_config_t *last;
 
   if (cfg == NULL)
     return (EINVAL);
 
-  if (graph_config_head == NULL)
+  if (head == NULL)
+    head = &graph_config_head;
+
+  if (*head == NULL)
   {
-    graph_config_head = cfg;
+    *head = cfg;
     return (0);
   }
 
-  last = graph_config_head;
+  last = *head;
   while (last->next != NULL)
     last = last->next;
 
@@ -298,7 +304,10 @@ static graph_config_t *graph_create (const graph_ident_t *selector) /* {{{ */
     return (NULL);
   memset (cfg, 0, sizeof (*cfg));
 
-  cfg->select = ident_clone (selector);
+  if (selector != NULL)
+    cfg->select = ident_clone (selector);
+  else
+    cfg->select = NULL;
 
   cfg->title = NULL;
   cfg->vertical_label = NULL;
@@ -355,69 +364,12 @@ static int register_file (const graph_ident_t *file) /* {{{ */
   if (num_graphs == 0)
   {
     cfg = graph_create (file);
-    graph_append (cfg);
+    graph_append (/* head = */ NULL, cfg);
     graph_add_file (cfg, file);
   }
 
   return (0);
 } /* }}} int register_file */
-
-static int FIXME_graph_create_from_file (const char *host, /* {{{ */
-    const char *plugin, const char *plugin_instance,
-    const char *type, const char *type_instance,
-    const char *title)
-{
-  graph_config_t *cfg;
-
-  cfg = malloc (sizeof (*cfg));
-  if (cfg == NULL)
-    return (ENOMEM);
-  memset (cfg, 0, sizeof (*cfg));
-
-  cfg->select = ident_create (host, plugin, plugin_instance, type, type_instance);
-
-  cfg->title = NULL;
-  if (title != NULL)
-    cfg->title = strdup (title);
-  cfg->vertical_label = NULL;
-  cfg->instances = NULL;
-  cfg->next = NULL;
-
-  graph_append (cfg);
-
-  return (0);
-} /* }}} int FIXME_graph_create_from_file */
-
-/* FIXME: Actually read the config file here. */
-static int read_graph_config (void) /* {{{ */
-{
-  if (graph_config_head != NULL)
-    return (0);
-
-  FIXME_graph_create_from_file (ANY_TOKEN, "cpu", ANY_TOKEN, "cpu", ALL_TOKEN,
-      "CPU {instance} usage");
-  FIXME_graph_create_from_file (ANY_TOKEN, "memory", "", "memory", ALL_TOKEN,
-      "Memory usage");
-  FIXME_graph_create_from_file (ANY_TOKEN, "swap", "", "swap", ALL_TOKEN,
-      "Swap");
-  FIXME_graph_create_from_file (ANY_TOKEN, ANY_TOKEN, ANY_TOKEN, "ps_state", ALL_TOKEN,
-      "Processes");
-  FIXME_graph_create_from_file (ANY_TOKEN, "cpu", ALL_TOKEN, "cpu", "idle",
-      "CPU idle overview");
-
-  return (0);
-} /* }}} int read_graph_config */
-
-static void gl_clear (void) /* {{{ */
-{
-  graph_config_t *cfg;
-
-  cfg = graph_config_head;
-  graph_config_head = NULL;
-  graph_destroy (cfg);
-
-  gl_last_update = 0;
-} /* }}} void gl_clear */
 
 static int callback_type (const char *type, void *user_data) /* {{{ */
 {
@@ -648,8 +600,91 @@ static int gl_instance_get_rrdargs_cb (graph_def_t *def, void *user_data) /* {{{
 } /* }}} int gl_instance_get_rrdargs_cb */
 
 /*
+ * Config functions
+ */
+static int config_get_string (const oconfig_item_t *ci, char **ret_str)
+{
+  char *tmp;
+
+  if ((ci->values_num != 1) || (ci->values[0].type != OCONFIG_TYPE_STRING))
+    return (EINVAL);
+
+  tmp = strdup (ci->values[0].value.string);
+  if (tmp == NULL)
+    return (ENOMEM);
+
+  free (*ret_str);
+  *ret_str = tmp;
+
+  return (0);
+} /* }}} int config_get_string */
+
+/*
  * Global functions
  */
+int graph_config_add (const oconfig_item_t *ci)
+{
+  char *host = NULL;
+  char *plugin = NULL;
+  char *plugin_instance = NULL;
+  char *type = NULL;
+  char *type_instance = NULL;
+  graph_config_t *cfg = NULL;
+  int i;
+
+  cfg = graph_create (/* selector = */ NULL);
+  if (cfg == NULL)
+    return (ENOMEM);
+
+  for (i = 0; i < ci->children_num; i++)
+  {
+    oconfig_item_t *child;
+
+    child = ci->children + i;
+
+    if (strcasecmp ("Host", child->key) == 0)
+      config_get_string (child, &host);
+    else if (strcasecmp ("Plugin", child->key) == 0)
+      config_get_string (child, &plugin);
+    else if (strcasecmp ("PluginInstance", child->key) == 0)
+      config_get_string (child, &plugin_instance);
+    else if (strcasecmp ("Type", child->key) == 0)
+      config_get_string (child, &type);
+    else if (strcasecmp ("TypeInstance", child->key) == 0)
+      config_get_string (child, &type_instance);
+    else if (strcasecmp ("Title", child->key) == 0)
+      config_get_string (child, &cfg->title);
+    else if (strcasecmp ("VerticalLabel", child->key) == 0)
+      config_get_string (child, &cfg->vertical_label);
+    /* TODO: DEFs! */
+  } /* for */
+
+  cfg->select = ident_create (host, plugin, plugin_instance,
+      type, type_instance);
+  if (cfg->select == NULL)
+  {
+    graph_destroy (cfg);
+    return (EINVAL);
+  }
+
+  graph_append (&graph_config_staging, cfg);
+
+  return (0);
+} /* }}} graph_config_add */
+
+int graph_config_submit (void) /* {{{ */
+{
+  graph_config_t *tmp;
+
+  tmp = graph_config_head;
+  graph_config_head = graph_config_staging;
+  graph_config_staging = NULL;
+
+  graph_destroy (tmp);
+
+  return (0);
+} /* }}} int graph_config_submit */
+
 int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {
@@ -816,23 +851,17 @@ int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
 int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
     char *buffer, size_t buffer_size)
 {
-  char *str;
-
   if ((cfg == NULL) || (buffer == NULL) || (buffer_size < 1))
     return (EINVAL);
 
-  if (cfg->title != NULL)
-    str = cfg->title;
-  else
-    str = ident_to_string (cfg->select);
+  if (cfg->title == NULL)
+    cfg->title = ident_to_string (cfg->select);
 
-  if (str == NULL)
+  if (cfg->title == NULL)
     return (ENOMEM);
 
-  strncpy (buffer, str, buffer_size);
+  strncpy (buffer, cfg->title, buffer_size);
   buffer[buffer_size - 1] = 0;
-
-  free (str);
 
   return (0);
 } /* }}} int gl_graph_get_title */
@@ -886,6 +915,12 @@ int gl_instance_get_rrdargs (graph_config_t *cfg, /* {{{ */
     array_append (args, cfg->title);
   }
 
+  if (cfg->vertical_label != NULL)
+  {
+    array_append (args, "-v");
+    array_append (args, cfg->vertical_label);
+  }
+
   if (cfg->defs == NULL)
   {
     default_defs = gl_inst_get_default_defs (cfg, inst);
@@ -931,9 +966,7 @@ int gl_update (void) /* {{{ */
   if ((gl_last_update + UPDATE_INTERVAL) >= now)
     return (0);
 
-  gl_clear ();
-
-  read_graph_config ();
+  graph_read_config ();
 
   memset (&gl, 0, sizeof (gl));
   gl.host = NULL;
@@ -944,7 +977,7 @@ int gl_update (void) /* {{{ */
 
   status = foreach_host (callback_host, &gl);
 
-  /* print_graphs (); */
+  gl_last_update = now;
 
   return (status);
 } /* }}} int gl_update */

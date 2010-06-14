@@ -3,6 +3,7 @@
 
 #include "utils_array.h"
 #include "graph_ident.h"
+#include "oconfig.h"
 
 struct graph_instance_s;
 typedef struct graph_instance_s graph_instance_t;
@@ -22,6 +23,9 @@ typedef int (*gl_inst_callback) (graph_config_t *cfg,
 /*
  * Functions
  */
+int graph_config_add (const oconfig_item_t *ci);
+int graph_config_submit (void);
+
 int gl_graph_get_all (gl_cfg_callback callback,
     void *user_data);
 
