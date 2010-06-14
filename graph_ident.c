@@ -41,11 +41,21 @@ static char *part_copy_with_selector (const char *selector, /* {{{ */
 
   /* Replace the ANY and ALL flags if requested and if the selecter actually
    * *is* that flag. */
-  if ((flags & IDENT_FLAG_REPLACE_ANY) && IS_ANY (selector))
-    return (strdup (part));
+  if (IS_ANY (selector))
+  {
+    if (flags & IDENT_FLAG_REPLACE_ANY)
+      return (strdup (part));
+    else
+      return (strdup (selector));
+  }
 
-  if ((flags & IDENT_FLAG_REPLACE_ALL) && IS_ALL (selector))
-    return (strdup (part));
+  if (IS_ALL (selector))
+  {
+    if (flags & IDENT_FLAG_REPLACE_ALL)
+      return (strdup (part));
+    else
+      return (strdup (selector));
+  }
 
   if (strcmp (selector, part) != 0)
     return (NULL);
