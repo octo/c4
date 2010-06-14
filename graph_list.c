@@ -183,6 +183,12 @@ static graph_instance_t *instance_create (graph_config_t *cfg, /* {{{ */
 
   i->select = ident_copy_with_selector (cfg->select, file,
       IDENT_FLAG_REPLACE_ANY);
+  if (i->select == NULL)
+  {
+    DEBUG ("instance_create: ident_copy_with_selector returned NULL.\n");
+    free (i);
+    return (NULL);
+  }
 
   i->files = NULL;
   i->files_num = 0;
