@@ -11,6 +11,8 @@ clean:
 
 common.o: common.c common.h
 
+graph_config.o: graph_config.c graph_config.h
+
 graph_ident.o: graph_ident.c graph_ident.h
 
 graph_def.o: graph_def.c graph_def.h
@@ -25,10 +27,22 @@ action_graph.o: action_graph.c action_graph.h
 
 action_list_graphs.o: action_list_graphs.c action_list_graphs.h
 
+oconfig.o: oconfig.c oconfig.h
+
+scanner.c: scanner.l
+	flex --outfile=scanner.c scanner.l
+
+scanner.o: scanner.c parser.h
+
+parser.c parser.h: parser.y
+	bison --output=parser.c --defines=parser.h parser.y
+
+parser.o: parser.c
+
 test: test.c utils_params.o
 
 test.fcgi: LDLIBS = -lfcgi -lrrd
-test.fcgi: test.fcgi.c common.o graph_ident.o graph_def.o graph_list.o utils_array.o utils_params.o action_graph.o action_list_graphs.o
+test.fcgi: test.fcgi.c common.o graph_config.o graph_ident.o graph_def.o graph_list.o utils_array.o utils_params.o action_graph.o action_list_graphs.o scanner.o parser.o oconfig.o
 
 .PHONY: clean
 
