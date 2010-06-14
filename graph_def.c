@@ -47,6 +47,28 @@ DEF_CONFIG_FIELD (type_instance);
 
 #undef DEF_CONFIG_FIELD
 
+static int def_config_color (const oconfig_item_t *ci, uint32_t *ret_color) /* {{{ */
+{
+  char *tmp;
+  char *endptr;
+  uint32_t color;
+
+  if ((ci->values_num != 1) || (ci->values[0].type != OCONFIG_TYPE_STRING))
+    return (EINVAL);
+
+  tmp = ci->values[0].value.string;
+
+  endptr = NULL;
+  errno = 0;
+  color = (uint32_t) strtoul (tmp, &endptr, /* base = */ 16);
+  if ((errno != 0) || (endptr == tmp) || (color > 0x00ffffff))
+    return (EINVAL);
+
+  *ret_color = color;
+
+  return (0);
+} /* }}} int def_config_color */
+
 /*
  * Public functions
  */
@@ -120,6 +142,7 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
   graph_ident_t *ident;
   char *ds_name = NULL;
   char *legend = NULL;
+  uint32_t color = 0x01000000;
   graph_def_t *def;
   int i;
 
@@ -140,6 +163,9 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
       graph_config_get_string (child, &ds_name);
     else if (strcasecmp ("Legend", child->key) == 0)
       graph_config_get_string (child, &legend);
+    else if (strcasecmp ("Color", child->key) == 0)
+      def_config_color (child, &color);
+
     HANDLE_FIELD ("Host", host);
     HANDLE_FIELD ("Plugin", plugin);
     HANDLE_FIELD ("PluginInstance", plugin_instance);
@@ -159,6 +185,8 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
   }
 
   def->legend = legend;
+  if (color < 0x01000000)
+    def->color = color;
 
   ident_destroy (ident);
   free (ds_name);
