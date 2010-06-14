@@ -21,13 +21,6 @@
 
 struct data_source_s
 {
-  char *file;
-  char *name;
-  char *legend;
-  double scale;
-  _Bool nan_to_zero;
-  _Bool draw_area;
-  uint32_t color;
 };
 typedef struct data_source_s data_source_t;
 

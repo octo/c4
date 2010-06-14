@@ -12,6 +12,14 @@ typedef int (*callback_type_t)   (const char *type,   void *user_data);
 typedef int (*callback_plugin_t) (const char *plugin, void *user_data);
 typedef int (*callback_host_t)   (const char *host,   void *user_data);
 
+int print_debug (const char *format, ...)
+  __attribute__((format(printf,1,2)));
+#if 0
+# define DEBUG(...) print_debug (__VA_ARGS__)
+#else
+# define DEBUG(...) /**/
+#endif
+
 int foreach_type (const char *host, const char *plugin,
     callback_type_t, void *user_data);
 int foreach_plugin (const char *host, callback_plugin_t, void *user_data);

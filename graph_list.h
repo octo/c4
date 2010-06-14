@@ -2,9 +2,7 @@
 #define GRAPH_LIST_H 1
 
 #include "utils_array.h"
-
-struct graph_ident_s;
-typedef struct graph_ident_s graph_ident_t;
+#include "graph_ident.h"
 
 struct graph_instance_s;
 typedef struct graph_instance_s graph_instance_t;
@@ -24,8 +22,6 @@ typedef int (*gl_inst_callback) (graph_config_t *cfg,
 /*
  * Functions
  */
-char *ident_to_file (const graph_ident_t *ident);
-
 int gl_graph_get_all (gl_cfg_callback callback,
     void *user_data);
 
@@ -48,6 +44,8 @@ int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst,
 int gl_instance_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
     str_array_t *args);
 
+graph_ident_t *gl_instance_get_selector (graph_instance_t *inst);
+
 struct graph_list_s
 {
   char *host;
@@ -62,7 +60,6 @@ typedef int (*gl_callback) (
     const graph_list_t *, void *user_data);
 
 int gl_update (void);
-int gl_foreach (gl_callback callback, void *user_data);
 
 #endif /* GRAPH_LIST_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

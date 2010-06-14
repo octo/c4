@@ -16,6 +16,9 @@
 #include "common.h"
 #include "graph_list.h"
 
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
+
 static int foreach_rrd_file (const char *dir, /* {{{ */
     int (*callback) (const char *, void *),
     void *user_data)
@@ -299,5 +302,25 @@ uint32_t get_random_color (void) /* {{{ */
 
   return (rgb_to_uint32 (rgb));
 } /* }}} uint32_t get_random_color */
+
+int print_debug (const char *format, ...) /* {{{ */
+{
+  static _Bool have_header = 0;
+
+  va_list ap;
+  int status;
+
+  if (!have_header)
+  {
+    printf ("Content-Type: text/plain\n\n");
+    have_header = 1;
+  }
+
+  va_start (ap, format);
+  status = vprintf (format, ap);
+  va_end (ap);
+
+  return (status);
+} /* }}} int print_debug */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

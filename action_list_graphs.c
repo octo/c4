@@ -3,45 +3,63 @@
 #include <string.h>
 #include <errno.h>
 
-#include <fcgiapp.h>
-#include <fcgi_stdio.h>
-
 #include "action_list_graphs.h"
 #include "graph_list.h"
 #include "utils_params.h"
 
-static int print_graph_json (const graph_list_t *gl, void *user_data) /* {{{ */
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
+
+static int print_graph_inst_json (__attribute__((unused)) graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    void *user_data)
 {
   _Bool *first;
+  graph_ident_t *ident;
+  char *json;
 
-  if ((gl == NULL) || (user_data == NULL))
-    return (EINVAL);
+  first = user_data;
 
-  first = (_Bool *) user_data;
-  if (!*first)
-    printf (",\n");
+  ident = gl_instance_get_selector (inst);
+  if (ident == NULL)
+    return (-1);
+
+  json = ident_to_json (ident);
+  if (json == NULL)
+  {
+    ident_destroy (ident);
+    return (ENOMEM);
+  }
+
+  if (*first)
+    printf ("%s", json);
+  else
+    printf (",\n%s", json);
+
   *first = 0;
 
-  printf (" {");
+  ident_destroy (ident);
+  return (0);
+} /* }}} int print_graph_inst_json */
 
-  printf ("\"host\":\"%s\"", gl->host);
-      
-  printf (",\"plugin\":\"%s\"", gl->plugin);
-  if (gl->plugin_instance != NULL)
-    printf (",\"plugin_instance\":\"%s\"", gl->plugin_instance);
-  else
-    printf (",\"plugin_instance\":null");
+static int print_graph_json (graph_config_t *cfg, /* {{{ */
+    void *user_data)
+{
+  return (gl_graph_instance_get_all (cfg, print_graph_inst_json, user_data));
+} /* }}} int print_graph_json */
 
-  printf (",\"type\":\"%s\"", gl->type);
-  if (gl->type_instance != NULL)
-    printf (",\"type_instance\":\"%s\"", gl->type_instance);
-  else
-    printf (",\"type_instance\":null");
+static int list_graphs_json (void) /* {{{ */
+{
+  _Bool first = 1;
 
-  printf ("}");
+  printf ("Content-Type: application/json\n\n");
+
+  printf ("[\n");
+  gl_graph_get_all (print_graph_json, /* user_data = */ &first);
+  printf ("\n]");
 
   return (0);
-} /* }}} int print_graph_json */
+} /* }}} int list_graphs_json */
 
 static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
@@ -71,19 +89,6 @@ static int print_graph_html (graph_config_t *cfg, /* {{{ */
 
   return (0);
 } /* }}} int print_graph_html */
-
-static int list_graphs_json (void) /* {{{ */
-{
-  _Bool first = 1;
-
-  printf ("Content-Type: application/json\n\n");
-
-  printf ("[\n");
-  gl_foreach (print_graph_json, /* user_data = */ &first);
-  printf ("\n]");
-
-  return (0);
-} /* }}} int list_graphs_json */
 
 static int list_graphs_html (void) /* {{{ */
 {
