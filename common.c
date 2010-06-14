@@ -8,7 +8,10 @@
 #include <dirent.h>
 #include <assert.h>
 
+#include <rrd.h>
+
 #include "common.h"
+#include "graph_list.h"
 
 static int foreach_rrd_file (const char *dir, /* {{{ */
     int (*callback) (const char *, void *),
@@ -170,6 +173,76 @@ size_t c_strlcat (char *dst, const char *src, size_t size) /* {{{ */
   return (retval);
 } /* }}} size_t c_strlcat */
 
+int ds_list_from_rrd_file (char *file, /* {{{ */
+    size_t *ret_dses_num, char ***ret_dses)
+{
+  char *rrd_argv[] = { "info", file, NULL };
+  int rrd_argc = (sizeof (rrd_argv) / sizeof (rrd_argv[0])) - 1;
 
+  rrd_info_t *info;
+  rrd_info_t *ptr;
+
+  char **dses = NULL;
+  size_t dses_num = 0;
+
+  info = rrd_info (rrd_argc, rrd_argv);
+  if (info == NULL)
+  {
+    printf ("%s: rrd_info (%s) failed.\n", __func__, file);
+    return (-1);
+  }
+
+  for (ptr = info; ptr != NULL; ptr = ptr->next)
+  {
+    size_t keylen;
+    size_t dslen;
+    char *ds;
+    char **tmp;
+
+    if (strncmp ("ds[", ptr->key, strlen ("ds[")) != 0)
+      continue;
+
+    keylen = strlen (ptr->key);
+    if (keylen < strlen ("ds[?].index"))
+      continue;
+
+    dslen = keylen - strlen ("ds[].index");
+    assert (dslen >= 1);
+
+    if (strcmp ("].index", ptr->key + (strlen ("ds[") + dslen)) != 0)
+      continue;
+
+    ds = malloc (dslen + 1);
+    if (ds == NULL)
+      continue;
+
+    memcpy (ds, ptr->key + strlen ("ds["), dslen);
+    ds[dslen] = 0;
+
+    tmp = realloc (dses, sizeof (*dses) * (dses_num + 1));
+    if (tmp == NULL)
+    {
+      free (ds);
+      continue;
+    }
+    dses = tmp;
+
+    dses[dses_num] = ds;
+    dses_num++;
+  }
+
+  rrd_info_free (info);
+
+  if (dses_num < 1)
+  {
+    assert (dses == NULL);
+    return (ENOENT);
+  }
+
+  *ret_dses_num = dses_num;
+  *ret_dses = dses;
+
+  return (0);
+} /* }}} int ds_list_from_rrd_file */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

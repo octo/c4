@@ -4,13 +4,14 @@
 #include <time.h>
 #include <errno.h>
 #include <assert.h>
-
-#include <fcgiapp.h>
-#include <fcgi_stdio.h>
+#include <limits.h> /* PATH_MAX */
 
 #include "graph_list.h"
 #include "common.h"
 #include "utils_params.h"
+
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
 
 /*
  * Defines
@@ -19,6 +20,15 @@
 
 #define ANY_TOKEN "/any/"
 #define ALL_TOKEN "/all/"
+
+#if 0
+# define GL_DEBUG(...) do {             \
+  printf ("Content-Type: text/plain\n\n"); \
+  printf (__VA_ARGS__);                    \
+} while (0)
+#else
+# define GL_DEBUG(...) /**/
+#endif
 
 /*
  * Data types
@@ -181,6 +191,65 @@ static _Bool file_matches (const graph_ident_t *sel, /* {{{ */
 
   return (1);
 } /* }}} _Bool ident_compare */
+
+/* Free all the pointers contained in the graph_ident_t but don't free the
+ * graph_ident_t* itself. */
+static void ident_destroy (graph_ident_t *ident) /* {{{ */
+{
+  if (ident == NULL)
+    return;
+
+  free (ident->host);
+  ident->host = NULL;
+  free (ident->plugin);
+  ident->plugin = NULL;
+  free (ident->plugin_instance);
+  ident->plugin_instance = NULL;
+  free (ident->type);
+  ident->type = NULL;
+  free (ident->type_instance);
+  ident->type_instance = NULL;
+} /* }}} void ident_destroy */
+
+static void instance_destroy (graph_instance_t *inst) /* {{{ */
+{
+  graph_instance_t *next;
+  size_t i;
+
+  if (inst == NULL)
+    return;
+
+  next = inst->next;
+
+  ident_destroy (&inst->select);
+
+  for (i = 0; i < inst->files_num; i++)
+    ident_destroy (inst->files + i);
+  free (inst->files);
+
+  free (inst);
+
+  instance_destroy (next);
+} /* }}} void instance_destroy */
+
+static void graph_destroy (graph_config_t *cfg) /* {{{ */
+{
+  graph_config_t *next;
+
+  if (cfg == NULL)
+    return;
+
+  next = cfg->next;
+
+  ident_destroy (&cfg->select);
+
+  free (cfg->title);
+  free (cfg->vertical_label);
+
+  instance_destroy (cfg->instances);
+
+  graph_destroy (next);
+} /* }}} void graph_destroy */
 
 /*
  * Copy part of an identifier. If the "template" value is ANY_TOKEN, "value" is
@@ -391,7 +460,8 @@ static int register_file (const graph_ident_t *file) /* {{{ */
   return (0);
 } /* }}} int register_file */
 
-static int FIXME_graph_create_from_file (const graph_ident_t *file) /* {{{ */
+static int FIXME_graph_create_from_file (const graph_ident_t *file, /* {{{ */
+    const char *title)
 {
   graph_config_t *cfg;
 
@@ -407,6 +477,8 @@ static int FIXME_graph_create_from_file (const graph_ident_t *file) /* {{{ */
   cfg->select.type_instance = strdup (file->type_instance);
 
   cfg->title = NULL;
+  if (title != NULL)
+    cfg->title = strdup (title);
   cfg->vertical_label = NULL;
   cfg->instances = NULL;
   cfg->next = NULL;
@@ -430,34 +502,32 @@ static int read_graph_config (void) /* {{{ */
   ident.plugin_instance = ANY_TOKEN;
   ident.type = "cpu";
   ident.type_instance = ALL_TOKEN;
-  FIXME_graph_create_from_file (&ident);
+  FIXME_graph_create_from_file (&ident, "CPU {instance} usage");
 
   ident.plugin = "memory";
   ident.plugin_instance = "";
   ident.type = "memory";
-  FIXME_graph_create_from_file (&ident);
+  FIXME_graph_create_from_file (&ident, "Memory usage");
 
   ident.plugin = "swap";
   ident.plugin_instance = "";
   ident.type = "swap";
-  FIXME_graph_create_from_file (&ident);
+  FIXME_graph_create_from_file (&ident, "Swap");
 
   ident.plugin = ANY_TOKEN;
   ident.plugin_instance = ANY_TOKEN;
   ident.type = "ps_state";
-  FIXME_graph_create_from_file (&ident);
+  FIXME_graph_create_from_file (&ident, "Processes");
 
   ident.host = ALL_TOKEN;
   ident.plugin = "cpu";
   ident.plugin_instance = ALL_TOKEN;
   ident.type = "cpu";
   ident.type_instance = "idle";
-  FIXME_graph_create_from_file (&ident);
+  FIXME_graph_create_from_file (&ident, "CPU idle overview");
 
   return (0);
 } /* }}} int read_graph_config */
-
-
 
 static int gl_compare (const void *p0, const void *p1) /* {{{ */
 {
@@ -505,6 +575,11 @@ static void gl_clear_entry (graph_ident_t *gl) /* {{{ */
 static void gl_clear (void) /* {{{ */
 {
   size_t i;
+  graph_config_t *cfg;
+
+  cfg = graph_config_head;
+  graph_config_head = NULL;
+  graph_destroy (cfg);
 
   for (i = 0; i < graph_list_length; i++)
     gl_clear_entry (graph_list + i);
@@ -684,9 +759,88 @@ static const char *get_part_from_param (const char *prim_key, /* {{{ */
   return (param (sec_key));
 } /* }}} const char *get_part_from_param */
 
+int gl_ident_get_rrdargs (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    graph_ident_t *ident,
+    str_array_t *args)
+{
+  char *file;
+  char **dses = NULL;
+  size_t dses_num = 0;
+  int status;
+  size_t i;
+
+  if ((cfg == NULL) || (inst == NULL) || (ident == NULL) || (args == NULL))
+    return (EINVAL);
+
+  file = ident_to_file (ident);
+  if (file == NULL)
+  {
+    GL_DEBUG ("gl_ident_get_rrdargs: ident_to_file returned NULL.\n");
+    return (-1);
+  }
+
+  GL_DEBUG ("gl_ident_get_rrdargs: file = %s;\n", file);
+
+  status = ds_list_from_rrd_file (file, &dses_num, &dses);
+  if (status != 0)
+  {
+    free (file);
+    return (status);
+  }
+
+  for (i = 0; i < dses_num; i++)
+  {
+    int id;
+
+    GL_DEBUG ("gl_ident_get_rrdargs: ds[%lu] = %s;\n", (unsigned long) i, dses[i]);
+
+    id = array_argc (args);
+    array_append_format (args, "DEF:avg%i=%s:%s:AVERAGE", id, file, dses[i]);
+    array_append_format (args, "LINE1:avg%i#ff0000:%s\\l", id, file);
+
+    free (dses[i]);
+  }
+  free (dses);
+
+  free (file);
+
+  return (0);
+} /* }}} int gl_ident_get_rrdargs */
+
 /*
  * Global functions
  */
+char *ident_to_file (const graph_ident_t *ident) /* {{{ */
+{
+  char buffer[PATH_MAX];
+
+  buffer[0] = 0;
+
+  strlcat (buffer, DATA_DIR, sizeof (buffer));
+  strlcat (buffer, "/", sizeof (buffer));
+
+  strlcat (buffer, ident->host, sizeof (buffer));
+  strlcat (buffer, "/", sizeof (buffer));
+  strlcat (buffer, ident->plugin, sizeof (buffer));
+  if (ident->plugin_instance[0] != 0)
+  {
+    strlcat (buffer, "-", sizeof (buffer));
+    strlcat (buffer, ident->plugin_instance, sizeof (buffer));
+  }
+  strlcat (buffer, "/", sizeof (buffer));
+  strlcat (buffer, ident->type, sizeof (buffer));
+  if (ident->type_instance[0] != 0)
+  {
+    strlcat (buffer, "-", sizeof (buffer));
+    strlcat (buffer, ident->type_instance, sizeof (buffer));
+  }
+
+  strlcat (buffer, ".rrd", sizeof (buffer));
+
+  return (strdup (buffer));
+} /* }}} char *ident_to_file */
+
 int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {
@@ -744,12 +898,18 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
     cfg = graph_get_selected ();
 
   if (cfg == NULL)
+  {
+    GL_DEBUG ("inst_get_selected: cfg == NULL;\n");
     return (NULL);
+  }
 
   if ((host == NULL)
       || (plugin == NULL) || (plugin_instance == NULL)
       || (type == NULL) || (type_instance == NULL))
+  {
+    GL_DEBUG ("inst_get_selected: A parameter is NULL.\n");
     return (NULL);
+  }
 
   for (inst = cfg->instances; inst != NULL; inst = inst->next)
   {
@@ -763,6 +923,7 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
     return (inst);
   }
 
+  GL_DEBUG ("inst_get_selected: No match found.\n");
   return (NULL);
 } /* }}} graph_instance_t *inst_get_selected */
 
@@ -773,6 +934,8 @@ int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
 
   if (callback == NULL)
     return (EINVAL);
+
+  gl_update ();
 
   for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
   {
@@ -798,7 +961,13 @@ graph_config_t *graph_get_selected (void) /* {{{ */
   if ((host == NULL)
       || (plugin == NULL) || (plugin_instance == NULL)
       || (type == NULL) || (type_instance == NULL))
+  {
+    printf ("Content-Type: text/plain\n\n");
+    printf ("graph_get_selected(): A param is NULL.\n");
     return (NULL);
+  }
+
+  gl_update ();
 
   for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
   {
@@ -811,6 +980,9 @@ graph_config_t *graph_get_selected (void) /* {{{ */
 
     return (cfg);
   }
+
+  printf ("Content-Type: text/plain\n\n");
+  printf ("graph_get_selected(): No matching graph found.\n");
 
   return (NULL);
 } /* }}} graph_config_t *graph_get_selected */
@@ -866,6 +1038,8 @@ int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
 {
   graph_config_t *cfg;
 
+  gl_update ();
+
   for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
   {
     graph_instance_t *inst;
@@ -883,6 +1057,35 @@ int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
   return (0);
 } /* }}} int gl_instance_get_all */
 
+int gl_instance_get_rrdargs (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    str_array_t *args)
+{
+  size_t i;
+
+  if ((cfg == NULL) || (inst == NULL) || (args == NULL))
+    return (EINVAL);
+
+  if (cfg->title != NULL)
+  {
+    array_append (args, "-t");
+    array_append (args, cfg->title);
+  }
+
+  for (i = 0; i < inst->files_num; i++)
+  {
+    int status;
+
+    status = gl_ident_get_rrdargs (cfg, inst, inst->files + i, args);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_instance_get_rrdargs */
+
+/* DELETEME */
+
 int gl_update (void) /* {{{ */
 {
   time_t now;
@@ -893,14 +1096,14 @@ int gl_update (void) /* {{{ */
   printf ("Content-Type: text/plain\n\n");
   */
 
-  read_graph_config ();
-
   now = time (NULL);
 
   if ((gl_last_update + UPDATE_INTERVAL) >= now)
     return (0);
 
   gl_clear ();
+
+  read_graph_config ();
 
   memset (&gl, 0, sizeof (gl));
   gl.host = NULL;

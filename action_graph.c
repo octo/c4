@@ -112,14 +112,9 @@ static uint32_t get_random_color (void) /* {{{ */
 } /* }}} uint32_t get_random_color */
 
 static int graph_def_add_ds (graph_def_t *gd, /* {{{ */
-    const char *file,
-    const char *in_ds_name, size_t ds_name_len)
+    const char *file, const char *ds_name)
 {
-  char ds_name[ds_name_len + 1];
   data_source_t *ds;
-
-  strncpy (ds_name, in_ds_name, sizeof (ds_name));
-  ds_name[sizeof (ds_name) - 1] = 0;
 
   ds = realloc (gd->data_sources, sizeof (*ds) * (gd->data_sources_num + 1));
   if (ds == NULL)
@@ -150,49 +145,32 @@ static int graph_def_add_ds (graph_def_t *gd, /* {{{ */
 
 static graph_def_t *graph_def_from_rrd_file (char *file) /* {{{ */
 {
-  char *rrd_argv[] = { "info", file, NULL };
-  int rrd_argc = (sizeof (rrd_argv) / sizeof (rrd_argv[0])) - 1;
-  rrd_info_t *info;
-  rrd_info_t *ptr;
   graph_def_t *gd;
+  char **dses = NULL;
+  size_t dses_num = 0;
+  int status;
+  size_t i;
 
   gd = malloc (sizeof (*gd));
   if (gd == NULL)
     return (NULL);
   memset (gd, 0, sizeof (*gd));
-
   gd->data_sources = NULL;
 
-  info = rrd_info (rrd_argc, rrd_argv);
-  if (info == NULL)
+  status = ds_list_from_rrd_file (file, &dses_num, &dses);
+  if (status != 0)
   {
-    printf ("%s: rrd_info (%s) failed.\n", __func__, file);
     free (gd);
     return (NULL);
   }
 
-  for (ptr = info; ptr != NULL; ptr = ptr->next)
+  for (i = 0; i < dses_num; i++)
   {
-    size_t keylen;
-    size_t dslen;
-
-    if (strncmp ("ds[", ptr->key, strlen ("ds[")) != 0)
-      continue;
-
-    keylen = strlen (ptr->key);
-    if (keylen < strlen ("ds[?].index"))
-      continue;
-
-    dslen = keylen - strlen ("ds[].index");
-    assert (dslen >= 1);
-
-    if (strcmp ("].index", ptr->key + (strlen ("ds[") + dslen)) != 0)
-      continue;
-
-    graph_def_add_ds (gd, file, ptr->key + strlen ("ds["), dslen);
+    graph_def_add_ds (gd, file, dses[i]);
+    free (dses[i]);
   }
 
-  rrd_info_free (info);
+  free (dses);
 
   return (gd);
 } /* }}} graph_def_t *graph_def_from_rrd_file */
@@ -270,7 +248,7 @@ static void emulate_graph (int argc, char **argv) /* {{{ */
   }
 } /* }}} void emulate_graph */
 
-static int ag_info_print (rrd_info_t *info)
+static int ag_info_print (rrd_info_t *info) /* {{{ */
 {
   if (info->type == RD_I_VAL)
     printf ("[info] %s = %g;\n", info->key, info->value.u_val);
@@ -288,7 +266,7 @@ static int ag_info_print (rrd_info_t *info)
   return (0);
 } /* }}} int ag_info_print */
 
-static int output_graph (rrd_info_t *info)
+static int output_graph (rrd_info_t *info) /* {{{ */
 {
   rrd_info_t *img;
 
@@ -310,58 +288,11 @@ static int output_graph (rrd_info_t *info)
   return (0);
 } /* }}} int output_graph */
 
-static int draw_graph (graph_def_t *gd) /* {{{ */
-{
-  str_array_t *args;
-  rrd_info_t *info;
-  size_t i;
-
-  args = array_create ();
-  if (args == NULL)
-    return (ENOMEM);
-
-  array_append (args, "graph");
-  array_append (args, "-");
-  array_append (args, "--imgformat");
-  array_append (args, "PNG");
-
-  for (i = 0; i < gd->data_sources_num; i++)
-    draw_graph_ds (gd, i, args);
-
-  rrd_clear_error ();
-  info = rrd_graph_v (array_argc (args), array_argv (args));
-  if ((info == NULL) || rrd_test_error ())
-  {
-    printf ("Content-Type: text/plain\n\n");
-    printf ("rrd_graph_v failed: %s\n", rrd_get_error ());
-    emulate_graph (array_argc (args), array_argv (args));
-  }
-  else
-  {
-    int status;
-
-    status = output_graph (info);
-    if (status != 0)
-    {
-      rrd_info_t *ptr;
-
-      printf ("Content-Type: text/plain\n\n");
-      printf ("output_graph failed. Maybe the \"image\" info was not found?\n\n");
-
-      for (ptr = info; ptr != NULL; ptr = ptr->next)
-      {
-        ag_info_print (ptr);
-      }
-    }
-  }
-
-  if (info != NULL)
-    rrd_info_free (info);
-
-  array_destroy (args);
-
-  return (0);
-} /* }}} int draw_graph */
+#define OUTPUT_ERROR(...) do {             \
+  printf ("Content-Type: text/plain\n\n"); \
+  printf (__VA_ARGS__);                    \
+  return (0);                              \
+} while (0)
 
 static int init_gl (graph_list_t *gl) /* {{{ */
 {
@@ -398,28 +329,68 @@ static int init_gl (graph_list_t *gl) /* {{{ */
 
 int action_graph (void) /* {{{ */
 {
-  graph_list_t gl;
-  graph_def_t *gd;
+  str_array_t *args;
+  graph_config_t *cfg;
+  graph_instance_t *inst;
+  rrd_info_t *info;
   int status;
 
-  memset (&gl, 0, sizeof (gl));
-  status = init_gl (&gl);
+  cfg = graph_get_selected ();
+  if (cfg == NULL)
+    OUTPUT_ERROR ("graph_get_selected () failed.\n");
+
+  inst = inst_get_selected (cfg);
+  if (inst == NULL)
+    OUTPUT_ERROR ("inst_get_selected (%p) failed.\n", (void *) cfg);
+
+  args = array_create ();
+  if (args == NULL)
+    return (ENOMEM);
+
+  array_append (args, "graph");
+  array_append (args, "-");
+  array_append (args, "--imgformat");
+  array_append (args, "PNG");
+
+  status = gl_instance_get_rrdargs (cfg, inst, args);
   if (status != 0)
   {
-    printf ("Content-Type: text/plain\n\n"
-        "init_gl failed with status %i.\n", status);
-    return (status);
+    array_destroy (args);
+    OUTPUT_ERROR ("gl_instance_get_rrdargs failed with status %i.\n", status);
   }
 
-  gd = graph_def_from_gl (&gl);
-  if (gd == NULL)
+  rrd_clear_error ();
+  info = rrd_graph_v (array_argc (args), array_argv (args));
+  if ((info == NULL) || rrd_test_error ())
   {
-    printf ("graph_def_from_gl failed.\n");
-    return (0);
+    printf ("Content-Type: text/plain\n\n");
+    printf ("rrd_graph_v failed: %s\n", rrd_get_error ());
+    emulate_graph (array_argc (args), array_argv (args));
+  }
+  else
+  {
+    int status;
+
+    status = output_graph (info);
+    if (status != 0)
+    {
+      rrd_info_t *ptr;
+
+      printf ("Content-Type: text/plain\n\n");
+      printf ("output_graph failed. Maybe the \"image\" info was not found?\n\n");
+
+      for (ptr = info; ptr != NULL; ptr = ptr->next)
+      {
+        ag_info_print (ptr);
+      }
+    }
   }
 
-  draw_graph (gd);
-  graph_def_free (gd);
+  if (info != NULL)
+    rrd_info_free (info);
+
+  array_destroy (args);
+  args = NULL;
 
   return (0);
 } /* }}} int action_graph */

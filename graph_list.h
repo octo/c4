@@ -1,6 +1,8 @@
 #ifndef GRAPH_LIST_H
 #define GRAPH_LIST_H 1
 
+#include "utils_array.h"
+
 struct graph_ident_s;
 typedef struct graph_ident_s graph_ident_t;
 
@@ -22,10 +24,15 @@ typedef int (*gl_inst_callback) (graph_config_t *cfg,
 /*
  * Functions
  */
+char *ident_to_file (const graph_ident_t *ident);
+
 int gl_graph_get_all (gl_cfg_callback callback,
     void *user_data);
 
 graph_config_t *graph_get_selected (void);
+
+int gl_graph_get_title (graph_config_t *cfg,
+    char *buffer, size_t buffer_size);
 
 int gl_graph_instance_get_all (graph_config_t *cfg,
     gl_inst_callback callback, void *user_data);
@@ -38,9 +45,8 @@ int gl_instance_get_all (gl_inst_callback callback,
 int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);
 
-int gl_graph_get_title (graph_config_t *cfg,
-    char *buffer, size_t buffer_size);
-
+int gl_instance_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
+    str_array_t *args);
 
 struct graph_list_s
 {

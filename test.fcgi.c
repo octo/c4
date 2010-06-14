@@ -9,15 +9,17 @@
 #include <unistd.h>
 #include <dirent.h>
 
-#include <fcgiapp.h>
-#include <fcgi_stdio.h>
-
 #include "common.h"
 #include "graph_list.h"
 #include "utils_params.h"
 
 #include "action_graph.h"
 #include "action_list_graphs.h"
+
+/* Include this last, so the macro magic of <fcgi_stdio.h> doesn't interfere
+ * with our own header files. */
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
 
 struct action_s
 {
