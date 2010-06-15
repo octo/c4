@@ -23,6 +23,7 @@ struct graph_def_s
   uint32_t color;
   _Bool stack;
   _Bool area;
+  char *format;
 
   graph_def_t *next;
 };
@@ -147,6 +148,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
   }
   memset (ret, 0, sizeof (*ret));
   ret->legend = NULL;
+  ret->format = NULL;
 
   ret->ds_name = strdup (ds_name);
   if (ret->ds_name == NULL)
@@ -185,6 +187,8 @@ void def_destroy (graph_def_t *def) /* {{{ */
   ident_destroy (def->select);
 
   free (def->ds_name);
+  free (def->legend);
+  free (def->format);
 
   free (def);
 
@@ -213,6 +217,8 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
       graph_config_get_bool (child, &def->stack);
     else if (strcasecmp ("Area", child->key) == 0)
       graph_config_get_bool (child, &def->area);
+    else if (strcasecmp ("Format", child->key) == 0)
+      graph_config_get_string (child, &def->format);
     else
       fprintf (stderr, "def_config: Ignoring unknown config option \"%s\"",
           child->key);
@@ -325,10 +331,14 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
       index, def->color,
       (def->legend != NULL) ? def->legend : def->ds_name,
       def->stack ? ":STACK" : "");
-  array_append_format (args, "GPRINT:vdef_%04i_min:%%lg min,", index);
-  array_append_format (args, "GPRINT:vdef_%04i_avg:%%lg avg,", index);
-  array_append_format (args, "GPRINT:vdef_%04i_max:%%lg max,", index);
-  array_append_format (args, "GPRINT:vdef_%04i_lst:%%lg last\\l", index);
+  array_append_format (args, "GPRINT:vdef_%04i_min:%s min,",
+      index, (def->format != NULL) ? def->format : "%lg");
+  array_append_format (args, "GPRINT:vdef_%04i_avg:%s avg,",
+      index, (def->format != NULL) ? def->format : "%lg");
+  array_append_format (args, "GPRINT:vdef_%04i_max:%s max,",
+      index, (def->format != NULL) ? def->format : "%lg");
+  array_append_format (args, "GPRINT:vdef_%04i_lst:%s last\\l",
+      index, (def->format != NULL) ? def->format : "%lg");
 
   free (file);
 
