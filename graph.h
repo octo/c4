@@ -11,6 +11,7 @@ typedef struct graph_config_s graph_config_t;
 #include "graph_ident.h"
 #include "graph_instance.h"
 #include "oconfig.h"
+#include "utils_array.h"
 
 /*
  * Functions
@@ -39,6 +40,9 @@ _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident);
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);
 
 int graph_clear_instances (graph_config_t *cfg);
+
+int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
+    str_array_t *args);
 
 #endif /* GRAPH_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

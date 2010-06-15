@@ -288,20 +288,9 @@ int inst_get_rrdargs (graph_config_t *cfg, /* {{{ */
   if ((cfg == NULL) || (inst == NULL) || (args == NULL))
     return (EINVAL);
 
-/* FIXME: Re-enable title and vertical label stuff. */
-#if 0
-  if (cfg->title != NULL)
-  {
-    array_append (args, "-t");
-    array_append (args, cfg->title);
-  }
-
-  if (cfg->vertical_label != NULL)
-  {
-    array_append (args, "-v");
-    array_append (args, cfg->vertical_label);
-  }
-#endif
+  status = graph_get_rrdargs (cfg, inst, args);
+  if (status != 0)
+    return (status);
 
   defs = graph_get_defs (cfg);
   if (defs == NULL)

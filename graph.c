@@ -266,4 +266,25 @@ int graph_clear_instances (graph_config_t *cfg) /* {{{ */
   return (0);
 } /* }}} int graph_clear_instances */
 
+int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
+    str_array_t *args)
+{
+  if ((cfg == NULL) || (inst == NULL) || (args == NULL))
+    return (EINVAL);
+
+  if (cfg->title != NULL)
+  {
+    array_append (args, "-t");
+    array_append (args, cfg->title);
+  }
+
+  if (cfg->vertical_label != NULL)
+  {
+    array_append (args, "-v");
+    array_append (args, cfg->vertical_label);
+  }
+
+  return (0);
+} /* }}} int graph_get_rrdargs */
+
 /* vim: set sw=2 sts=2 et fdm=marker : */
