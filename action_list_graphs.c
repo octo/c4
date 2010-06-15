@@ -75,7 +75,8 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   memset (desc, 0, sizeof (desc));
   inst_describe (cfg, inst, desc, sizeof (desc));
 
-  printf ("<li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n", params, desc);
+  printf ("    <li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n",
+      params, desc);
 
   return (0);
 } /* }}} int print_graph_inst_html */
@@ -88,9 +89,9 @@ static int print_graph_html (graph_config_t *cfg, /* {{{ */
   memset (buffer, 0, sizeof (buffer));
   graph_get_title (cfg, buffer, sizeof (buffer));
 
-  printf ("<li>%s\n<ul>\n", buffer);
+  printf ("  <li>%s\n  <ul>\n", buffer);
   gl_graph_instance_get_all (cfg, print_graph_inst_html, /* user_data = */ NULL);
-  printf ("</ul>\n");
+  printf ("  </ul></li>\n");
 
   return (0);
 } /* }}} int print_graph_html */
