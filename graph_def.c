@@ -5,6 +5,7 @@
 #include "graph_def.h"
 #include "graph.h"
 #include "graph_config.h"
+#include "graph_ident.h"
 #include "common.h"
 #include "oconfig.h"
 
@@ -219,9 +220,11 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
       graph_config_get_bool (child, &def->area);
     else if (strcasecmp ("Format", child->key) == 0)
       graph_config_get_string (child, &def->format);
+#if 0
     else
-      fprintf (stderr, "def_config: Ignoring unknown config option \"%s\"",
+      fprintf (stderr, "def_config: Ignoring unknown config option \"%s\"\n",
           child->key);
+#endif
   }
 
   return (graph_add_def (cfg, def));

@@ -5,6 +5,7 @@
 
 #include "action_list_graphs.h"
 #include "graph.h"
+#include "graph_ident.h"
 #include "graph_list.h"
 #include "utils_params.h"
 
@@ -62,12 +63,32 @@ static int list_graphs_json (void) /* {{{ */
   return (0);
 } /* }}} int list_graphs_json */
 
+struct callback_data_s
+{
+  graph_config_t *cfg;
+};
+typedef struct callback_data_s callback_data_t;
+
 static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
-    __attribute__((unused)) void *user_data)
+    void *user_data)
 {
+  callback_data_t *data = user_data;
   char params[1024];
   char desc[1024];
+
+  if (data->cfg != cfg)
+  {
+    if (data->cfg != NULL)
+      printf ("  </ul></li>\n");
+
+    memset (desc, 0, sizeof (desc));
+    graph_get_title (cfg, desc, sizeof (desc));
+
+    printf ("  <li>%s\n  <ul>\n", desc);
+
+    data->cfg = cfg;
+  }
 
   memset (params, 0, sizeof (params));
   inst_get_params (cfg, inst, params, sizeof (params));
@@ -81,27 +102,20 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int print_graph_inst_html */
 
-static int print_graph_html (graph_config_t *cfg, /* {{{ */
-    __attribute__((unused)) void *user_data)
+static int list_graphs_html (const char *term) /* {{{ */
 {
-  char buffer[1024];
-
-  memset (buffer, 0, sizeof (buffer));
-  graph_get_title (cfg, buffer, sizeof (buffer));
-
-  printf ("  <li>%s\n  <ul>\n", buffer);
-  gl_graph_instance_get_all (cfg, print_graph_inst_html, /* user_data = */ NULL);
-  printf ("  </ul></li>\n");
-
-  return (0);
-} /* }}} int print_graph_html */
-
-static int list_graphs_html (void) /* {{{ */
-{
+  callback_data_t data = { NULL };
   printf ("Content-Type: text/html\n\n");
 
   printf ("<ul>\n");
-  gl_graph_get_all (print_graph_html, /* user_data = */ NULL);
+  if (term == NULL)
+    gl_instance_get_all (print_graph_inst_html, /* user_data = */ &data);
+  else
+    gl_search (term, print_graph_inst_html, /* user_data = */ &data);
+
+  if (data.cfg != NULL)
+    printf ("  </ul></li>\n");
+
   printf ("</ul>\n");
 
   return (0);
@@ -120,7 +134,7 @@ int action_list_graphs (void) /* {{{ */
   if (strcmp ("json", format) == 0)
     return (list_graphs_json ());
   else
-    return (list_graphs_html ());
+    return (list_graphs_html (param ("search")));
 } /* }}} int action_list_graphs */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
