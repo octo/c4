@@ -20,7 +20,7 @@ int gl_add_graph (graph_config_t *cfg);
 int gl_graph_get_all (gl_cfg_callback callback,
     void *user_data);
 
-graph_config_t *graph_get_selected (void);
+graph_config_t *gl_graph_get_selected (void);
 
 int gl_graph_instance_get_all (graph_config_t *cfg,
     gl_inst_callback callback, void *user_data);

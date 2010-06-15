@@ -87,9 +87,9 @@ int action_graph (void) /* {{{ */
   rrd_info_t *info;
   int status;
 
-  cfg = graph_get_selected ();
+  cfg = gl_graph_get_selected ();
   if (cfg == NULL)
-    OUTPUT_ERROR ("graph_get_selected () failed.\n");
+    OUTPUT_ERROR ("gl_graph_get_selected () failed.\n");
 
   inst = inst_get_selected (cfg);
   if (inst == NULL)

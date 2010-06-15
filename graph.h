@@ -23,16 +23,16 @@ int graph_config_add (const oconfig_item_t *ci);
 
 int graph_add_file (graph_config_t *cfg, const graph_ident_t *file);
 
-int gl_graph_get_title (graph_config_t *cfg,
+int graph_get_title (graph_config_t *cfg,
     char *buffer, size_t buffer_size);
 
-graph_ident_t *gl_graph_get_selector (graph_config_t *cfg);
+graph_ident_t *graph_get_selector (graph_config_t *cfg);
 
-graph_instance_t *gl_graph_get_instances (graph_config_t *cfg);
+graph_instance_t *graph_get_instances (graph_config_t *cfg);
 
-graph_def_t *gl_graph_get_defs (graph_config_t *cfg);
+graph_def_t *graph_get_defs (graph_config_t *cfg);
 
-int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def);
+int graph_add_def (graph_config_t *cfg, graph_def_t *def);
 
 _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident);
 

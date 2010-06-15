@@ -201,31 +201,31 @@ int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int gl_graph_get_title */
 
-graph_ident_t *gl_graph_get_selector (graph_config_t *cfg) /* {{{ */
+graph_ident_t *graph_get_selector (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)
     return (NULL);
 
   return (ident_clone (cfg->select));
-} /* }}} graph_ident_t *gl_graph_get_selector */
+} /* }}} graph_ident_t *graph_get_selector */
 
-graph_instance_t *gl_graph_get_instances (graph_config_t *cfg) /* {{{ */
+graph_instance_t *graph_get_instances (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)
     return (NULL);
 
   return (cfg->instances);
-} /* }}} graph_instance_t *gl_graph_get_instances */
+} /* }}} graph_instance_t *graph_get_instances */
 
-graph_def_t *gl_graph_get_defs (graph_config_t *cfg) /* {{{ */
+graph_def_t *graph_get_defs (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)
     return (NULL);
 
   return (cfg->defs);
-} /* }}} graph_def_t *gl_graph_get_defs */
+} /* }}} graph_def_t *graph_get_defs */
 
-int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
+int graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
 {
   if ((cfg == NULL) || (def == NULL))
     return (EINVAL);
@@ -237,7 +237,7 @@ int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
   }
 
   return (def_append (cfg->defs, def));
-} /* }}} int gl_graph_add_def */
+} /* }}} int graph_add_def */
 
 _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {

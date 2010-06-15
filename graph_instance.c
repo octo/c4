@@ -165,10 +165,10 @@ graph_instance_t *inst_create (graph_config_t *cfg, /* {{{ */
     return (NULL);
   memset (i, 0, sizeof (*i));
 
-  selector = gl_graph_get_selector (cfg);
+  selector = graph_get_selector (cfg);
   if (selector == NULL)
   {
-    fprintf (stderr, "inst_create: gl_graph_get_selector failed\n");
+    fprintf (stderr, "inst_create: graph_get_selector failed\n");
     free (i);
     return (NULL);
   }
@@ -244,7 +244,7 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
   graph_instance_t *inst;
 
   if (cfg == NULL)
-    cfg = graph_get_selected ();
+    cfg = gl_graph_get_selected ();
 
   if (cfg == NULL)
   {
@@ -262,7 +262,7 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
 
   ident = ident_create (host, plugin, plugin_instance, type, type_instance);
 
-  for (inst = gl_graph_get_instances (cfg); inst != NULL; inst = inst->next)
+  for (inst = graph_get_instances (cfg); inst != NULL; inst = inst->next)
   {
     if (ident_compare (ident, inst->select) != 0)
       continue;
@@ -302,7 +302,7 @@ int inst_get_rrdargs (graph_config_t *cfg, /* {{{ */
   }
 #endif
 
-  defs = gl_graph_get_defs (cfg);
+  defs = graph_get_defs (cfg);
   if (defs == NULL)
   {
     defs = inst_get_default_defs (cfg, inst);
@@ -339,10 +339,10 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
       || (buffer == NULL) || (buffer_size < 1))
     return (EINVAL);
 
-  cfg_select = gl_graph_get_selector (cfg);
+  cfg_select = graph_get_selector (cfg);
   if (cfg_select == NULL)
   {
-    fprintf (stderr, "inst_get_params: gl_graph_get_selector failed");
+    fprintf (stderr, "inst_get_params: graph_get_selector failed");
     return (-1);
   }
 

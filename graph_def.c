@@ -80,10 +80,10 @@ static graph_def_t *def_config_get_obj (graph_config_t *cfg, /* {{{ */
   graph_def_t *def;
   int i;
 
-  ident = gl_graph_get_selector (cfg);
+  ident = graph_get_selector (cfg);
   if (ident == NULL)
   {
-    fprintf (stderr, "def_config_get_obj: gl_graph_get_selector failed");
+    fprintf (stderr, "def_config_get_obj: graph_get_selector failed");
     return (NULL);
   }
 
@@ -135,7 +135,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
   if ((cfg == NULL) || (ident == NULL) || (ds_name == NULL))
     return (NULL);
 
-  selector = gl_graph_get_selector (cfg);
+  selector = graph_get_selector (cfg);
   if (selector == NULL)
     return (NULL);
 
@@ -218,7 +218,7 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
           child->key);
   }
 
-  return (gl_graph_add_def (cfg, def));
+  return (graph_add_def (cfg, def));
 } /* }}} int def_config */
 
 int def_append (graph_def_t *head, graph_def_t *def) /* {{{ */

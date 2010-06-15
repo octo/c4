@@ -175,7 +175,7 @@ int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
   return (0);
 } /* }}} int gl_graph_get_all */
 
-graph_config_t *graph_get_selected (void) /* {{{ */
+graph_config_t *gl_graph_get_selected (void) /* {{{ */
 {
   const char *host = get_part_from_param ("graph_host", "host");
   const char *plugin = get_part_from_param ("graph_plugin", "plugin");
@@ -205,7 +205,7 @@ graph_config_t *graph_get_selected (void) /* {{{ */
 
   ident_destroy (ident);
   return (NULL);
-} /* }}} graph_config_t *graph_get_selected */
+} /* }}} graph_config_t *gl_graph_get_selected */
 
 /* gl_instance_get_all, gl_graph_instance_get_all {{{ */
 struct gl_inst_callback_data /* {{{ */
@@ -236,7 +236,7 @@ int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
   if ((cfg == NULL) || (callback == NULL))
     return (EINVAL);
 
-  return (inst_foreach (gl_graph_get_instances (cfg),
+  return (inst_foreach (graph_get_instances (cfg),
         gl_inst_callback_handler, &data));
 } /* }}} int gl_graph_instance_get_all */
 
