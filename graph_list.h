@@ -4,11 +4,14 @@
 /*
  * Data types
  */
-struct graph_instance_s;
-typedef struct graph_instance_s graph_instance_t;
-
 struct graph_config_s;
 typedef struct graph_config_s graph_config_t;
+
+#include "graph_def.h"
+#include "graph_ident.h"
+#include "graph_instance.h"
+#include "utils_array.h"
+#include "oconfig.h"
 
 /*
  * Callback types
@@ -18,11 +21,6 @@ typedef int (*gl_cfg_callback) (graph_config_t *cfg,
 
 typedef int (*gl_inst_callback) (graph_config_t *cfg,
     graph_instance_t *inst, void *user_data);
-
-#include "graph_def.h"
-#include "graph_ident.h"
-#include "utils_array.h"
-#include "oconfig.h"
 
 /*
  * Functions
@@ -40,23 +38,17 @@ int gl_graph_get_title (graph_config_t *cfg,
 
 graph_ident_t *gl_graph_get_selector (graph_config_t *cfg);
 
+graph_instance_t *gl_graph_get_instances (graph_config_t *cfg);
+
+graph_def_t *gl_graph_get_defs (graph_config_t *cfg);
+
 int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def);
 
 int gl_graph_instance_get_all (graph_config_t *cfg,
     gl_inst_callback callback, void *user_data);
 
-graph_instance_t *inst_get_selected (graph_config_t *cfg);
-
 int gl_instance_get_all (gl_inst_callback callback,
     void *user_data);
-
-int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst,
-    char *buffer, size_t buffer_size);
-
-int gl_instance_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
-    str_array_t *args);
-
-graph_ident_t *gl_instance_get_selector (graph_instance_t *inst);
 
 int gl_update (void);
 

@@ -20,7 +20,7 @@ static int print_graph_inst_json (__attribute__((unused)) graph_config_t *cfg, /
 
   first = user_data;
 
-  ident = gl_instance_get_selector (inst);
+  ident = inst_get_selector (inst);
   if (ident == NULL)
     return (-1);
 
@@ -68,7 +68,7 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   char buffer[1024];
 
   memset (buffer, 0, sizeof (buffer));
-  gl_instance_get_params (cfg, inst, buffer, sizeof (buffer));
+  inst_get_params (cfg, inst, buffer, sizeof (buffer));
 
   printf ("<li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n", buffer, buffer);
 

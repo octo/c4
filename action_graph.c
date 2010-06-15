@@ -19,22 +19,6 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
-struct data_source_s
-{
-};
-typedef struct data_source_s data_source_t;
-
-struct graph_def_s
-{
-  data_source_t *data_sources;
-  size_t data_sources_num;
-
-  _Bool stack;
-
-  int def_num;
-};
-typedef struct graph_def_s graph_def_t;
-
 static void emulate_graph (int argc, char **argv) /* {{{ */
 {
   int i;
@@ -120,11 +104,11 @@ int action_graph (void) /* {{{ */
   array_append (args, "--imgformat");
   array_append (args, "PNG");
 
-  status = gl_instance_get_rrdargs (cfg, inst, args);
+  status = inst_get_rrdargs (cfg, inst, args);
   if (status != 0)
   {
     array_destroy (args);
-    OUTPUT_ERROR ("gl_instance_get_rrdargs failed with status %i.\n", status);
+    OUTPUT_ERROR ("inst_get_rrdargs failed with status %i.\n", status);
   }
 
   rrd_clear_error ();

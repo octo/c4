@@ -38,16 +38,6 @@ struct gl_ident_stage_s /* {{{ */
 }; /* }}} */
 typedef struct gl_ident_stage_s gl_ident_stage_t;
 
-struct graph_instance_s /* {{{ */
-{
-  graph_ident_t *select;
-
-  graph_ident_t **files;
-  size_t files_num;
-
-  graph_instance_t *next;
-}; /* }}} struct graph_instance_s */
-
 struct graph_config_s /* {{{ */
 {
   graph_ident_t *select;
@@ -62,13 +52,6 @@ struct graph_config_s /* {{{ */
   graph_config_t *next;
 }; /* }}} struct graph_config_s */
 
-struct def_callback_data_s
-{
-  graph_instance_t *inst;
-  str_array_t *args;
-};
-typedef struct def_callback_data_s def_callback_data_t;
-
 /*
  * Global variables
  */
@@ -80,61 +63,6 @@ static time_t gl_last_update = 0;
 /*
  * Private functions
  */
-/* FIXME: These "print_*" functions are used for debugging. They should be
- * removed at some point. */
-static int print_files (const graph_instance_t *inst) /* {{{ */
-{
-  size_t i;
-
-  for (i = 0; i < inst->files_num; i++)
-  {
-    graph_ident_t *ident = inst->files[i];
-    char *file;
-
-    file = ident_to_file (ident);
-    printf ("    File \"%s\"\n", file);
-    free (file);
-  }
-
-  return (0);
-} /* }}} int print_instances */
-
-static int print_instances (const graph_config_t *cfg) /* {{{ */
-{
-  graph_instance_t *inst;
-
-  for (inst = cfg->instances; inst != NULL; inst = inst->next)
-  {
-    char *str;
-
-    str = ident_to_string (inst->select);
-    printf ("  Instance \"%s\"\n", str);
-    free (str);
-
-    print_files (inst);
-  }
-
-  return (0);
-} /* }}} int print_instances */
-
-static int print_graphs (void) /* {{{ */
-{
-  graph_config_t *cfg;
-
-  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
-  {
-    char *str;
-
-    str = ident_to_string (cfg->select);
-    printf ("Graph \"%s\"\n", str);
-    free (str);
-
-    print_instances (cfg);
-  }
-
-  return (0);
-} /* }}} int print_graphs */
-
 #if 0
 /* "Safe" version of strcmp(3): Either or both pointers may be NULL. */
 static int strcmp_s (const char *s1, const char *s2) /* {{{ */
@@ -151,107 +79,19 @@ static int strcmp_s (const char *s1, const char *s2) /* {{{ */
 } /* }}} int strcmp_s */
 #endif
 
-static void instance_destroy (graph_instance_t *inst) /* {{{ */
-{
-  graph_instance_t *next;
-  size_t i;
-
-  if (inst == NULL)
-    return;
-
-  next = inst->next;
-
-  ident_destroy (inst->select);
-
-  for (i = 0; i < inst->files_num; i++)
-    ident_destroy (inst->files[i]);
-  free (inst->files);
-
-  free (inst);
-
-  instance_destroy (next);
-} /* }}} void instance_destroy */
-
 /*
  * Copy part of an identifier. If the "template" value is ANY_TOKEN, "value" is
  * copied and returned. This function is used when creating graph_instance_t
  * from graph_config_t.
  */
-static graph_instance_t *instance_create (graph_config_t *cfg, /* {{{ */
-    const graph_ident_t *file)
-{
-  graph_instance_t *i;
-
-  if ((cfg == NULL) || (file == NULL))
-    return (NULL);
-
-  i = malloc (sizeof (*i));
-  if (i == NULL)
-    return (NULL);
-  memset (i, 0, sizeof (*i));
-
-  i->select = ident_copy_with_selector (cfg->select, file,
-      IDENT_FLAG_REPLACE_ANY);
-  if (i->select == NULL)
-  {
-    DEBUG ("instance_create: ident_copy_with_selector returned NULL.\n");
-    free (i);
-    return (NULL);
-  }
-
-  i->files = NULL;
-  i->files_num = 0;
-
-  i->next = NULL;
-
-  if (cfg->instances == NULL)
-    cfg->instances = i;
-  else
-  {
-    graph_instance_t *last;
-
-    last = cfg->instances;
-    while (last->next != NULL)
-      last = last->next;
-
-    last->next = i;
-  }
-
-  return (i);
-} /* }}} graph_instance_t *instance_create */
-
-static int instance_add_file (graph_instance_t *inst, /* {{{ */
-    const graph_ident_t *file)
-{
-  graph_ident_t **tmp;
-
-  tmp = realloc (inst->files, sizeof (*inst->files) * (inst->files_num + 1));
-  if (tmp == NULL)
-    return (ENOMEM);
-  inst->files = tmp;
-
-  inst->files[inst->files_num] = ident_clone (file);
-  if (inst->files[inst->files_num] == NULL)
-    return (ENOMEM);
-
-  inst->files_num++;
-
-  return (0);
-} /* }}} int instance_add_file */
 
 static graph_instance_t *graph_find_instance (graph_config_t *cfg, /* {{{ */
-    const graph_ident_t *file)
+    const graph_ident_t *ident)
 {
-  graph_instance_t *i;
-
-  if ((cfg == NULL) || (file == NULL))
+  if ((cfg == NULL) || (ident == NULL))
     return (NULL);
 
-  for (i = cfg->instances; i != NULL; i = i->next)
-    if (ident_matches (i->select, file))
-      return (i);
-
-  return (NULL);
+  return (inst_find_matching (cfg->instances, ident));
 } /* }}} graph_instance_t *graph_find_instance */
 
 static int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{{ */
@@ -261,12 +101,17 @@ static int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{
   inst = graph_find_instance (cfg, file);
   if (inst == NULL)
   {
-    inst = instance_create (cfg, file);
+    inst = inst_create (cfg, file);
     if (inst == NULL)
       return (ENOMEM);
+
+    if (cfg->instances == NULL)
+      cfg->instances = inst;
+    else
+      inst_append (cfg->instances, inst);
   }
 
-  return (instance_add_file (inst, file));
+  return (inst_add_file (inst, file));
 } /* }}} int graph_add_file */
 
 static int graph_append (graph_config_t **head, /* {{{ */
@@ -333,7 +178,7 @@ static void graph_destroy (graph_config_t *cfg) /* {{{ */
   free (cfg->vertical_label);
 
   def_destroy (cfg->defs);
-  instance_destroy (cfg->instances);
+  inst_destroy (cfg->instances);
 
   graph_destroy (next);
 } /* }}} void graph_destroy */
@@ -491,121 +336,13 @@ static const char *get_part_from_param (const char *prim_key, /* {{{ */
   return (param (sec_key));
 } /* }}} const char *get_part_from_param */
 
-/* Create one DEF for each data source in the file. Called by
- * "gl_inst_get_default_defs" for each file. */
-static graph_def_t *gl_ident_get_default_defs (graph_config_t *cfg, /* {{{ */
-    graph_ident_t *ident, graph_def_t *def_head)
-{
-  graph_def_t *defs = NULL;
-  char *file;
-  char **dses = NULL;
-  size_t dses_num = 0;
-  int status;
-  size_t i;
-
-  if ((cfg == NULL) || (ident == NULL))
-    return (def_head);
-
-  file = ident_to_file (ident);
-  if (file == NULL)
-  {
-    DEBUG ("gl_ident_get_default_defs: ident_to_file returned NULL.\n");
-    return (def_head);
-  }
-
-  DEBUG ("gl_ident_get_default_defs: file = %s;\n", file);
-
-  status = ds_list_from_rrd_file (file, &dses_num, &dses);
-  if (status != 0)
-  {
-    free (file);
-    return (def_head);
-  }
-
-  for (i = 0; i < dses_num; i++)
-  {
-    graph_def_t *def;
-
-    def = def_search (def_head, ident, dses[i]);
-    if (def != NULL)
-      continue;
-
-    def = def_create (cfg, ident, dses[i]);
-    if (def == NULL)
-      continue;
-
-    if (defs == NULL)
-      defs = def;
-    else
-      def_append (defs, def);
-
-    free (dses[i]);
-  }
-
-  free (dses);
-  free (file);
-
-  return (defs);
-} /* }}} int gl_ident_get_default_defs */
-
-/* Create one or more DEFs for each file in the graph instance. The number
- * depends on the number of data sources in each of the files. Called from
- * "gl_instance_get_rrdargs" if no DEFs are available from the configuration.
- * */
-static graph_def_t *gl_inst_get_default_defs (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst)
-{
-  graph_def_t *defs = NULL;
-  size_t i;
-
-  if ((cfg == NULL) || (inst == NULL))
-    return (NULL);
-
-  for (i = 0; i < inst->files_num; i++)
-  {
-    graph_def_t *def;
-
-    def = gl_ident_get_default_defs (cfg, inst->files[i], defs);
-    if (def == NULL)
-      continue;
-
-    if (defs == NULL)
-      defs = def;
-    else
-      def_append (defs, def);
-  }
-
-  return (defs);
-} /* }}} graph_def_t *gl_inst_get_default_defs */
-
-/* Called with each DEF in turn. Calls "def_get_rrdargs" with every appropriate
- * file / DEF pair. */
-static int gl_instance_get_rrdargs_cb (graph_def_t *def, void *user_data) /* {{{ */
-{
-  def_callback_data_t *data = user_data;
-  graph_instance_t *inst = data->inst;
-  str_array_t *args = data->args;
-
-  size_t i;
-
-  for (i = 0; i < inst->files_num; i++)
-  {
-    if (!def_matches (def, inst->files[i]))
-      continue;
-
-    def_get_rrdargs (def, inst->files[i], args);
-  }
-
-  return (0);
-} /* }}} int gl_instance_get_rrdargs_cb */
-
 static int gl_clear_instances (void) /* {{{ */
 {
   graph_config_t *cfg;
 
   for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
   {
-    instance_destroy (cfg->instances);
+    inst_destroy (cfg->instances);
     cfg->instances = NULL;
   }
 
@@ -659,7 +396,6 @@ static graph_ident_t *graph_config_get_selector (const oconfig_item_t *ci) /* {{
 /*
  * Global functions
  */
-
 int graph_config_add (const oconfig_item_t *ci) /* {{{ */
 {
   graph_ident_t *select;
@@ -707,95 +443,6 @@ int graph_config_submit (void) /* {{{ */
 
   return (0);
 } /* }}} int graph_config_submit */
-
-int gl_instance_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
-    char *buffer, size_t buffer_size)
-{
-  if ((inst == NULL) || (buffer == NULL) || (buffer_size < 1))
-    return (EINVAL);
-
-  buffer[0] = 0;
-
-#define COPY_FIELD(field) do {                                  \
-  const char *cfg_f  = ident_get_##field (cfg->select);         \
-  const char *inst_f = ident_get_##field (inst->select);        \
-  if (strcmp (cfg_f, inst_f) == 0)                              \
-  {                                                             \
-    strlcat (buffer, #field, buffer_size);                      \
-    strlcat (buffer, "=", buffer_size);                         \
-    strlcat (buffer, cfg_f, buffer_size);                       \
-  }                                                             \
-  else                                                          \
-  {                                                             \
-    strlcat (buffer, "graph_", buffer_size);                    \
-    strlcat (buffer, #field, buffer_size);                      \
-    strlcat (buffer, "=", buffer_size);                         \
-    strlcat (buffer, cfg_f, buffer_size);                       \
-    strlcat (buffer, ";", buffer_size);                         \
-    strlcat (buffer, "inst_", buffer_size);                     \
-    strlcat (buffer, #field, buffer_size);                      \
-    strlcat (buffer, "=", buffer_size);                         \
-    strlcat (buffer, inst_f, buffer_size);                      \
-  }                                                             \
-} while (0)
-
-  COPY_FIELD(host);
-  strlcat (buffer, ";", buffer_size);
-  COPY_FIELD(plugin);
-  strlcat (buffer, ";", buffer_size);
-  COPY_FIELD(plugin_instance);
-  strlcat (buffer, ";", buffer_size);
-  COPY_FIELD(type);
-  strlcat (buffer, ";", buffer_size);
-  COPY_FIELD(type_instance);
-
-#undef COPY_FIELD
-
-  return (0);
-} /* }}} int gl_instance_get_params */
-
-graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
-{
-  const char *host = get_part_from_param ("inst_host", "host");
-  const char *plugin = get_part_from_param ("inst_plugin", "plugin");
-  const char *plugin_instance = get_part_from_param ("inst_plugin_instance", "plugin_instance");
-  const char *type = get_part_from_param ("inst_type", "type");
-  const char *type_instance = get_part_from_param ("inst_type_instance", "type_instance");
-  graph_ident_t *ident;
-  graph_instance_t *inst;
-
-  if (cfg == NULL)
-    cfg = graph_get_selected ();
-
-  if (cfg == NULL)
-  {
-    DEBUG ("inst_get_selected: cfg == NULL;\n");
-    return (NULL);
-  }
-
-  if ((host == NULL)
-      || (plugin == NULL) || (plugin_instance == NULL)
-      || (type == NULL) || (type_instance == NULL))
-  {
-    DEBUG ("inst_get_selected: A parameter is NULL.\n");
-    return (NULL);
-  }
-
-  ident = ident_create (host, plugin, plugin_instance, type, type_instance);
-
-  for (inst = cfg->instances; inst != NULL; inst = inst->next)
-  {
-    if (ident_compare (ident, inst->select) != 0)
-      continue;
-
-    ident_destroy (ident);
-    return (inst);
-  }
-
-  DEBUG ("inst_get_selected: No match found.\n");
-  ident_destroy (ident);
-  return (NULL);
-} /* }}} graph_instance_t *inst_get_selected */
 
 int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
     void *user_data)
@@ -851,25 +498,57 @@ graph_config_t *graph_get_selected (void) /* {{{ */
   return (NULL);
 } /* }}} graph_config_t *graph_get_selected */
 
+/* gl_instance_get_all, gl_graph_instance_get_all {{{ */
+struct gl_inst_callback_data /* {{{ */
+{
+  graph_config_t *cfg;
+  gl_inst_callback callback;
+  void *user_data;
+}; /* }}} struct gl_inst_callback_data */
+
+static int gl_inst_callback_handler (graph_instance_t *inst, /* {{{ */
+    void *user_data)
+{
+  struct gl_inst_callback_data *data = user_data;
+
+  return ((*data->callback) (data->cfg, inst, data->user_data));
+} /* }}} int gl_inst_callback_handler */
+
 int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
     gl_inst_callback callback, void *user_data)
 {
-  graph_instance_t *inst;
+  struct gl_inst_callback_data data =
+  {
+    cfg,
+    callback,
+    user_data
+  };
 
   if ((cfg == NULL) || (callback == NULL))
     return (EINVAL);
 
-  for (inst = cfg->instances; inst != NULL; inst = inst->next)
+  return (inst_foreach (cfg->instances, gl_inst_callback_handler, &data));
+} /* }}} int gl_graph_instance_get_all */
+
+int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
+    void *user_data)
+{
+  graph_config_t *cfg;
+
+  gl_update ();
+
+  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
   {
     int status;
 
-    status = (*callback) (cfg, inst, user_data);
+    status = gl_graph_instance_get_all (cfg, callback, user_data);
     if (status != 0)
       return (status);
   }
 
   return (0);
-} /* }}} int gl_graph_instance_get_all */
+} /* }}} int gl_instance_get_all */
+/* }}} gl_instance_get_all, gl_graph_instance_get_all */
 
 int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
     char *buffer, size_t buffer_size)
@@ -897,6 +576,22 @@ graph_ident_t *gl_graph_get_selector (graph_config_t *cfg) /* {{{ */
   return (ident_clone (cfg->select));
 } /* }}} graph_ident_t *gl_graph_get_selector */
 
+graph_instance_t *gl_graph_get_instances (graph_config_t *cfg) /* {{{ */
+{
+  if (cfg == NULL)
+    return (NULL);
+
+  return (cfg->instances);
+} /* }}} graph_instance_t *gl_graph_get_instances */
+
+graph_def_t *gl_graph_get_defs (graph_config_t *cfg) /* {{{ */
+{
+  if (cfg == NULL)
+    return (NULL);
+
+  return (cfg->defs);
+} /* }}} graph_def_t *gl_graph_get_defs */
+
 int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
 {
   if ((cfg == NULL) || (def == NULL))
@@ -910,82 +605,6 @@ int gl_graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
 
   return (def_append (cfg->defs, def));
 } /* }}} int gl_graph_add_def */
-
-
-int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
-    void *user_data)
-{
-  graph_config_t *cfg;
-
-  gl_update ();
-
-  for (cfg = graph_config_head; cfg != NULL; cfg = cfg->next)
-  {
-    graph_instance_t *inst;
-
-    for (inst = cfg->instances; inst != NULL; inst = inst->next)
-    {
-      int status;
-
-      status = (*callback) (cfg, inst, user_data);
-      if (status != 0)
-        return (status);
-    }
-  }
-
-  return (0);
-} /* }}} int gl_instance_get_all */
-
-int gl_instance_get_rrdargs (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst,
-    str_array_t *args)
-{
-  def_callback_data_t data = { inst, args };
-  graph_def_t *default_defs;
-  int status;
-
-  if ((cfg == NULL) || (inst == NULL) || (args == NULL))
-    return (EINVAL);
-
-  if (cfg->title != NULL)
-  {
-    array_append (args, "-t");
-    array_append (args, cfg->title);
-  }
-
-  if (cfg->vertical_label != NULL)
-  {
-    array_append (args, "-v");
-    array_append (args, cfg->vertical_label);
-  }
-
-  if (cfg->defs == NULL)
-  {
-    default_defs = gl_inst_get_default_defs (cfg, inst);
-
-    if (default_defs == NULL)
-      return (-1);
-
-    status = def_foreach (default_defs, gl_instance_get_rrdargs_cb, &data);
-
-    if (default_defs != NULL)
-      def_destroy (default_defs);
-  }
-  else
-  {
-    status = def_foreach (cfg->defs, gl_instance_get_rrdargs_cb, &data);
-  }
-
-  return (status);
-} /* }}} int gl_instance_get_rrdargs */
-
-graph_ident_t *gl_instance_get_selector (graph_instance_t *inst) /* {{{ */
-{
-  if (inst == NULL)
-    return (NULL);
-
-  return (ident_clone (inst->select));
-} /* }}} graph_ident_t *gl_instance_get_selector */
 
 int gl_update (void) /* {{{ */
 {
