@@ -4,6 +4,9 @@
 #define ANY_TOKEN "/any/"
 #define ALL_TOKEN "/all/"
 
+#define IS_ANY(str) (((str) != NULL) && (strcasecmp (ANY_TOKEN, (str)) == 0))
+#define IS_ALL(str) (((str) != NULL) && (strcasecmp (ALL_TOKEN, (str)) == 0))
+
 struct graph_ident_s;
 typedef struct graph_ident_s graph_ident_t;
 

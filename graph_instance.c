@@ -440,4 +440,47 @@ graph_instance_t *inst_find_matching (graph_instance_t *inst, /* {{{ */
   return (NULL);
 } /* }}} graph_instance_t *inst_find_matching */
 
+int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
+    char *buffer, size_t buffer_size)
+{
+  graph_ident_t *cfg_select;
+
+  if ((cfg == NULL) || (inst == NULL)
+      || (buffer == NULL) || (buffer_size < 2))
+    return (EINVAL);
+
+  cfg_select = graph_get_selector (cfg);
+  if (cfg_select == NULL)
+  {
+    fprintf (stderr, "inst_describe: graph_get_selector failed\n");
+    return (-1);
+  }
+
+  buffer[0] = 0;
+
+#define CHECK_FIELD(field) do {                                              \
+  if (IS_ANY (ident_get_##field (cfg_select)))                               \
+  {                                                                          \
+    if (buffer[0] != 0)                                                      \
+      strlcat (buffer, "/", buffer_size);                                    \
+    strlcat (buffer, ident_get_##field (inst->select), buffer_size);         \
+  }                                                                          \
+} while (0)
+
+  CHECK_FIELD (host);
+  CHECK_FIELD (plugin);
+  CHECK_FIELD (plugin_instance);
+  CHECK_FIELD (type);
+  CHECK_FIELD (type_instance);
+
+#undef CHECK_FIELD
+
+  if (buffer[0] == 0)
+    strlcat (buffer, "default", buffer_size);
+
+  ident_destroy (cfg_select);
+
+  return (0);
+} /* }}} int inst_describe */
+
 /* vim: set sw=2 sts=2 et fdm=marker : */

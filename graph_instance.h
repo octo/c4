@@ -43,5 +43,8 @@ int inst_foreach (graph_instance_t *inst,
 graph_instance_t *inst_find_matching (graph_instance_t *inst,
     const graph_ident_t *ident);
 
+int inst_describe (graph_config_t *cfg, graph_instance_t *inst,
+    char *buffer, size_t buffer_size);
+
 #endif /* GRAPH_INSTANCE_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

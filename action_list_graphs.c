@@ -66,12 +66,16 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
     __attribute__((unused)) void *user_data)
 {
-  char buffer[1024];
+  char params[1024];
+  char desc[1024];
 
-  memset (buffer, 0, sizeof (buffer));
-  inst_get_params (cfg, inst, buffer, sizeof (buffer));
+  memset (params, 0, sizeof (params));
+  inst_get_params (cfg, inst, params, sizeof (params));
 
-  printf ("<li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n", buffer, buffer);
+  memset (desc, 0, sizeof (desc));
+  inst_describe (cfg, inst, desc, sizeof (desc));
+
+  printf ("<li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n", params, desc);
 
   return (0);
 } /* }}} int print_graph_inst_html */
