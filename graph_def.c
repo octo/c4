@@ -3,6 +3,7 @@
 #include <errno.h>
 
 #include "graph_def.h"
+#include "graph.h"
 #include "graph_config.h"
 #include "common.h"
 #include "oconfig.h"

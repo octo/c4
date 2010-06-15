@@ -13,6 +13,8 @@ common.o: common.c common.h
 
 filesystem.o: filesystem.c filesystem.h
 
+graph.o: graph.c graph.h
+
 graph_config.o: graph_config.c graph_config.h
 
 graph_def.o: graph_def.c graph_def.h
@@ -46,7 +48,7 @@ parser.o: parser.c
 test: test.c utils_params.o
 
 test.fcgi: LDLIBS = -lfcgi -lrrd
-test.fcgi: test.fcgi.c common.o filesystem.o graph_config.o graph_def.o graph_ident.o graph_instance.o graph_list.o utils_array.o utils_params.o action_graph.o action_list_graphs.o scanner.o parser.o oconfig.o
+test.fcgi: test.fcgi.c common.o filesystem.o graph.o graph_config.o graph_def.o graph_ident.o graph_instance.o graph_list.o utils_array.o utils_params.o action_graph.o action_list_graphs.o scanner.o parser.o oconfig.o
 
 .PHONY: clean
 

@@ -405,7 +405,7 @@ int inst_append (graph_instance_t *head, graph_instance_t *inst) /* {{{ */
 } /* }}} int inst_append */
 
 int inst_foreach (graph_instance_t *inst, /* {{{ */
-		inst_callback cb, void *user_data)
+		inst_callback_t cb, void *user_data)
 {
   graph_instance_t *ptr;
 

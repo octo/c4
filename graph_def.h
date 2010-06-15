@@ -7,8 +7,8 @@ typedef struct graph_def_s graph_def_t;
 typedef int (*def_callback_t) (graph_def_t *def,
     void *user_data);
 
+#include "graph.h"
 #include "graph_ident.h"
-#include "graph_list.h"
 #include "utils_array.h"
 #include "oconfig.h"
 
