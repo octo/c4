@@ -5,7 +5,6 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <assert.h>
 
 #include "graph_list.h"
 #include "graph_ident.h"
@@ -23,22 +22,6 @@
  */
 #define UPDATE_INTERVAL 10
 
-#define ANY_TOKEN "/any/"
-#define ALL_TOKEN "/all/"
-
-/*
- * Data types
- */
-struct gl_ident_stage_s /* {{{ */
-{
-  char *host;
-  char *plugin;
-  char *plugin_instance;
-  char *type;
-  char *type_instance;
-}; /* }}} */
-typedef struct gl_ident_stage_s gl_ident_stage_t;
-
 /*
  * Global variables
  */
@@ -53,22 +36,6 @@ static time_t gl_last_update = 0;
 /*
  * Private functions
  */
-#if 0
-/* "Safe" version of strcmp(3): Either or both pointers may be NULL. */
-static int strcmp_s (const char *s1, const char *s2) /* {{{ */
-{
-  if ((s1 == NULL) && (s2 == NULL))
-    return (0);
-  else if (s1 == NULL)
-    return (1);
-  else if (s2 == NULL)
-    return (-1);
-  assert ((s1 != NULL) && (s2 != NULL));
-
-  return (strcmp (s1, s2));
-} /* }}} int strcmp_s */
-#endif
-
 int gl_add_graph_internal (graph_config_t *cfg, /* {{{ */
     graph_config_t ***gl_array, size_t *gl_array_num)
 {
@@ -296,7 +263,6 @@ int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
 int gl_update (void) /* {{{ */
 {
   time_t now;
-  gl_ident_stage_t gl;
   int status;
 
   /*
@@ -309,13 +275,6 @@ int gl_update (void) /* {{{ */
     return (0);
 
   graph_read_config ();
-
-  memset (&gl, 0, sizeof (gl));
-  gl.host = NULL;
-  gl.plugin = NULL;
-  gl.plugin_instance = NULL;
-  gl.type = NULL;
-  gl.type_instance = NULL;
 
   gl_clear_instances ();
   status = fs_scan (/* callback = */ gl_register_file, /* user data = */ NULL);
