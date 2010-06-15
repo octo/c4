@@ -28,6 +28,7 @@ struct graph_config_s /* {{{ */
 
   char *title;
   char *vertical_label;
+  _Bool show_zero;
 
   graph_def_t *defs;
 
@@ -154,6 +155,8 @@ int graph_config_add (const oconfig_item_t *ci) /* {{{ */
       graph_config_get_string (child, &cfg->title);
     else if (strcasecmp ("VerticalLabel", child->key) == 0)
       graph_config_get_string (child, &cfg->vertical_label);
+    else if (strcasecmp ("ShowZero", child->key) == 0)
+      graph_config_get_bool (child, &cfg->show_zero);
     else if (strcasecmp ("DEF", child->key) == 0)
       def_config (cfg, child);
   } /* for */
@@ -282,6 +285,12 @@ int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
   {
     array_append (args, "-v");
     array_append (args, cfg->vertical_label);
+  }
+
+  if (cfg->show_zero)
+  {
+    array_append (args, "-l");
+    array_append (args, "0");
   }
 
   return (0);
