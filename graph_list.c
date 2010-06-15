@@ -12,6 +12,7 @@
 #include "graph_def.h"
 #include "graph_config.h"
 #include "common.h"
+#include "filesystem.h"
 #include "utils_params.h"
 
 #include <fcgiapp.h>
@@ -183,7 +184,8 @@ static void graph_destroy (graph_config_t *cfg) /* {{{ */
   graph_destroy (next);
 } /* }}} void graph_destroy */
 
-static int register_file (const graph_ident_t *file) /* {{{ */
+static int gl_register_file (const graph_ident_t *file, /* {{{ */
+    __attribute__((unused)) void *user_data)
 {
   graph_config_t *cfg;
   int num_graphs = 0;
@@ -214,115 +216,7 @@ static int register_file (const graph_ident_t *file) /* {{{ */
   }
 
   return (0);
-} /* }}} int register_file */
-
-static int callback_type (const char *type, void *user_data) /* {{{ */
-{
-  gl_ident_stage_t *gl;
-  graph_ident_t *ident;
-  int status;
-
-  if ((type == NULL) || (user_data == NULL))
-    return (EINVAL);
-
-  gl = user_data;
-  if ((gl->type != NULL) || (gl->type_instance != NULL))
-    return (EINVAL);
-
-  gl->type = strdup (type);
-  if (gl->type == NULL)
-    return (ENOMEM);
-
-  gl->type_instance = strchr (gl->type, '-');
-  if (gl->type_instance != NULL)
-  {
-    *gl->type_instance = 0;
-    gl->type_instance++;
-  }
-  else
-  {
-    gl->type_instance = gl->type + strlen (gl->type);
-  }
-
-  ident = ident_create (gl->host,
-      gl->plugin, gl->plugin_instance,
-      gl->type, gl->type_instance);
-  if (ident == 0)
-  {
-    status = -1;
-  }
-  else
-  {
-    status = register_file (ident);
-    ident_destroy (ident);
-  }
-
-  free (gl->type);
-  gl->type = NULL;
-  gl->type_instance = NULL;
-
-  return (status);
-} /* }}} int callback_type */
-
-static int callback_plugin (const char *plugin, void *user_data) /* {{{ */
-{
-  gl_ident_stage_t *gl;
-  int status;
-
-  if ((plugin == NULL) || (user_data == NULL))
-    return (EINVAL);
-
-  gl = user_data;
-  if ((gl->plugin != NULL) || (gl->plugin_instance != NULL))
-    return (EINVAL);
-
-  gl->plugin = strdup (plugin);
-  if (gl->plugin == NULL)
-    return (ENOMEM);
-
-  gl->plugin_instance = strchr (gl->plugin, '-');
-  if (gl->plugin_instance != NULL)
-  {
-    *gl->plugin_instance = 0;
-    gl->plugin_instance++;
-  }
-  else
-  {
-    gl->plugin_instance = gl->plugin + strlen (gl->plugin);
-  }
-
-  status = foreach_type (gl->host, plugin, callback_type, gl);
-
-  free (gl->plugin);
-  gl->plugin = NULL;
-  gl->plugin_instance = NULL;
-
-  return (status);
-} /* }}} int callback_plugin */
-
-static int callback_host (const char *host, void *user_data) /* {{{ */
-{
-  gl_ident_stage_t *gl;
-  int status;
-
-  if ((host == NULL) || (user_data == NULL))
-    return (EINVAL);
-
-  gl = user_data;
-  if (gl->host != NULL)
-    return (EINVAL);
-
-  gl->host = strdup (host);
-  if (gl->host == NULL)
-    return (ENOMEM);
-
-  status =  foreach_plugin (host, callback_plugin, gl);
-
-  free (gl->host);
-  gl->host = NULL;
-
-  return (status);
-} /* }}} int callback_host */
+} /* }}} int gl_register_file */
 
 static const char *get_part_from_param (const char *prim_key, /* {{{ */
     const char *sec_key)
@@ -631,7 +525,7 @@ int gl_update (void) /* {{{ */
   gl.type_instance = NULL;
 
   gl_clear_instances ();
-  status = foreach_host (callback_host, &gl);
+  status = fs_scan (/* callback = */ gl_register_file, /* user data = */ NULL);
 
   gl_last_update = now;
 
