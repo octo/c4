@@ -8,8 +8,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#define DATA_DIR "/var/lib/collectd/rrd"
-
 #include "filesystem.h"
 
 struct fs_scan_dir_data_s /* {{{ */
@@ -92,7 +90,7 @@ static int foreach_dir (const char *dir, /* {{{ */
 {
   DIR *dh;
   struct dirent *entry;
-  int status;
+  int status = 0;
 
   if (callback == NULL)
     return (EINVAL);

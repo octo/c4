@@ -128,7 +128,7 @@ int gl_add_graph (graph_config_t *cfg) /* {{{ */
   return (gl_add_graph_internal (cfg, &gl_staging, &gl_staging_num));
 } /* }}} int gl_add_graph */
 
-int graph_config_submit (void) /* {{{ */
+int gl_config_submit (void) /* {{{ */
 {
   graph_config_t **old;
   size_t old_num;

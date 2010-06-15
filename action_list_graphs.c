@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include "action_list_graphs.h"
+#include "graph.h"
 #include "graph_list.h"
 #include "utils_params.h"
 
@@ -81,7 +82,7 @@ static int print_graph_html (graph_config_t *cfg, /* {{{ */
   char buffer[1024];
 
   memset (buffer, 0, sizeof (buffer));
-  gl_graph_get_title (cfg, buffer, sizeof (buffer));
+  graph_get_title (cfg, buffer, sizeof (buffer));
 
   printf ("<li>%s\n<ul>\n", buffer);
   gl_graph_instance_get_all (cfg, print_graph_inst_html, /* user_data = */ NULL);

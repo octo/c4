@@ -17,6 +17,8 @@ typedef int (*gl_inst_callback) (graph_config_t *cfg,
  */
 int gl_add_graph (graph_config_t *cfg);
 
+int gl_config_submit (void);
+
 int gl_graph_get_all (gl_cfg_callback callback,
     void *user_data);
 

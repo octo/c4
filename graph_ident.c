@@ -6,6 +6,7 @@
 
 #include "graph_ident.h"
 #include "common.h"
+#include "filesystem.h"
 
 #define IS_ANY(str) (((str) != NULL) && (strcasecmp (ANY_TOKEN, (str)) == 0))
 #define IS_ALL(str) (((str) != NULL) && (strcasecmp (ALL_TOKEN, (str)) == 0))

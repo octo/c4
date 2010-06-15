@@ -183,7 +183,7 @@ int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{{ */
   return (inst_add_file (inst, file));
 } /* }}} int graph_add_file */
 
-int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
+int graph_get_title (graph_config_t *cfg, /* {{{ */
     char *buffer, size_t buffer_size)
 {
   if ((cfg == NULL) || (buffer == NULL) || (buffer_size < 1))
@@ -199,7 +199,7 @@ int gl_graph_get_title (graph_config_t *cfg, /* {{{ */
   buffer[buffer_size - 1] = 0;
 
   return (0);
-} /* }}} int gl_graph_get_title */
+} /* }}} int graph_get_title */
 
 graph_ident_t *graph_get_selector (graph_config_t *cfg) /* {{{ */
 {

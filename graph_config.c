@@ -47,7 +47,7 @@ static int internal_read_config (void) /* {{{ */
 
   oconfig_free (ci);
 
-  graph_config_submit ();
+  gl_config_submit ();
 
   return (0);
 } /* }}} int internal_read_config */

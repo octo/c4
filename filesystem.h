@@ -3,6 +3,8 @@
 
 #include "graph_ident.h"
 
+#define DATA_DIR "/var/lib/collectd/rrd"
+
 typedef int (*fs_ident_cb_t) (const graph_ident_t *ident, void *user_data);
 
 int fs_scan (fs_ident_cb_t callback, void *user_data);
