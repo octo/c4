@@ -1,0 +1,25 @@
+AUTOMAKE_OPTIONS = foreign no-dependencies
+
+if COMPILER_IS_GCC
+AM_CFLAGS = -Wall -Wextra
+endif
+AM_YFLAGS = -d
+
+BUILT_SOURCES = parser.h
+
+bin_PROGRAMS = collection.fcgi
+
+collection_fcgi_SOURCES = main.c \
+			  oconfig.c oconfig.h aux_types.h scanner.l parser.y \
+			  action_graph.c action_graph.h \
+			  action_list_graphs.c action_list_graphs.h \
+			  common.c common.h \
+			  filesystem.c filesystem.h \
+			  graph.c graph.h \
+			  graph_config.c graph_config.h \
+			  graph_def.c graph_def.h \
+			  graph_ident.c graph_ident.h \
+			  graph_instance.c graph_instance.h \
+			  graph_list.c graph_list.h \
+			  utils_array.c utils_array.h \
+			  utils_params.c utils_params.h
