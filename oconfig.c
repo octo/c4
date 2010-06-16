@@ -48,7 +48,7 @@ oconfig_item_t *oconfig_parse_fh (FILE *fh)
 
     status = snprintf (file, sizeof (file), "<fd#%d>", fileno (fh));
 
-    if ((status < 0) || (status >= sizeof (file))) {
+    if ((status < 0) || (((size_t) status) >= sizeof (file))) {
       c_file = "<unknown>";
     }
     else {
