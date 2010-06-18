@@ -275,7 +275,10 @@ int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size) /* {{{ */
   struct tm tm_tmp;
   size_t status;
 
-  if (localtime_r (&t, &tm_tmp) == NULL)
+  /* Apparently Apache or FastCGI doesn't honor the timezone information and
+   * thus "fixes" the last modified header when the timezone information is
+   * east of GMT. With "gmtime_r" this problem doesn't occur. */
+  if (gmtime_r (&t, &tm_tmp) == NULL)
     return (errno);
 
   status = strftime (buffer, buffer_size, "%a, %d %b %Y %T %z", &tm_tmp);
