@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <time.h>
 
 #include "utils_params.h"
 
@@ -232,7 +233,7 @@ int uri_escape (char *dst, const char *src, size_t size) /* {{{ */
     else if ((src[in] < 32)
         || (src[in] == '&')
         || (src[in] == ';')
-        || (src[in] >= 128))
+        || (((unsigned char) src[in]) >= 128))
     {
       char esc[4];
 
@@ -254,9 +255,11 @@ int uri_escape (char *dst, const char *src, size_t size) /* {{{ */
       in++;
     }
   } /* while (42) */
+
+  return (0);
 } /* }}} int uri_escape */
 
-const char *script_name (void)
+const char *script_name (void) /* {{{ */
 {
   char *ret;
 
