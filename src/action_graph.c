@@ -119,7 +119,8 @@ static int ag_info_print (rrd_info_t *info) /* {{{ */
   return (0);
 } /* }}} int ag_info_print */
 
-static int output_graph (rrd_info_t *info) /* {{{ */
+static int output_graph (rrd_info_t *info, /* {{{ */
+    time_t mtime)
 {
   rrd_info_t *img;
 
@@ -132,9 +133,19 @@ static int output_graph (rrd_info_t *info) /* {{{ */
     return (ENOENT);
 
   printf ("Content-Type: image/png\n"
-      "Content-Length: %lu\n"
-      "\n",
+      "Content-Length: %lu\n",
       img->value.u_blo.size);
+  if (mtime > 0)
+  {
+    char buffer[256];
+    int status;
+    
+    status = time_to_rfc1123 (mtime, buffer, sizeof (buffer));
+    if (status == 0)
+      printf ("Last-Modified: %s\n", buffer);
+  }
+  printf ("\n");
+
   fwrite (img->value.u_blo.ptr, img->value.u_blo.size,
       /* nmemb = */ 1, stdout);
 
@@ -193,7 +204,7 @@ int action_graph (void) /* {{{ */
   {
     int status;
 
-    status = output_graph (info);
+    status = output_graph (info, inst_get_mtime (inst));
     if (status != 0)
     {
       rrd_info_t *ptr;
