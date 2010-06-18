@@ -161,11 +161,7 @@ static int output_graph (graph_data_t *data) /* {{{ */
     
     status = time_to_rfc1123 (data->mtime, time_buffer, sizeof (time_buffer));
     if (status == 0)
-    {
       printf ("Last-Modified: %s\n", time_buffer);
-      printf ("X-Last-Modified: %s\n", time_buffer);
-      fprintf (stderr, "Last-Modified: %s (%li)\n", time_buffer, (long) data->mtime);
-    }
   }
 
   /* Print Expires header. */
