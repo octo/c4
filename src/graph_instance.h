@@ -9,6 +9,8 @@ typedef struct graph_instance_s graph_instance_t;
 
 typedef int (*inst_callback_t) (graph_instance_t *inst, void *user_data);
 
+#include <time.h>
+
 #include "graph.h"
 #include "utils_array.h"
 
@@ -45,6 +47,8 @@ graph_instance_t *inst_find_matching (graph_instance_t *inst,
 
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);
+
+time_t inst_get_mtime (graph_instance_t *inst);
 
 #endif /* GRAPH_INSTANCE_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

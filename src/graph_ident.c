@@ -1,12 +1,19 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <limits.h> /* PATH_MAX */
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "graph_ident.h"
 #include "common.h"
 #include "filesystem.h"
+
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
 
 /*
  * Data types
@@ -450,6 +457,32 @@ char *ident_to_json (const graph_ident_t *ident) /* {{{ */
 
   return (strdup (buffer));
 } /* }}} char *ident_to_json */
+
+time_t ident_get_mtime (const graph_ident_t *ident) /* {{{ */
+{
+  char *file;
+  struct stat statbuf;
+  int status;
+
+  if (ident == NULL)
+    return (0);
+
+  file = ident_to_file (ident);
+  if (file == NULL)
+    return (0);
+
+  memset (&statbuf, 0, sizeof (statbuf));
+  status = stat (file, &statbuf);
+  if (status != 0)
+  {
+    fprintf (stderr, "ident_get_mtime: stat'ing file \"%s\" failed: %s\n",
+        file, strerror (errno));
+    return (0);
+  }
+
+  free (file);
+  return (statbuf.st_mtime);
+} /* }}} time_t ident_get_mtime */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
 

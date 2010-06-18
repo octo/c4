@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include "graph_instance.h"
 #include "graph_ident.h"
@@ -471,5 +472,26 @@ int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
 
   return (0);
 } /* }}} int inst_describe */
+
+time_t inst_get_mtime (graph_instance_t *inst) /* {{{ */
+{
+  size_t i;
+  time_t mtime;
+
+  if (inst == NULL)
+    return (0);
+
+  mtime = 0;
+  for (i = 0; i < inst->files_num; i++)
+  {
+    time_t tmp;
+
+    tmp = ident_get_mtime (inst->files[i]);
+    if (mtime < tmp)
+      mtime = tmp;
+  }
+
+  return (mtime);
+} /* }}} time_t inst_get_mtime */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

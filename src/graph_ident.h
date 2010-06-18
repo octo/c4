@@ -1,6 +1,8 @@
 #ifndef GRAPH_IDENT_H
 #define GRAPH_IDENT_H 1
 
+#include <time.h>
+
 #define ANY_TOKEN "/any/"
 #define ALL_TOKEN "/all/"
 
@@ -45,6 +47,8 @@ _Bool ident_matches (const graph_ident_t *selector,
 char *ident_to_string (const graph_ident_t *ident);
 char *ident_to_file (const graph_ident_t *ident);
 char *ident_to_json (const graph_ident_t *ident);
+
+time_t ident_get_mtime (const graph_ident_t *ident);
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
 #endif /* GRAPH_IDENT_H */
