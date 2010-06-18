@@ -267,4 +267,19 @@ const char *script_name (void)
   return (ret);
 } /* }}} char *script_name */
 
+int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size) /* {{{ */
+{
+  struct tm tm_tmp;
+  size_t status;
+
+  if (localtime_r (&t, &tm_tmp) == NULL)
+    return (errno);
+
+  status = strftime (buffer, buffer_size, "%a, %d %b %Y %T %z", &tm_tmp);
+  if (status == 0)
+    return (errno);
+
+  return (0);
+} /* }}} int time_to_rfc1123 */
+
 /* vim: set sw=2 sts=2 et fdm=marker : */
