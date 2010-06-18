@@ -19,6 +19,74 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
+static int get_time_args (str_array_t *args) /* {{{ */
+{
+  const char *begin_str;
+  const char *end_str;
+  long now;
+  long begin;
+  long end;
+  char *endptr;
+  long tmp;
+
+  begin_str = param ("begin");
+  end_str = param ("end");
+
+  now = (long) time (NULL);
+
+  if (begin_str != NULL)
+  {
+    endptr = NULL;
+    errno = 0;
+    tmp = strtol (begin_str, &endptr, /* base = */ 0);
+    if ((endptr == begin_str) || (errno != 0))
+      return (-1);
+    if (tmp <= 0)
+      begin = now + tmp;
+    else
+      begin = tmp;
+  }
+  else /* if (begin_str == NULL) */
+  {
+    begin = now - 86400;
+  }
+
+  if (end_str != NULL)
+  {
+    endptr = NULL;
+    errno = 0;
+    tmp = strtol (end_str, &endptr, /* base = */ 0);
+    if ((endptr == end_str) || (errno != 0))
+      return (-1);
+    end = tmp;
+    if (tmp <= 0)
+      end = now + tmp;
+    else
+      end = tmp;
+  }
+  else /* if (end_str == NULL) */
+  {
+    end = now;
+  }
+
+  if (begin == end)
+    return (-1);
+
+  if (begin > end)
+  {
+    tmp = begin;
+    begin = end;
+    end = tmp;
+  }
+
+  array_append (args, "-s");
+  array_append_format (args, "%li", begin);
+  array_append (args, "-e");
+  array_append_format (args, "%li", end);
+
+  return (0);
+} /* }}} int get_time_args */
+
 static void emulate_graph (int argc, char **argv) /* {{{ */
 {
   int i;
@@ -103,6 +171,8 @@ int action_graph (void) /* {{{ */
   array_append (args, "-");
   array_append (args, "--imgformat");
   array_append (args, "PNG");
+
+  get_time_args (args);
 
   status = inst_get_rrdargs (cfg, inst, args);
   if (status != 0)
