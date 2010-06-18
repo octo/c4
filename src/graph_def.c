@@ -219,9 +219,6 @@ int def_config (graph_config_t *cfg, const oconfig_item_t *ci) /* {{{ */
       graph_config_get_bool (child, &def->area);
     else if (strcasecmp ("Format", child->key) == 0)
       graph_config_get_string (child, &def->format);
-    else
-      fprintf (stderr, "def_config: Ignoring unknown config option \"%s\"",
-          child->key);
   }
 
   return (graph_add_def (cfg, def));
