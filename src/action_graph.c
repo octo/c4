@@ -19,7 +19,19 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
-static int get_time_args (str_array_t *args) /* {{{ */
+struct graph_data_s
+{
+  str_array_t *args;
+  rrd_info_t *info;
+  time_t mtime;
+  time_t expires;
+  long now;
+  long begin;
+  long end;
+};
+typedef struct graph_data_s graph_data_t;
+
+static int get_time_args (graph_data_t *data) /* {{{ */
 {
   const char *begin_str;
   const char *end_str;
@@ -33,6 +45,9 @@ static int get_time_args (str_array_t *args) /* {{{ */
   end_str = param ("end");
 
   now = (long) time (NULL);
+  data->now = now;
+  data->begin = now - 86400;
+  data->end = now;
 
   if (begin_str != NULL)
   {
@@ -79,10 +94,13 @@ static int get_time_args (str_array_t *args) /* {{{ */
     end = tmp;
   }
 
-  array_append (args, "-s");
-  array_append_format (args, "%li", begin);
-  array_append (args, "-e");
-  array_append_format (args, "%li", end);
+  data->begin = begin;
+  data->end = end;
+
+  array_append (data->args, "-s");
+  array_append_format (data->args, "%li", begin);
+  array_append (data->args, "-e");
+  array_append_format (data->args, "%li", end);
 
   return (0);
 } /* }}} int get_time_args */
@@ -119,12 +137,14 @@ static int ag_info_print (rrd_info_t *info) /* {{{ */
   return (0);
 } /* }}} int ag_info_print */
 
-static int output_graph (rrd_info_t *info, /* {{{ */
-    time_t mtime)
+static int output_graph (graph_data_t *data) /* {{{ */
 {
   rrd_info_t *img;
+  char time_buffer[256];
+  time_t expires;
+  int status;
 
-  for (img = info; img != NULL; img = img->next)
+  for (img = data->info; img != NULL; img = img->next)
     if ((strcmp ("image", img->key) == 0)
         && (img->type == RD_I_BLO))
       break;
@@ -135,15 +155,38 @@ static int output_graph (rrd_info_t *info, /* {{{ */
   printf ("Content-Type: image/png\n"
       "Content-Length: %lu\n",
       img->value.u_blo.size);
-  if (mtime > 0)
+  if (data->mtime > 0)
   {
-    char buffer[256];
     int status;
     
-    status = time_to_rfc1123 (mtime, buffer, sizeof (buffer));
+    status = time_to_rfc1123 (data->mtime, time_buffer, sizeof (time_buffer));
     if (status == 0)
-      printf ("Last-Modified: %s\n", buffer);
+    {
+      printf ("Last-Modified: %s\n", time_buffer);
+      printf ("X-Last-Modified: %s\n", time_buffer);
+      fprintf (stderr, "Last-Modified: %s (%li)\n", time_buffer, (long) data->mtime);
+    }
   }
+
+  /* Print Expires header. */
+  if (data->end >= data->now)
+  {
+    /* The end of the timespan can be seen. */
+    long secs_per_pixel;
+
+    /* FIXME: Handle graphs with width != 400. */
+    secs_per_pixel = (data->end - data->begin) / 400;
+
+    expires = (time_t) (data->now + secs_per_pixel);
+  }
+  else /* if (data->end < data->now) */
+  {
+    expires = (time_t) (data->now + 86400);
+  }
+  status = time_to_rfc1123 (expires, time_buffer, sizeof (time_buffer));
+  if (status == 0)
+    printf ("Expires: %s\n", time_buffer);
+
   printf ("\n");
 
   fwrite (img->value.u_blo.ptr, img->value.u_blo.size,
@@ -160,10 +203,9 @@ static int output_graph (rrd_info_t *info, /* {{{ */
 
 int action_graph (void) /* {{{ */
 {
-  str_array_t *args;
+  graph_data_t data;
   graph_config_t *cfg;
   graph_instance_t *inst;
-  rrd_info_t *info;
   int status;
 
   cfg = gl_graph_get_selected ();
@@ -174,37 +216,39 @@ int action_graph (void) /* {{{ */
   if (inst == NULL)
     OUTPUT_ERROR ("inst_get_selected (%p) failed.\n", (void *) cfg);
 
-  args = array_create ();
-  if (args == NULL)
+  data.args = array_create ();
+  if (data.args == NULL)
     return (ENOMEM);
 
-  array_append (args, "graph");
-  array_append (args, "-");
-  array_append (args, "--imgformat");
-  array_append (args, "PNG");
+  array_append (data.args, "graph");
+  array_append (data.args, "-");
+  array_append (data.args, "--imgformat");
+  array_append (data.args, "PNG");
 
-  get_time_args (args);
+  get_time_args (&data);
 
-  status = inst_get_rrdargs (cfg, inst, args);
+  status = inst_get_rrdargs (cfg, inst, data.args);
   if (status != 0)
   {
-    array_destroy (args);
+    array_destroy (data.args);
     OUTPUT_ERROR ("inst_get_rrdargs failed with status %i.\n", status);
   }
 
   rrd_clear_error ();
-  info = rrd_graph_v (array_argc (args), array_argv (args));
-  if ((info == NULL) || rrd_test_error ())
+  data.info = rrd_graph_v (array_argc (data.args), array_argv (data.args));
+  if ((data.info == NULL) || rrd_test_error ())
   {
     printf ("Content-Type: text/plain\n\n");
     printf ("rrd_graph_v failed: %s\n", rrd_get_error ());
-    emulate_graph (array_argc (args), array_argv (args));
+    emulate_graph (array_argc (data.args), array_argv (data.args));
   }
   else
   {
     int status;
 
-    status = output_graph (info, inst_get_mtime (inst));
+    data.mtime = inst_get_mtime (inst);
+
+    status = output_graph (&data);
     if (status != 0)
     {
       rrd_info_t *ptr;
@@ -212,18 +256,18 @@ int action_graph (void) /* {{{ */
       printf ("Content-Type: text/plain\n\n");
       printf ("output_graph failed. Maybe the \"image\" info was not found?\n\n");
 
-      for (ptr = info; ptr != NULL; ptr = ptr->next)
+      for (ptr = data.info; ptr != NULL; ptr = ptr->next)
       {
         ag_info_print (ptr);
       }
     }
   }
 
-  if (info != NULL)
-    rrd_info_free (info);
+  if (data.info != NULL)
+    rrd_info_free (data.info);
 
-  array_destroy (args);
-  args = NULL;
+  array_destroy (data.args);
+  data.args = NULL;
 
   return (0);
 } /* }}} int action_graph */
