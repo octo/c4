@@ -256,4 +256,15 @@ int uri_escape (char *dst, const char *src, size_t size) /* {{{ */
   } /* while (42) */
 } /* }}} int uri_escape */
 
+const char *script_name (void)
+{
+  char *ret;
+
+  ret = getenv ("SCRIPT_NAME");
+  if (ret == NULL)
+    ret = "collection4.fcgi";
+
+  return (ret);
+} /* }}} char *script_name */
+
 /* vim: set sw=2 sts=2 et fdm=marker : */

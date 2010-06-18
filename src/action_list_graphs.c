@@ -75,8 +75,8 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   memset (desc, 0, sizeof (desc));
   inst_describe (cfg, inst, desc, sizeof (desc));
 
-  printf ("    <li><a href=\"test.fcgi?action=graph;%s\">%s</a></li>\n",
-      params, desc);
+  printf ("    <li><a href=\"%s?action=graph;%s\">%s</a></li>\n",
+      script_name (), params, desc);
 
   return (0);
 } /* }}} int print_graph_inst_html */
