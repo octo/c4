@@ -85,6 +85,7 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
 
     memset (desc, 0, sizeof (desc));
     graph_get_title (cfg, desc, sizeof (desc));
+    html_escape_buffer (desc, sizeof (desc));
 
     printf ("  <li>%s\n  <ul>\n", desc);
 
@@ -93,9 +94,11 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
 
   memset (params, 0, sizeof (params));
   inst_get_params (cfg, inst, params, sizeof (params));
+  html_escape_buffer (params, sizeof (params));
 
   memset (desc, 0, sizeof (desc));
   inst_describe (cfg, inst, desc, sizeof (desc));
+  html_escape_buffer (desc, sizeof (desc));
 
   printf ("    <li><a href=\"%s?action=graph;%s\">%s</a></li>\n",
       script_name (), params, desc);
@@ -113,6 +116,12 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
 static int list_graphs_html (const char *term) /* {{{ */
 {
   callback_data_t data = { NULL, /* limit = */ 20 };
+  char *term_html;
+
+  term_html = NULL;
+  if (term != NULL)
+    term_html = html_escape (term);
+
   printf ("Content-Type: text/html\n\n");
 
   printf ("<html>\n  <head>\n");
@@ -127,7 +136,9 @@ static int list_graphs_html (const char *term) /* {{{ */
       "  <input type=\"text\" name=\"search\" value=\"%s\" />\n"
       "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
       "</form>\n",
-      script_name (), (term != NULL) ? term : "");
+      script_name (), (term_html != NULL) ? term_html : "");
+
+  free (term_html);
 
   printf ("    <ul>\n");
   if (term == NULL)
