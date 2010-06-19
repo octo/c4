@@ -1,5 +1,5 @@
-#ifndef UTILS_PARAMS_H
-#define UTILS_PARAMS_H 1
+#ifndef UTILS_CGI_H
+#define UTILS_CGI_H 1
 
 #include <time.h>
 
@@ -14,4 +14,4 @@ const char *script_name (void);
 
 int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size);
 
-#endif /* UTILS_PARAMS_H */
+#endif /* UTILS_CGI_H */

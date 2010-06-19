@@ -7,7 +7,7 @@
 #include "graph.h"
 #include "graph_ident.h"
 #include "graph_list.h"
-#include "utils_params.h"
+#include "utils_cgi.h"
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>

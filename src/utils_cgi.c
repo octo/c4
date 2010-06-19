@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <time.h>
 
-#include "utils_params.h"
+#include "utils_cgi.h"
 
 struct parameter_s
 {

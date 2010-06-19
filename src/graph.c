@@ -14,7 +14,7 @@
 #include "graph_config.h"
 #include "common.h"
 #include "filesystem.h"
-#include "utils_params.h"
+#include "utils_cgi.h"
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>

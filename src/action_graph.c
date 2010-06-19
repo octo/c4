@@ -13,7 +13,7 @@
 #include "common.h"
 #include "action_graph.h"
 #include "graph_list.h"
-#include "utils_params.h"
+#include "utils_cgi.h"
 #include "utils_array.h"
 
 #include <fcgiapp.h>
