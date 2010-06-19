@@ -66,6 +66,7 @@ static int list_graphs_json (void) /* {{{ */
 struct callback_data_s
 {
   graph_config_t *cfg;
+  int limit;
 };
 typedef struct callback_data_s callback_data_t;
 
@@ -99,12 +100,19 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   printf ("    <li><a href=\"%s?action=graph;%s\">%s</a></li>\n",
       script_name (), params, desc);
 
+  if (data->limit > 0)
+    data->limit--;
+
+  /* Abort scan if limit is reached. */
+  if (data->limit == 0)
+    return (1);
+
   return (0);
 } /* }}} int print_graph_inst_html */
 
 static int list_graphs_html (const char *term) /* {{{ */
 {
-  callback_data_t data = { NULL };
+  callback_data_t data = { NULL, /* limit = */ 20 };
   printf ("Content-Type: text/html\n\n");
 
   printf ("<html>\n  <head>\n");
