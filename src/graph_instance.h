@@ -1,22 +1,11 @@
 #ifndef GRAPH_INSTANCE_H
 #define GRAPH_INSTANCE_H 1
 
-/*
- * Data types
- */
-struct graph_instance_s;
-typedef struct graph_instance_s graph_instance_t;
-
-typedef int (*inst_callback_t) (graph_instance_t *inst, void *user_data);
-
 #include <time.h>
 
-#include "graph.h"
+#include "graph_types.h"
 #include "utils_array.h"
 
-/*
- * Callback types
- */
 /*
  * Methods
  */
@@ -41,6 +30,10 @@ int inst_append (graph_instance_t *head, graph_instance_t *inst);
 
 int inst_foreach (graph_instance_t *inst,
 		inst_callback_t cb, void *user_data);
+
+int inst_search (graph_config_t *cfg, graph_instance_t *inst,
+    const char *term, inst_callback_t cb,
+    void *user_data);
 
 graph_instance_t *inst_find_matching (graph_instance_t *inst,
     const graph_ident_t *ident);

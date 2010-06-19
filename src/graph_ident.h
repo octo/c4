@@ -2,15 +2,13 @@
 #define GRAPH_IDENT_H 1
 
 #include <time.h>
+#include "graph_types.h"
 
 #define ANY_TOKEN "/any/"
 #define ALL_TOKEN "/all/"
 
 #define IS_ANY(str) (((str) != NULL) && (strcasecmp (ANY_TOKEN, (str)) == 0))
 #define IS_ALL(str) (((str) != NULL) && (strcasecmp (ALL_TOKEN, (str)) == 0))
-
-struct graph_ident_s;
-typedef struct graph_ident_s graph_ident_t;
 
 graph_ident_t *ident_create (const char *host,
     const char *plugin, const char *plugin_instance,
@@ -42,7 +40,7 @@ int ident_compare (const graph_ident_t *i0,
     const graph_ident_t *i1);
 
 _Bool ident_matches (const graph_ident_t *selector,
-		const graph_ident_t *ident);
+    const graph_ident_t *ident);
 
 char *ident_to_string (const graph_ident_t *ident);
 char *ident_to_file (const graph_ident_t *ident);

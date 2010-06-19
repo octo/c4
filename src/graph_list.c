@@ -153,7 +153,7 @@ int gl_config_submit (void) /* {{{ */
   return (0);
 } /* }}} int graph_config_submit */
 
-int gl_graph_get_all (gl_cfg_callback callback, /* {{{ */
+int gl_graph_get_all (graph_callback_t callback, /* {{{ */
     void *user_data)
 {
   size_t i;
@@ -211,7 +211,7 @@ graph_config_t *gl_graph_get_selected (void) /* {{{ */
 struct gl_inst_callback_data /* {{{ */
 {
   graph_config_t *cfg;
-  gl_inst_callback callback;
+  graph_inst_callback_t callback;
   void *user_data;
 }; /* }}} struct gl_inst_callback_data */
 
@@ -224,7 +224,7 @@ static int gl_inst_callback_handler (graph_instance_t *inst, /* {{{ */
 } /* }}} int gl_inst_callback_handler */
 
 int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
-    gl_inst_callback callback, void *user_data)
+    graph_inst_callback_t callback, void *user_data)
 {
   struct gl_inst_callback_data data =
   {
@@ -240,7 +240,7 @@ int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
         gl_inst_callback_handler, &data));
 } /* }}} int gl_graph_instance_get_all */
 
-int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
+int gl_instance_get_all (graph_inst_callback_t callback, /* {{{ */
     void *user_data)
 {
   size_t i;
@@ -259,6 +259,25 @@ int gl_instance_get_all (gl_inst_callback callback, /* {{{ */
   return (0);
 } /* }}} int gl_instance_get_all */
 /* }}} gl_instance_get_all, gl_graph_instance_get_all */
+
+int gl_search (const char *term, graph_inst_callback_t callback, /* {{{ */
+    void *user_data)
+{
+  size_t i;
+
+  for (i = 0; i < gl_active_num; i++)
+  {
+    int status;
+
+    status = graph_search (gl_active[i], term,
+        /* callback  = */ callback,
+        /* user data = */ user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_search */
 
 int gl_update (void) /* {{{ */
 {

@@ -28,6 +28,7 @@ struct graph_config_s /* {{{ */
 
   char *title;
   char *vertical_label;
+  _Bool show_zero;
 
   graph_def_t *defs;
 
@@ -154,6 +155,8 @@ int graph_config_add (const oconfig_item_t *ci) /* {{{ */
       graph_config_get_string (child, &cfg->title);
     else if (strcasecmp ("VerticalLabel", child->key) == 0)
       graph_config_get_string (child, &cfg->vertical_label);
+    else if (strcasecmp ("ShowZero", child->key) == 0)
+      graph_config_get_bool (child, &cfg->show_zero);
     else if (strcasecmp ("DEF", child->key) == 0)
       def_config (cfg, child);
   } /* for */
@@ -247,6 +250,57 @@ _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
   return (ident_matches (cfg->select, ident));
 } /* }}} _Bool graph_matches */
 
+struct graph_search_data_s
+{
+  graph_config_t *cfg;
+  graph_inst_callback_t callback;
+  void *user_data;
+};
+typedef struct graph_search_data_s graph_search_data_t;
+
+static int graph_search_submit (graph_instance_t *inst, /* {{{ */
+    void *user_data)
+{
+  graph_search_data_t *data = user_data;
+
+  if ((inst == NULL) || (data == NULL))
+    return (EINVAL);
+
+  return ((*data->callback) (data->cfg, inst, data->user_data));
+} /* }}} int graph_search_submit */
+
+int graph_search (graph_config_t *cfg, const char *term, /* {{{ */
+    graph_inst_callback_t callback,
+    void *user_data)
+{
+  graph_search_data_t data = { cfg, callback, user_data };
+  char buffer[1024];
+  int status;
+
+  status = graph_get_title (cfg, buffer, sizeof (buffer));
+  if (status != 0)
+  {
+    fprintf (stderr, "graph_search: graph_get_title failed\n");
+    return (status);
+  }
+
+  if (strstr (buffer, term) != NULL)
+  {
+    status = inst_foreach (cfg->instances, graph_search_submit, &data);
+    if (status != 0)
+      return (status);
+  }
+  else
+  {
+    status = inst_search (cfg, cfg->instances, term,
+        graph_search_submit, &data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int graph_search */
+
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {
   if ((cfg == NULL) || (ident == NULL))
@@ -282,6 +336,12 @@ int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
   {
     array_append (args, "-v");
     array_append (args, cfg->vertical_label);
+  }
+
+  if (cfg->show_zero)
+  {
+    array_append (args, "-l");
+    array_append (args, "0");
   }
 
   return (0);

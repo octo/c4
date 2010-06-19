@@ -1,15 +1,7 @@
 #ifndef GRAPH_H
 #define GRAPH_H 1
 
-/*
- * Data types
- */
-struct graph_config_s;
-typedef struct graph_config_s graph_config_t;
-
-#include "graph_def.h"
-#include "graph_ident.h"
-#include "graph_instance.h"
+#include "graph_types.h"
 #include "oconfig.h"
 #include "utils_array.h"
 
@@ -36,6 +28,9 @@ graph_def_t *graph_get_defs (graph_config_t *cfg);
 int graph_add_def (graph_config_t *cfg, graph_def_t *def);
 
 _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident);
+
+int graph_search (graph_config_t *cfg, const char *term,
+    graph_inst_callback_t callback, void *user_data);
 
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);
 

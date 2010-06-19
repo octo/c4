@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "graph_instance.h"
+#include "graph_def.h"
 #include "graph_ident.h"
 #include "graph_list.h"
 #include "common.h"
@@ -414,6 +415,38 @@ int inst_foreach (graph_instance_t *inst, /* {{{ */
 
   return (0);
 } /* }}} int inst_foreach */
+
+int inst_search (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
+    const char *term, inst_callback_t cb, void *user_data)
+{
+  graph_instance_t *ptr;
+  char buffer[1024];
+  int status;
+
+  if ((inst == NULL) || (cb == NULL))
+    return (EINVAL);
+
+  for (ptr = inst; ptr != NULL; ptr = ptr->next)
+  {
+    status = inst_describe (cfg, ptr, buffer, sizeof (buffer));
+    if (status != 0)
+    {
+      fprintf (stderr, "inst_search: inst_describe failed\n");
+      return (status);
+    }
+
+    /* no match */
+    if (strstr (buffer, term) == NULL)
+      continue;
+
+    /* match */
+    status = (*cb) (ptr, user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int inst_search */
 
 graph_instance_t *inst_find_matching (graph_instance_t *inst, /* {{{ */
     const graph_ident_t *ident)

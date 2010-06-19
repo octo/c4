@@ -5,6 +5,7 @@
 #include "graph_def.h"
 #include "graph.h"
 #include "graph_config.h"
+#include "graph_ident.h"
 #include "common.h"
 #include "oconfig.h"
 
@@ -329,13 +330,13 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
       (def->legend != NULL) ? def->legend : def->ds_name,
       def->stack ? ":STACK" : "");
   array_append_format (args, "GPRINT:vdef_%04i_min:%s min,",
-      index, (def->format != NULL) ? def->format : "%lg");
+      index, (def->format != NULL) ? def->format : "%6.2lf");
   array_append_format (args, "GPRINT:vdef_%04i_avg:%s avg,",
-      index, (def->format != NULL) ? def->format : "%lg");
+      index, (def->format != NULL) ? def->format : "%6.2lf");
   array_append_format (args, "GPRINT:vdef_%04i_max:%s max,",
-      index, (def->format != NULL) ? def->format : "%lg");
+      index, (def->format != NULL) ? def->format : "%6.2lf");
   array_append_format (args, "GPRINT:vdef_%04i_lst:%s last\\l",
-      index, (def->format != NULL) ? def->format : "%lg");
+      index, (def->format != NULL) ? def->format : "%6.2lf");
 
   free (file);
 
