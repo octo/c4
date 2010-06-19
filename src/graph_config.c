@@ -11,7 +11,9 @@
 #include "oconfig.h"
 #include "common.h"
 
-#define CONFIG_FILE "/usr/lib/cgi-bin/octo/collection.conf"
+#ifndef CONFIGFILE
+# define CONFIGFILE "/etc/collection.conf"
+#endif
 
 time_t last_read_mtime = 0;
 
@@ -39,7 +41,7 @@ static int internal_read_config (void) /* {{{ */
 {
   oconfig_item_t *ci;
 
-  ci = oconfig_parse_file (CONFIG_FILE);
+  ci = oconfig_parse_file (CONFIGFILE);
   if (ci == NULL)
     return (-1);
 
@@ -58,7 +60,7 @@ static time_t get_config_mtime (void) /* {{{ */
   int status;
 
   memset (&statbuf, 0, sizeof (statbuf));
-  status = stat (CONFIG_FILE, &statbuf);
+  status = stat (CONFIGFILE, &statbuf);
   if (status != 0)
     return (0);
 
