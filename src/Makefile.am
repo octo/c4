@@ -1,8 +1,12 @@
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
+AM_CPPFLAGS = -DPREFIX='"${prefix}"'
+AM_CPPFLAGS += -DCONFIGFILE='"${sysconfdir}/collection.conf"'
+
 if COMPILER_IS_GCC
 AM_CFLAGS = -Wall -Wextra
 endif
+
 AM_YFLAGS = -d
 
 BUILT_SOURCES = parser.h

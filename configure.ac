@@ -30,4 +30,4 @@ AC_CHECK_LIB(fcgi, FCGI_Accept, [],
 AC_CHECK_LIB(rrd_th, rrd_graph_v, [],
 	     [AC_MSG_ERROR(cannot find librrd_th.)], [-lm])
 
-AC_OUTPUT(Makefile src/Makefile)
+AC_OUTPUT(Makefile share/Makefile src/Makefile)
