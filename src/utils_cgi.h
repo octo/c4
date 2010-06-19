@@ -14,4 +14,6 @@ const char *script_name (void);
 
 int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size);
 
+char *html_escape (const char *string);
+
 #endif /* UTILS_CGI_H */

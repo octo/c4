@@ -288,4 +288,50 @@ int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size) /* {{{ */
   return (0);
 } /* }}} int time_to_rfc1123 */
 
+#define COPY_ENTITY(e) do {    \
+  size_t len = strlen (e);     \
+  if (buffer_size < (len + 1)) \
+    break;                     \
+  strcpy (buffer_ptr, (e));    \
+  buffer_ptr += len;           \
+  buffer_size -= len;          \
+} while (0)
+
+char *html_escape (const char *string) /* {{{ */
+{
+  char buffer[4096];
+  char *buffer_ptr;
+  size_t buffer_size;
+  size_t pos;
+
+  buffer[0] = 0;
+  buffer_ptr = &buffer[0];
+  buffer_size = sizeof (buffer);
+  for (pos = 0; string[pos] != 0; pos++)
+  {
+    if (string[pos] == '"')
+      COPY_ENTITY ("&quot;");
+    else if (string[pos] == '<')
+      COPY_ENTITY ("&lt;");
+    else if (string[pos] == '>')
+      COPY_ENTITY ("&gt;");
+    else if (string[pos] == '&')
+      COPY_ENTITY ("&amp;");
+    else
+    {
+      *buffer_ptr = string[pos];
+      buffer_ptr++;
+      buffer_size--;
+      *buffer_ptr = 0;
+    }
+
+    if (buffer_size <= 1)
+      break;
+  }
+
+  return (strdup (buffer));
+} /* }}} char *html_escape */
+
+#undef COPY_ENTITY
+
 /* vim: set sw=2 sts=2 et fdm=marker : */
