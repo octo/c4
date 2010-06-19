@@ -107,16 +107,32 @@ static int list_graphs_html (const char *term) /* {{{ */
   callback_data_t data = { NULL };
   printf ("Content-Type: text/html\n\n");
 
-  printf ("<ul>\n");
+  printf ("<html>\n  <head>\n");
+  if (term != NULL)
+    printf ("    <title>c4: Graphs matching &quot;%s&quot;</title>\n", term);
+  else
+    printf ("    <title>c4: List of all graphs</title>\n");
+  printf ("  </head>\n  <body>\n");
+
+  printf ("<form action=\"%s\" method=\"get\">\n"
+      "  <input type=\"hidden\" name=\"action\" value=\"list_graphs\" />\n"
+      "  <input type=\"text\" name=\"search\" value=\"%s\" />\n"
+      "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
+      "</form>\n",
+      script_name (), (term != NULL) ? term : "");
+
+  printf ("    <ul>\n");
   if (term == NULL)
     gl_instance_get_all (print_graph_inst_html, /* user_data = */ &data);
   else
     gl_search (term, print_graph_inst_html, /* user_data = */ &data);
 
   if (data.cfg != NULL)
-    printf ("  </ul></li>\n");
+    printf ("      </ul></li>\n");
 
-  printf ("</ul>\n");
+  printf ("    </ul>\n");
+
+  printf ("  </body>\n</html>\n");
 
   return (0);
 } /* }}} int list_graphs_html */
