@@ -87,7 +87,8 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_get_title (cfg, desc, sizeof (desc));
     html_escape_buffer (desc, sizeof (desc));
 
-    printf ("  <li>%s\n  <ul>\n", desc);
+    printf ("  <li class=\"graph\">%s\n"
+        "  <ul class=\"instance_list\">\n", desc);
 
     data->cfg = cfg;
   }
@@ -100,7 +101,7 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   inst_describe (cfg, inst, desc, sizeof (desc));
   html_escape_buffer (desc, sizeof (desc));
 
-  printf ("    <li><a href=\"%s?action=graph;%s\">%s</a></li>\n",
+  printf ("    <li class=\"instance\"><a href=\"%s?action=graph;%s\">%s</a></li>\n",
       script_name (), params, desc);
 
   if (data->limit > 0)
@@ -129,6 +130,7 @@ static int list_graphs_html (const char *term) /* {{{ */
     printf ("    <title>c4: Graphs matching &quot;%s&quot;</title>\n", term);
   else
     printf ("    <title>c4: List of all graphs</title>\n");
+  printf ("    <link rel=\"stylesheet\" type=\"text/css\" href=\"../share/style.css\" />\n");
   printf ("  </head>\n  <body>\n");
 
   printf ("<form action=\"%s\" method=\"get\">\n"
@@ -140,7 +142,7 @@ static int list_graphs_html (const char *term) /* {{{ */
 
   free (term_html);
 
-  printf ("    <ul>\n");
+  printf ("    <ul class=\"graph_list\">\n");
   if (term == NULL)
     gl_instance_get_all (print_graph_inst_html, /* user_data = */ &data);
   else

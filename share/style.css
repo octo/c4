@@ -1,0 +1,36 @@
+body
+{
+	font-family: sans-serif;
+}
+
+ul.graph_list
+{
+	margin: 0;
+	padding: 1ex;
+	width: 50ex;
+}
+
+li.graph
+{
+	display: block;
+	border: 1px solid gray;
+	margin-top: 1ex;
+
+	background-color: rgb(245,245,255);
+}
+
+ul.instance_list
+{
+	margin: 0;
+	padding: 1ex;
+	border-top: 1px solid gray;
+
+	background-color: rgb(252,252,252);
+}
+
+li.instance
+{
+	display: block;
+
+	font-size: 90%;
+}
