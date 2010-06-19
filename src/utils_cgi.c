@@ -290,48 +290,66 @@ int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size) /* {{{ */
 
 #define COPY_ENTITY(e) do {    \
   size_t len = strlen (e);     \
-  if (buffer_size < (len + 1)) \
+  if (dest_size < (len + 1)) \
     break;                     \
-  strcpy (buffer_ptr, (e));    \
-  buffer_ptr += len;           \
-  buffer_size -= len;          \
+  strcpy (dest_ptr, (e));    \
+  dest_ptr += len;           \
+  dest_size -= len;          \
 } while (0)
+
+char *html_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
+{
+  char *dest_ptr;
+  size_t dest_size;
+  size_t pos;
+
+  dest[0] = 0;
+  dest_ptr = dest;
+  dest_size = n;
+  for (pos = 0; src[pos] != 0; pos++)
+  {
+    if (src[pos] == '"')
+      COPY_ENTITY ("&quot;");
+    else if (src[pos] == '<')
+      COPY_ENTITY ("&lt;");
+    else if (src[pos] == '>')
+      COPY_ENTITY ("&gt;");
+    else if (src[pos] == '&')
+      COPY_ENTITY ("&amp;");
+    else
+    {
+      *dest_ptr = src[pos];
+      dest_ptr++;
+      dest_size--;
+      *dest_ptr = 0;
+    }
+
+    if (dest_size <= 1)
+      break;
+  }
+
+  return (src);
+} /* }}} char *html_escape_copy */
+
+#undef COPY_ENTITY
+
+char *html_escape_buffer (char *buffer, size_t buffer_size) /* {{{ */
+{
+  char tmp[buffer_size];
+
+  html_escape_copy (tmp, buffer, sizeof (tmp));
+  memcpy (buffer, tmp, buffer_size);
+
+  return (buffer);
+} /* }}} char *html_escape_buffer */
 
 char *html_escape (const char *string) /* {{{ */
 {
   char buffer[4096];
-  char *buffer_ptr;
-  size_t buffer_size;
-  size_t pos;
 
-  buffer[0] = 0;
-  buffer_ptr = &buffer[0];
-  buffer_size = sizeof (buffer);
-  for (pos = 0; string[pos] != 0; pos++)
-  {
-    if (string[pos] == '"')
-      COPY_ENTITY ("&quot;");
-    else if (string[pos] == '<')
-      COPY_ENTITY ("&lt;");
-    else if (string[pos] == '>')
-      COPY_ENTITY ("&gt;");
-    else if (string[pos] == '&')
-      COPY_ENTITY ("&amp;");
-    else
-    {
-      *buffer_ptr = string[pos];
-      buffer_ptr++;
-      buffer_size--;
-      *buffer_ptr = 0;
-    }
-
-    if (buffer_size <= 1)
-      break;
-  }
+  html_escape_copy (buffer, string, sizeof (buffer));
 
   return (strdup (buffer));
 } /* }}} char *html_escape */
-
-#undef COPY_ENTITY
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
