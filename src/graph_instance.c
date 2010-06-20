@@ -435,6 +435,8 @@ int inst_search (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
       return (status);
     }
 
+    strtolower (buffer);
+
     /* no match */
     if (strstr (buffer, term) == NULL)
       continue;

@@ -284,6 +284,8 @@ int graph_search (graph_config_t *cfg, const char *term, /* {{{ */
     return (status);
   }
 
+  strtolower (buffer);
+
   if (strstr (buffer, term) != NULL)
   {
     status = inst_foreach (cfg->instances, graph_search_submit, &data);

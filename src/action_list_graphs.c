@@ -227,17 +227,25 @@ static int list_graphs_html (const char *term) /* {{{ */
 int action_list_graphs (void) /* {{{ */
 {
   const char *format;
+  const char *search;
+  int status;
 
   gl_update ();
+
+  search = strtolower_copy (param ("search"));
 
   format = param ("format");
   if (format == NULL)
     format = "html";
 
   if (strcmp ("json", format) == 0)
-    return (list_graphs_json (param ("search")));
+    status = list_graphs_json (search);
   else
-    return (list_graphs_html (param ("search")));
+    status = list_graphs_html (search);
+
+  free (search);
+
+  return (status);
 } /* }}} int action_list_graphs */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
