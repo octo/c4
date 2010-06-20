@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -189,5 +190,26 @@ int print_debug (const char *format, ...) /* {{{ */
 
   return (status);
 } /* }}} int print_debug */
+
+char *strtolower (char *str) /* {{{ */
+{
+  unsigned int i;
+
+  if (str == NULL)
+    return (NULL);
+
+  for (i = 0; str[i] != 0; i++)
+    str[i] = (char) tolower ((int) str[i]);
+
+  return (str);
+} /* }}} char *strtolower */
+
+char *strtolower_copy (const char *str)
+{
+  if (str == NULL)
+    return (NULL);
+
+  return (strdup (str));
+}
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

@@ -20,5 +20,8 @@ int ds_list_from_rrd_file (char *file,
 
 uint32_t get_random_color (void);
 
+char *strtolower (char *str);
+char *strtolower_copy (const char *str);
+
 #endif /* COMMON_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
