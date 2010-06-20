@@ -1,6 +1,6 @@
 function format_instance(inst)
 {
-  return ("<li class=\"instance\">" + inst.description + "</li>");
+  return ("<li class=\"instance\"><a href=\"" + location.pathname + "?action=graph;" + inst.params + "\">" + inst.description + "</a></li>");
 }
 
 function format_instance_list(instances)
