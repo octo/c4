@@ -18,6 +18,7 @@ collection_fcgi_SOURCES = main.c \
 			  action_graph.c action_graph.h \
 			  action_list_graphs.c action_list_graphs.h \
 			  action_search_json.c action_search_json.h \
+			  action_show_graph.c action_show_graph.h \
 			  common.c common.h \
 			  filesystem.c filesystem.h \
 			  graph_types.h \
