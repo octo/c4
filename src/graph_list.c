@@ -236,8 +236,7 @@ int gl_graph_instance_get_all (graph_config_t *cfg, /* {{{ */
   if ((cfg == NULL) || (callback == NULL))
     return (EINVAL);
 
-  return (inst_foreach (graph_get_instances (cfg),
-        gl_inst_callback_handler, &data));
+  return (graph_inst_foreach (cfg, gl_inst_callback_handler, &data));
 } /* }}} int gl_graph_instance_get_all */
 
 int gl_instance_get_all (graph_inst_callback_t callback, /* {{{ */
