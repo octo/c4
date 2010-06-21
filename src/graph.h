@@ -29,6 +29,9 @@ int graph_add_def (graph_config_t *cfg, graph_def_t *def);
 
 _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident);
 
+int graph_inst_foreach (graph_config_t *cfg,
+		inst_callback_t cb, void *user_data);
+
 int graph_search (graph_config_t *cfg, const char *term,
     graph_inst_callback_t callback, void *user_data);
 
