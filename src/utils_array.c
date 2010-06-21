@@ -12,6 +12,14 @@ struct str_array_s
   size_t size;
 };
 
+static int sort_callback (const void *v0, const void *v1) /* {{{ */
+{
+  const char *c0 = v0;
+  const char *c1 = v1;
+
+  return (strcmp (c0, c1));
+} /* }}} int sort_callback */
+
 str_array_t *array_create (void) /* {{{ */
 {
   str_array_t *a;
@@ -75,6 +83,16 @@ int array_append_format (str_array_t *a, const char *format, ...) /* {{{ */
 
   return (array_append (a, buffer));
 } /* }}} int array_append_format */
+
+int array_sort (str_array_t *a) /* {{{ */
+{
+  if (a == NULL)
+    return (EINVAL);
+
+  qsort (a->ptr, a->size, sizeof (*a->ptr), sort_callback);
+
+  return (0);
+} /* }}} int array_sort */
 
 int array_argc (str_array_t *a) /* {{{ */
 {

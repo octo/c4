@@ -10,6 +10,8 @@ int array_append (str_array_t *a, const char *entry);
 int array_append_format (str_array_t *a, const char *format, ...)
   __attribute__((format(printf,2,3)));
 
+int array_sort (str_array_t *a);
+
 int array_argc (str_array_t *);
 char **array_argv (str_array_t *);
 
