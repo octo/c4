@@ -1,0 +1,41 @@
+ collection 4 - An efficient graphing front-end for collectd
+=============================================================
+
+About
+-----
+
+  collection 4 (c4) is a web-based front-end to the RRD files updated by
+  collectd. It is designed to be highly efficient and handle large
+  installations - with 50,000 and more RRD files - well.
+
+
+Concepts
+--------
+
+  c4 lets you configure "graphs" in its config file. Each graph has a selector
+  which determines which files will be used to draw the graph. The selector
+  uses the host/plugin[-instance]/type[-instance] layout known from collectd.
+  Each field of the selector may be one of two wildcard expressions:
+
+    * "/any/"
+      The field may be any value. The files will be grouped by the values of
+      all "/any/" fields. Think of the "GROUP BY" SQL expression. Each grouping
+      is called an "instance" which can be identified by the graph selector and
+      the value of the "/any/" fields.
+
+    * "/all/"
+      As with the any-selector, the field may be any value. However, all files
+      that only differ in the "/all/" field(s) will be printed in the same
+      graph.
+
+  Upon startup, c4 will read the configuration and scan the directory
+  containing the RRD files. Each file is added to all matching graphs, either
+  by adding it to the appropriate instance or by creating a new instance. I.e.
+  each file may be used in multiple graphs.
+
+
+Author
+------
+
+  Florian "octo" Forster <ff at octo.it>
+
