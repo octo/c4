@@ -29,7 +29,7 @@ $(document).ready(function() {
     {
       var term = $("#search-input").val ();
       $.getJSON ("collection.fcgi",
-        { "action": "list_graphs", "format": "json", "search": term},
+        { "action": "search_json", "q": term},
         function(data)
         {
           var i;

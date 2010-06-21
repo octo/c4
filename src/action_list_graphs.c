@@ -23,118 +23,6 @@ struct callback_data_s
 };
 typedef struct callback_data_s callback_data_t;
 
-static int json_begin_graph (graph_config_t *cfg) /* {{{ */
-{
-  char desc[1024];
-
-  if (cfg == NULL)
-    return (EINVAL);
-
-  graph_get_title (cfg, desc, sizeof (desc));
-
-  printf ("{\"title\":\"%s\",\"instances\":[", desc);
-
-  return (0);
-} /* }}} int json_begin_graph */
-
-static int json_end_graph (void) /* {{{ */
-{
-  printf ("]}");
-
-  return (0);
-} /* }}} int json_end_graph */
-
-static int json_print_instance (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst)
-{
-  char params[1024];
-  char desc[1024];
-
-  if ((cfg == NULL) || (inst == NULL))
-    return (EINVAL);
-
-  memset (desc, 0, sizeof (desc));
-  inst_describe (cfg, inst, desc, sizeof (desc));
-
-  memset (params, 0, sizeof (params));
-  inst_get_params (cfg, inst, params, sizeof (params));
-
-  printf ("{\"description\":\"%s\",\"params\":\"%s\"}",
-      desc, params);
-
-  return (0);
-} /* }}} int json_print_instance */
-
-static int print_graph_inst_json (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst,
-    void *user_data)
-{
-  callback_data_t *data = user_data;
-
-  if (data->cfg != cfg)
-  {
-    if (!data->first)
-    {
-      json_end_graph ();
-      printf (",\n");
-    }
-    json_begin_graph (cfg);
-
-    data->cfg = cfg;
-    data->first = 0;
-  }
-  else /* if (not first instance) */
-  {
-    printf (",\n");
-  }
-
-  json_print_instance (cfg, inst);
-
-  if (data->limit > 0)
-    data->limit--;
-
-  if (data->limit == 0)
-    return (1);
-
-  return (0);
-} /* }}} int print_graph_inst_json */
-
-static int list_graphs_json (const char *term) /* {{{ */
-{
-  callback_data_t data;
-
-  time_t now;
-  char time_buffer[128];
-  int status;
-
-  printf ("Content-Type: application/json\n");
-
-  now = time (NULL);
-  status = time_to_rfc1123 (now + 300, time_buffer, sizeof (time_buffer));
-  if (status == 0)
-    printf ("Expires: %s\n"
-        "Cache-Control: public\n",
-        time_buffer);
-  printf ("\n");
-
-  data.cfg = NULL;
-  data.limit = RESULT_LIMIT;
-  data.first = 1;
-
-  printf ("[\n");
-  if (term == NULL)
-    gl_instance_get_all (print_graph_inst_json, /* user_data = */ &data);
-  else
-    gl_search (term, print_graph_inst_json, /* user_data = */ &data);
-
-  if (!data.first)
-    json_end_graph ();
-
-  printf ("\n]");
-
-  return (0);
-} /* }}} int list_graphs_json */
-
 static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
     void *user_data)
@@ -189,6 +77,14 @@ static int print_search_result (void *user_data) /* {{{ */
 {
   page_data_t *pg_data = user_data;
   callback_data_t cb_data = { NULL, /* limit = */ RESULT_LIMIT, /* first = */ 1 };
+
+  if (pg_data->search_term != NULL)
+  {
+    char *search_term_html = html_escape (pg_data->search_term);
+    printf ("    <h2>Search results for &quot;%s&quot;</h2>\n",
+        search_term_html);
+    free (search_term_html);
+  }
 
   printf ("    <ul id=\"search-output\" class=\"graph_list\">\n");
   if (pg_data->search_term == NULL)
@@ -331,7 +227,6 @@ static int list_graphs_html (const char *term) /* {{{ */
 
 int action_list_graphs (void) /* {{{ */
 {
-  const char *format;
   char *search;
   int status;
 
@@ -339,14 +234,7 @@ int action_list_graphs (void) /* {{{ */
 
   search = strtolower_copy (param ("search"));
 
-  format = param ("format");
-  if (format == NULL)
-    format = "html";
-
-  if (strcmp ("json", format) == 0)
-    status = list_graphs_json (search);
-  else
-    status = list_graphs_html (search);
+  status = list_graphs_html (search);
 
   free (search);
 
