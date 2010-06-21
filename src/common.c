@@ -209,7 +209,7 @@ char *strtolower_copy (const char *str)
   if (str == NULL)
     return (NULL);
 
-  return (strdup (str));
+  return (strtolower (strdup (str)));
 }
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
