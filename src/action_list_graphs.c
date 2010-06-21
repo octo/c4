@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include "action_list_graphs.h"
+#include "common.h"
 #include "graph.h"
 #include "graph_ident.h"
 #include "graph_list.h"
@@ -11,6 +12,8 @@
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
+
+#define RESULT_LIMIT 50
 
 struct callback_data_s
 {
@@ -115,7 +118,7 @@ static int list_graphs_json (const char *term) /* {{{ */
   printf ("\n");
 
   data.cfg = NULL;
-  data.limit = 20;
+  data.limit = RESULT_LIMIT;
   data.first = 1;
 
   printf ("[\n");
@@ -176,50 +179,178 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int print_graph_inst_html */
 
-static int list_graphs_html (const char *term) /* {{{ */
+struct page_data_s
 {
-  callback_data_t data = { NULL, /* limit = */ 20, /* first = */ 1 };
+  const char *search_term;
+};
+typedef struct page_data_s page_data_t;
+
+static int print_search_box (void *user_data) /* {{{ */
+{
+  page_data_t *data = user_data;
   char *term_html;
 
-  term_html = NULL;
-  if (term != NULL)
-    term_html = html_escape (term);
+  if (data == NULL)
+  {
+    fprintf (stderr, "print_search_box: data == NULL\n");
+    return (EINVAL);
+  }
 
-  printf ("Content-Type: text/html\n\n");
-
-  printf ("<html>\n  <head>\n");
-  if (term != NULL)
-    printf ("    <title>c4: Graphs matching &quot;%s&quot;</title>\n", term);
-  else
-    printf ("    <title>c4: List of all graphs</title>\n");
-  printf ("    <link rel=\"stylesheet\" type=\"text/css\" href=\"../share/style.css\" />\n");
-  printf ("    <script type=\"text/javascript\" src=\"../share/jquery-1.4.2.min.js\">\n"
-      "    </script>\n"
-      "    <script type=\"text/javascript\" src=\"../share/collection.js\">\n"
-      "    </script>\n");
-  printf ("  </head>\n  <body>\n");
+  term_html = html_escape (data->search_term);
 
   printf ("<form action=\"%s\" method=\"get\">\n"
       "  <input type=\"hidden\" name=\"action\" value=\"list_graphs\" />\n"
       "  <input type=\"text\" name=\"search\" value=\"%s\" id=\"search-input\" />\n"
       "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
       "</form>\n",
-      script_name (), (term_html != NULL) ? term_html : "");
+      script_name (),
+      (term_html != NULL) ? term_html : "");
 
   free (term_html);
 
-  printf ("    <ul id=\"search-output\" class=\"graph_list\">\n");
-  if (term == NULL)
-    gl_instance_get_all (print_graph_inst_html, /* user_data = */ &data);
-  else
-    gl_search (term, print_graph_inst_html, /* user_data = */ &data);
+  return (0);
+} /* }}} int print_search_box */
 
-  if (data.cfg != NULL)
+static int print_search_result (void *user_data) /* {{{ */
+{
+  page_data_t *pg_data = user_data;
+  callback_data_t cb_data = { NULL, /* limit = */ RESULT_LIMIT, /* first = */ 1 };
+
+  printf ("    <ul id=\"search-output\" class=\"graph_list\">\n");
+  if (pg_data->search_term == NULL)
+    gl_instance_get_all (print_graph_inst_html, /* user_data = */ &cb_data);
+  else
+  {
+    char *term_lc = strtolower_copy (pg_data->search_term);
+    gl_search (term_lc, print_graph_inst_html, /* user_data = */ &cb_data);
+    free (term_lc);
+  }
+
+  if (cb_data.cfg != NULL)
     printf ("      </ul></li>\n");
 
   printf ("    </ul>\n");
 
-  printf ("  </body>\n</html>\n");
+  return (0);
+} /* }}} int print_search_result */
+
+struct print_host_list_data_s
+{
+  str_array_t *array;
+  char *last_host;
+};
+typedef struct print_host_list_data_s print_host_list_data_t;
+
+static int print_host_list_callback (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst, void *user_data)
+{
+  print_host_list_data_t *data = user_data;
+  graph_ident_t *ident;
+  const char *host;
+
+  /* make compiler happy */
+  cfg = NULL;
+
+  ident = inst_get_selector (inst);
+  if (ident == NULL)
+    return (-1);
+
+  host = ident_get_host (ident);
+  if (host == NULL)
+  {
+    ident_destroy (ident);
+    return (-1);
+  }
+
+  if (IS_ALL (host))
+    return (0);
+
+  if ((data->last_host != NULL)
+      && (strcmp (data->last_host, host) == 0))
+  {
+    ident_destroy (ident);
+    return (0);
+  }
+
+  free (data->last_host);
+  data->last_host = strdup (host);
+
+  array_append (data->array, host);
+
+  ident_destroy (ident);
+  return (0);
+} /* }}} int print_host_list_callback */
+
+static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  print_host_list_data_t data;
+  int hosts_argc;
+  char **hosts_argv;
+  int i;
+
+  data.array = array_create ();
+  data.last_host = NULL;
+
+  gl_instance_get_all (print_host_list_callback, &data);
+
+  free (data.last_host);
+  data.last_host = NULL;
+
+  array_sort (data.array);
+
+  hosts_argc = array_argc (data.array);
+  hosts_argv = array_argv (data.array);
+
+  if (hosts_argc < 1)
+  {
+    array_destroy (data.array);
+    return (0);
+  }
+
+  printf ("<ul id=\"host-list\">\n");
+  for (i = 0; i < hosts_argc; i++)
+  {
+    char *host = hosts_argv[i];
+    char *host_html;
+
+    if ((data.last_host != NULL) && (strcmp (data.last_host, host) == 0))
+      continue;
+    data.last_host = host;
+
+    host_html = html_escape (host);
+
+    printf ("  <li><a href=\"%s?action=list_graphs&search=%s\">%s</a></li>\n",
+        script_name (), host_html, host_html);
+
+    free (host_html);
+  }
+  printf ("</ul>\n");
+
+  array_destroy (data.array);
+
+  return (0);
+} /* }}} int print_host_list */
+
+static int list_graphs_html (const char *term) /* {{{ */
+{
+  page_data_t pg_data;
+  page_callbacks_t pg_callbacks = PAGE_CALLBACKS_INIT;
+  char title[512];
+
+  if (term != NULL)
+    snprintf (title, sizeof (title), "c4: Graphs matching \"%s\"", term);
+  else
+    strncpy (title, "c4: List of all graphs", sizeof (title));
+  title[sizeof (title) - 1] = 0;
+
+  memset (&pg_data, 0, sizeof (pg_data));
+  pg_data.search_term = term;
+
+  pg_callbacks.top_right = print_search_box;
+  pg_callbacks.middle_left = print_host_list;
+  pg_callbacks.middle_center = print_search_result;
+
+  html_print_page (title, &pg_callbacks, &pg_data);
 
   return (0);
 } /* }}} int list_graphs_html */
@@ -227,7 +358,7 @@ static int list_graphs_html (const char *term) /* {{{ */
 int action_list_graphs (void) /* {{{ */
 {
   const char *format;
-  const char *search;
+  char *search;
   int status;
 
   gl_update ();

@@ -7,6 +7,9 @@
 
 #include "utils_cgi.h"
 
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
+
 struct parameter_s
 {
   char *key;
@@ -354,5 +357,82 @@ char *html_escape (const char *string) /* {{{ */
 
   return (strdup (buffer));
 } /* }}} char *html_escape */
+
+int html_print_page (const char *title, /* {{{ */
+    const page_callbacks_t *cb, void *user_data)
+{
+  char *title_html;
+
+  printf ("Content-Type: text/html\n\n");
+
+  if (title == NULL)
+    title = "c4: collection4 graph interface";
+
+  title_html = html_escape (title);
+
+  printf ("<html>\n"
+      "  <head>\n"
+      "    <title>%s</title>\n"
+      "    <link rel=\"stylesheet\" type=\"text/css\" href=\"../share/style.css\" />\n"
+      "    <script type=\"text/javascript\" src=\"../share/jquery-1.4.2.min.js\">\n"
+      "    </script>\n"
+      "    <script type=\"text/javascript\" src=\"../share/collection.js\">\n"
+      "    </script>\n"
+      "  </head>\n",
+      title_html);
+
+  printf ("  <body>\n"
+      "    <table id=\"layout-table\">\n"
+      "      <tr id=\"layout-top\">\n"
+      "        <td id=\"layout-top-left\">");
+  if (cb->top_left != NULL)
+    (*cb->top_left) (user_data);
+  printf ("</td>\n"
+      "        <td id=\"layout-top-center\">");
+  if (cb->top_center != NULL)
+    (*cb->top_center) (user_data);
+  else
+    printf ("<h1>%s</h1>", title_html);
+  printf ("</td>\n"
+      "        <td id=\"layout-top-right\">");
+  if (cb->top_right != NULL)
+    (*cb->top_right) (user_data);
+  printf ("</td>\n"
+      "      </tr>\n"
+      "      <tr id=\"layout-middle\">\n"
+      "        <td id=\"layout-middle-left\">");
+  if (cb->middle_left != NULL)
+    (*cb->middle_left) (user_data);
+  printf ("</td>\n"
+      "        <td id=\"layout-middle-center\">");
+  if (cb->middle_center != NULL)
+    (*cb->middle_center) (user_data);
+  printf ("</td>\n"
+      "        <td id=\"layout-middle-right\">");
+  if (cb->middle_right != NULL)
+    (*cb->middle_right) (user_data);
+  printf ("</td>\n"
+      "      </tr>\n"
+      "      <tr id=\"layout-bottom\">\n"
+      "        <td id=\"layout-bottom-left\">");
+  if (cb->bottom_left != NULL)
+    (*cb->bottom_left) (user_data);
+  printf ("</td>\n"
+      "        <td id=\"layout-bottom-center\">");
+  if (cb->bottom_center != NULL)
+    (*cb->bottom_center) (user_data);
+  printf ("</td>\n"
+      "        <td id=\"layout-bottom-right\">");
+  if (cb->bottom_right != NULL)
+    (*cb->bottom_right) (user_data);
+  printf ("</td>\n"
+      "      </tr>\n"
+      "    </table>\n"
+      "  </body>\n"
+      "</html>\n");
+
+  free (title_html);
+  return (0);
+} /* }}} int html_print_page */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
