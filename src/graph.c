@@ -204,6 +204,35 @@ int graph_get_title (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int graph_get_title */
 
+int graph_get_params (graph_config_t *cfg, /* {{{ */
+    char *buffer, size_t buffer_size)
+{
+  buffer[0] = 0;
+
+#define COPY_FIELD(field) do {                                       \
+  const char *str = ident_get_##field (cfg->select);                 \
+  char uri_str[1024];                                                \
+  uri_escape (uri_str, str, sizeof (uri_str));                       \
+  strlcat (buffer, #field, buffer_size);                             \
+  strlcat (buffer, "=", buffer_size);                                \
+  strlcat (buffer, uri_str, buffer_size);                            \
+} while (0)
+
+  COPY_FIELD(host);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(plugin);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(plugin_instance);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(type);
+  strlcat (buffer, ";", buffer_size);
+  COPY_FIELD(type_instance);
+
+#undef COPY_FIELD
+
+  return (0);
+} /* }}} int graph_get_params */
+
 graph_ident_t *graph_get_selector (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)

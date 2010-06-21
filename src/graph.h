@@ -19,6 +19,8 @@ int graph_add_file (graph_config_t *cfg, const graph_ident_t *file);
 int graph_get_title (graph_config_t *cfg,
     char *buffer, size_t buffer_size);
 
+int graph_get_params (graph_config_t *cfg, char *buffer, size_t buffer_size);
+
 graph_ident_t *graph_get_selector (graph_config_t *cfg);
 
 graph_instance_t *graph_get_instances (graph_config_t *cfg);
