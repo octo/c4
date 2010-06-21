@@ -18,8 +18,12 @@
 struct callback_data_s
 {
   graph_config_t *cfg;
-  int limit;
-  _Bool first;
+  int graph_index;
+  int graph_limit;
+  _Bool graph_more;
+  int inst_index;
+  int inst_limit;
+  _Bool inst_more;
 };
 typedef struct callback_data_s callback_data_t;
 
@@ -33,6 +37,13 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
 
   if (data->cfg != cfg)
   {
+    data->graph_index++;
+    if (data->graph_index >= data->graph_limit)
+    {
+      data->graph_more = 1;
+      return (1);
+    }
+
     if (data->cfg != NULL)
       printf ("  </ul></li>\n");
 
@@ -44,6 +55,19 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
         "  <ul class=\"instance_list\">\n", desc);
 
     data->cfg = cfg;
+    data->inst_index = -1;
+    data->inst_more = 0;
+  }
+
+  data->inst_index++;
+  if (data->inst_index >= data->inst_limit)
+  {
+    if (!data->inst_more)
+    {
+      printf ("    <li class=\"instance more\">More ...</li>\n");
+      data->inst_more = 1;
+    }
+    return (0);
   }
 
   memset (params, 0, sizeof (params));
@@ -57,13 +81,6 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   printf ("    <li class=\"instance\"><a href=\"%s?action=show_graph;%s\">%s</a></li>\n",
       script_name (), params, desc);
 
-  if (data->limit > 0)
-    data->limit--;
-
-  /* Abort scan if limit is reached. */
-  if (data->limit == 0)
-    return (1);
-
   return (0);
 } /* }}} int print_graph_inst_html */
 
@@ -76,7 +93,9 @@ typedef struct page_data_s page_data_t;
 static int print_search_result (void *user_data) /* {{{ */
 {
   page_data_t *pg_data = user_data;
-  callback_data_t cb_data = { NULL, /* limit = */ RESULT_LIMIT, /* first = */ 1 };
+  callback_data_t cb_data = { /* cfg = */ NULL,
+    /* graph_index = */ -1, /* graph_limit = */ 20, /* graph_more = */ 0,
+    /* inst_index = */  -1, /* inst_limit = */   5, /* inst more = */  0 };
 
   if (pg_data->search_term != NULL)
   {
@@ -98,6 +117,11 @@ static int print_search_result (void *user_data) /* {{{ */
 
   if (cb_data.cfg != NULL)
     printf ("      </ul></li>\n");
+
+  if (cb_data.graph_more)
+  {
+    printf ("    <li class=\"graph more\">More ...</li>\n");
+  }
 
   printf ("    </ul>\n");
 
