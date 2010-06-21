@@ -3,11 +3,42 @@ body
 	font-family: sans-serif;
 }
 
+#layout-table
+{
+	width: 100%;
+}
+
+#layout-top-left,
+#layout-middle-left,
+#layout-bottom-left
+{
+	width: 10%;
+	min-width: 250px;
+}
+
+#layout-top-center,
+#layout-middle-center,
+#layout-bottom-center
+{
+}
+
+#layout-top-right,
+#layout-middle-right,
+#layout-bottom-right
+{
+	width: 10%;
+	min-width: 300px;
+}
+
+#layout-middle td
+{
+	vertical-align: top;
+}
+
 ul.graph_list
 {
 	margin: 0;
 	padding: 1ex;
-	width: 50ex;
 }
 
 li.graph
