@@ -185,32 +185,6 @@ struct page_data_s
 };
 typedef struct page_data_s page_data_t;
 
-static int print_search_box (void *user_data) /* {{{ */
-{
-  page_data_t *data = user_data;
-  char *term_html;
-
-  if (data == NULL)
-  {
-    fprintf (stderr, "print_search_box: data == NULL\n");
-    return (EINVAL);
-  }
-
-  term_html = html_escape (data->search_term);
-
-  printf ("<form action=\"%s\" method=\"get\">\n"
-      "  <input type=\"hidden\" name=\"action\" value=\"list_graphs\" />\n"
-      "  <input type=\"text\" name=\"search\" value=\"%s\" id=\"search-input\" />\n"
-      "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
-      "</form>\n",
-      script_name (),
-      (term_html != NULL) ? term_html : "");
-
-  free (term_html);
-
-  return (0);
-} /* }}} int print_search_box */
-
 static int print_search_result (void *user_data) /* {{{ */
 {
   page_data_t *pg_data = user_data;
@@ -346,7 +320,7 @@ static int list_graphs_html (const char *term) /* {{{ */
   memset (&pg_data, 0, sizeof (pg_data));
   pg_data.search_term = term;
 
-  pg_callbacks.top_right = print_search_box;
+  pg_callbacks.top_right = html_print_search_box;
   pg_callbacks.middle_left = print_host_list;
   pg_callbacks.middle_center = print_search_result;
 

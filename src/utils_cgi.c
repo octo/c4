@@ -435,4 +435,23 @@ int html_print_page (const char *title, /* {{{ */
   return (0);
 } /* }}} int html_print_page */
 
+int html_print_search_box (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  char *term_html;
+
+  term_html = html_escape (param ("search"));
+
+  printf ("<form action=\"%s\" method=\"get\">\n"
+      "  <input type=\"hidden\" name=\"action\" value=\"list_graphs\" />\n"
+      "  <input type=\"text\" name=\"search\" value=\"%s\" id=\"search-input\" />\n"
+      "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
+      "</form>\n",
+      script_name (),
+      (term_html != NULL) ? term_html : "");
+
+  free (term_html);
+
+  return (0);
+} /* }}} int html_print_search_box */
+
 /* vim: set sw=2 sts=2 et fdm=marker : */

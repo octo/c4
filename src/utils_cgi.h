@@ -42,5 +42,7 @@ char *html_escape_copy (char *dest, const char *src, size_t n);
 int html_print_page (const char *title,
     const page_callbacks_t *cb, void *user_data);
 
+int html_print_search_box (void *user_data);
+
 /* vim: set sw=2 sts=2 et fdm=marker : */
 #endif /* UTILS_CGI_H */
