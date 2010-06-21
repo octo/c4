@@ -328,7 +328,7 @@ char *html_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
       break;
   }
 
-  return (src);
+  return (dest);
 } /* }}} char *html_escape_copy */
 
 #undef COPY_ENTITY
@@ -346,6 +346,9 @@ char *html_escape_buffer (char *buffer, size_t buffer_size) /* {{{ */
 char *html_escape (const char *string) /* {{{ */
 {
   char buffer[4096];
+
+  if (string == NULL)
+    return (NULL);
 
   html_escape_copy (buffer, string, sizeof (buffer));
 
