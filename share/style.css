@@ -35,13 +35,23 @@ body
 	vertical-align: top;
 }
 
-ul.graph_list
+#search-form
+{
+	position: relative;
+}
+
+#search-suggest
+{
+	position: absolute;
+}
+
+#search-output ul.graph_list
 {
 	margin: 0;
 	padding: 1ex;
 }
 
-li.graph
+#search-output li.graph
 {
 	display: block;
 	border: 1px solid gray;
@@ -50,7 +60,7 @@ li.graph
 	background-color: rgb(245,245,255);
 }
 
-ul.instance_list
+#search-output ul.instance_list
 {
 	margin: 0;
 	padding: 1ex;
@@ -59,7 +69,7 @@ ul.instance_list
 	background-color: rgb(252,252,252);
 }
 
-li.instance
+#search-output li.instance
 {
 	display: block;
 
