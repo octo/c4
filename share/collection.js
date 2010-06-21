@@ -58,7 +58,10 @@ $(document).ready(function() {
 
     $("#search-input").blur (function()
     {
-      $("#search-suggest").hide ();
+      window.setTimeout (function ()
+      {
+        $("#search-suggest").hide ();
+      }, 500);
     });
 
     $("#search-input").focus (function()
