@@ -213,7 +213,7 @@ static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
 
     host_html = html_escape (host);
 
-    printf ("  <li><a href=\"%s?action=list_graphs&search=%s\">%s</a></li>\n",
+    printf ("  <li><a href=\"%s?action=list_graphs&q=%s\">%s</a></li>\n",
         script_name (), host_html, host_html);
 
     free (host_html);
@@ -256,10 +256,8 @@ int action_list_graphs (void) /* {{{ */
 
   gl_update ();
 
-  search = strtolower_copy (param ("search"));
-
+  search = strtolower_copy (param ("q"));
   status = list_graphs_html (search);
-
   free (search);
 
   return (status);

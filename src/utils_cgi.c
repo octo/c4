@@ -439,11 +439,11 @@ int html_print_search_box (__attribute__((unused)) void *user_data) /* {{{ */
 {
   char *term_html;
 
-  term_html = html_escape (param ("search"));
+  term_html = html_escape (param ("q"));
 
-  printf ("<form action=\"%s\" method=\"get\">\n"
+  printf ("<form action=\"%s\" method=\"get\" id=\"search-form\">\n"
       "  <input type=\"hidden\" name=\"action\" value=\"list_graphs\" />\n"
-      "  <input type=\"text\" name=\"search\" value=\"%s\" id=\"search-input\" />\n"
+      "  <input type=\"text\" name=\"q\" value=\"%s\" id=\"search-input\" />\n"
       "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
       "</form>\n",
       script_name (),

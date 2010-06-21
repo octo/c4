@@ -39,7 +39,7 @@ static void show_breadcrump_field (const char *str) /* {{{ */
   else
   {
     char *str_html = html_escape (str);
-    printf ("<a href=\"%s?action=list_graphs;search=%s\">%s</a>",
+    printf ("<a href=\"%s?action=list_graphs;q=%s\">%s</a>",
         script_name (), str_html, str_html);
     free (str_html);
   }
