@@ -201,7 +201,8 @@ static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
     return (0);
   }
 
-  printf ("<ul id=\"host-list\">\n");
+  printf ("<div><h3>List of hosts</h3>\n"
+      "<ul id=\"host-list\">\n");
   for (i = 0; i < hosts_argc; i++)
   {
     char *host = hosts_argv[i];
@@ -218,7 +219,7 @@ static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
 
     free (host_html);
   }
-  printf ("</ul>\n");
+  printf ("</ul></div>\n");
 
   array_destroy (data.array);
 
