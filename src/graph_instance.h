@@ -26,17 +26,12 @@ int inst_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
 
 graph_ident_t *inst_get_selector (graph_instance_t *inst);
 
-int inst_append (graph_instance_t *head, graph_instance_t *inst);
+int inst_compare_ident (graph_instance_t *inst, const graph_ident_t *ident);
 
-int inst_foreach (graph_instance_t *inst,
-		inst_callback_t cb, void *user_data);
+_Bool inst_matches_ident (graph_instance_t *inst, const graph_ident_t *ident);
 
-int inst_search (graph_config_t *cfg, graph_instance_t *inst,
-    const char *term, inst_callback_t cb,
-    void *user_data);
-
-graph_instance_t *inst_find_matching (graph_instance_t *inst,
-    const graph_ident_t *ident);
+_Bool inst_matches_string (graph_config_t *cfg, graph_instance_t *inst,
+    const char *term);
 
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);

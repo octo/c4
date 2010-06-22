@@ -32,20 +32,13 @@ struct graph_config_s /* {{{ */
 
   graph_def_t *defs;
 
-  graph_instance_t *instances;
+  graph_instance_t **instances;
+  size_t instances_num;
 }; /* }}} struct graph_config_s */
 
 /*
  * Private functions
  */
-static graph_instance_t *graph_find_instance (graph_config_t *cfg, /* {{{ */
-    const graph_ident_t *ident)
-{
-  if ((cfg == NULL) || (ident == NULL))
-    return (NULL);
-
-  return (inst_find_matching (cfg->instances, ident));
-} /* }}} graph_instance_t *graph_find_instance */
 
 /*
  * Config functions
@@ -117,6 +110,8 @@ graph_config_t *graph_create (const graph_ident_t *selector) /* {{{ */
 
 void graph_destroy (graph_config_t *cfg) /* {{{ */
 {
+  size_t i;
+
   if (cfg == NULL)
     return;
 
@@ -126,7 +121,10 @@ void graph_destroy (graph_config_t *cfg) /* {{{ */
   free (cfg->vertical_label);
 
   def_destroy (cfg->defs);
-  inst_destroy (cfg->instances);
+
+  for (i = 0; i < cfg->instances_num; i++)
+    inst_destroy (cfg->instances[i]);
+  free (cfg->instances);
 } /* }}} void graph_destroy */
 
 int graph_config_add (const oconfig_item_t *ci) /* {{{ */
@@ -170,17 +168,23 @@ int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{{ */
 {
   graph_instance_t *inst;
 
-  inst = graph_find_instance (cfg, file);
+  inst = graph_inst_find_matching (cfg, file);
   if (inst == NULL)
   {
+    graph_instance_t **tmp;
+
+    tmp = realloc (cfg->instances,
+        sizeof (*cfg->instances) * (cfg->instances_num + 1));
+    if (tmp == NULL)
+      return (ENOMEM);
+    cfg->instances = tmp;
+
     inst = inst_create (cfg, file);
     if (inst == NULL)
       return (ENOMEM);
 
-    if (cfg->instances == NULL)
-      cfg->instances = inst;
-    else
-      inst_append (cfg->instances, inst);
+    cfg->instances[cfg->instances_num] = inst;
+    cfg->instances_num++;
   }
 
   return (inst_add_file (inst, file));
@@ -241,14 +245,6 @@ graph_ident_t *graph_get_selector (graph_config_t *cfg) /* {{{ */
   return (ident_clone (cfg->select));
 } /* }}} graph_ident_t *graph_get_selector */
 
-graph_instance_t *graph_get_instances (graph_config_t *cfg) /* {{{ */
-{
-  if (cfg == NULL)
-    return (NULL);
-
-  return (cfg->instances);
-} /* }}} graph_instance_t *graph_get_instances */
-
 graph_def_t *graph_get_defs (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)
@@ -279,43 +275,64 @@ _Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
   return (ident_matches (cfg->select, ident));
 } /* }}} _Bool graph_matches */
 
-struct graph_search_data_s
-{
-  graph_config_t *cfg;
-  graph_inst_callback_t callback;
-  void *user_data;
-};
-typedef struct graph_search_data_s graph_search_data_t;
-
-static int graph_search_submit (graph_instance_t *inst, /* {{{ */
-    void *user_data)
-{
-  graph_search_data_t *data = user_data;
-
-  if ((inst == NULL) || (data == NULL))
-    return (EINVAL);
-
-  return ((*data->callback) (data->cfg, inst, data->user_data));
-} /* }}} int graph_search_submit */
-
 int graph_inst_foreach (graph_config_t *cfg, /* {{{ */
 		inst_callback_t cb, void *user_data)
 {
-  return (inst_foreach (cfg->instances, cb, user_data));
+  size_t i;
+  int status;
+
+  for (i = 0; i < cfg->instances_num; i++)
+  {
+    status = (*cb) (cfg->instances[i], user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
 } /* }}} int graph_inst_foreach */
 
-int graph_search (graph_config_t *cfg, const char *term, /* {{{ */
-    graph_inst_callback_t callback,
+graph_instance_t *graph_inst_find_exact (graph_config_t *cfg, /* {{{ */
+    graph_ident_t *ident)
+{
+  size_t i;
+
+  if ((cfg == NULL) || (ident == NULL))
+    return (NULL);
+
+  for (i = 0; i < cfg->instances_num; i++)
+    if (inst_compare_ident (cfg->instances[i], ident) == 0)
+      return (cfg->instances[i]);
+
+  return (NULL);
+} /* }}} graph_instance_t *graph_inst_find_exact */
+
+graph_instance_t *graph_inst_find_matching (graph_config_t *cfg, /* {{{ */
+    const graph_ident_t *ident)
+{
+  size_t i;
+
+  if ((cfg == NULL) || (ident == NULL))
+    return (NULL);
+
+  for (i = 0; i < cfg->instances_num; i++)
+    if (inst_matches_ident (cfg->instances[i], ident))
+      return (cfg->instances[i]);
+
+  return (NULL);
+} /* }}} graph_instance_t *graph_inst_find_matching */
+
+int graph_inst_search (graph_config_t *cfg, const char *term, /* {{{ */
+    graph_inst_callback_t cb,
     void *user_data)
 {
-  graph_search_data_t data = { cfg, callback, user_data };
   char buffer[1024];
   int status;
+  size_t i;
 
   status = graph_get_title (cfg, buffer, sizeof (buffer));
   if (status != 0)
   {
-    fprintf (stderr, "graph_search: graph_get_title failed\n");
+    fprintf (stderr, "graph_inst_search: graph_get_title failed\n");
     return (status);
   }
 
@@ -323,20 +340,28 @@ int graph_search (graph_config_t *cfg, const char *term, /* {{{ */
 
   if (strstr (buffer, term) != NULL)
   {
-    status = inst_foreach (cfg->instances, graph_search_submit, &data);
-    if (status != 0)
-      return (status);
+    for (i = 0; i < cfg->instances_num; i++)
+    {
+      status = (*cb) (cfg, cfg->instances[i], user_data);
+      if (status != 0)
+        return (status);
+    }
   }
   else
   {
-    status = inst_search (cfg, cfg->instances, term,
-        graph_search_submit, &data);
-    if (status != 0)
-      return (status);
+    for (i = 0; i < cfg->instances_num; i++)
+    {
+      if (inst_matches_string (cfg, cfg->instances[i], term))
+      {
+        status = (*cb) (cfg, cfg->instances[i], user_data);
+        if (status != 0)
+          return (status);
+      }
+    }
   }
 
   return (0);
-} /* }}} int graph_search */
+} /* }}} int graph_inst_search */
 
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {
@@ -348,11 +373,16 @@ int graph_compare (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 
 int graph_clear_instances (graph_config_t *cfg) /* {{{ */
 {
+  size_t i;
+
   if (cfg == NULL)
     return (EINVAL);
 
-  inst_destroy (cfg->instances);
+  for (i = 0; i < cfg->instances_num; i++)
+    inst_destroy (cfg->instances[i]);
+  free (cfg->instances);
   cfg->instances = NULL;
+  cfg->instances_num = 0;
 
   return (0);
 } /* }}} int graph_clear_instances */

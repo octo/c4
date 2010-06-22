@@ -268,7 +268,7 @@ int gl_search (const char *term, graph_inst_callback_t callback, /* {{{ */
   {
     int status;
 
-    status = graph_search (gl_active[i], term,
+    status = graph_inst_search (gl_active[i], term,
         /* callback  = */ callback,
         /* user data = */ user_data);
     if (status != 0)

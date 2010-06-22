@@ -19,8 +19,6 @@ struct graph_instance_s /* {{{ */
 
   graph_ident_t **files;
   size_t files_num;
-
-  graph_instance_t *next;
 }; /* }}} struct graph_instance_s */
 
 struct def_callback_data_s
@@ -191,20 +189,15 @@ graph_instance_t *inst_create (graph_config_t *cfg, /* {{{ */
   i->files = NULL;
   i->files_num = 0;
 
-  i->next = NULL;
-
   return (i);
 } /* }}} graph_instance_t *inst_create */
 
 void inst_destroy (graph_instance_t *inst) /* {{{ */
 {
-  graph_instance_t *next;
   size_t i;
 
   if (inst == NULL)
     return;
-
-  next = inst->next;
 
   ident_destroy (inst->select);
 
@@ -213,8 +206,6 @@ void inst_destroy (graph_instance_t *inst) /* {{{ */
   free (inst->files);
 
   free (inst);
-
-  inst_destroy (next);
 } /* }}} void inst_destroy */
 
 int inst_add_file (graph_instance_t *inst, /* {{{ */
@@ -240,9 +231,12 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
 {
   const char *host = get_part_from_param ("inst_host", "host");
   const char *plugin = get_part_from_param ("inst_plugin", "plugin");
-  const char *plugin_instance = get_part_from_param ("inst_plugin_instance", "plugin_instance");
+  const char *plugin_instance = get_part_from_param ("inst_plugin_instance",
+      "plugin_instance");
   const char *type = get_part_from_param ("inst_type", "type");
-  const char *type_instance = get_part_from_param ("inst_type_instance", "type_instance");
+  const char *type_instance = get_part_from_param ("inst_type_instance",
+      "type_instance");
+
   graph_ident_t *ident;
   graph_instance_t *inst;
 
@@ -264,19 +258,16 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
   }
 
   ident = ident_create (host, plugin, plugin_instance, type, type_instance);
-
-  for (inst = graph_get_instances (cfg); inst != NULL; inst = inst->next)
+  if (ident == NULL)
   {
-    if (ident_compare (ident, inst->select) != 0)
-      continue;
-
-    ident_destroy (ident);
-    return (inst);
+    fprintf (stderr, "inst_get_selected: ident_create failed\n");
+    return (NULL);
   }
 
-  DEBUG ("inst_get_selected: No match found.\n");
+  inst = graph_inst_find_exact (cfg, ident);
   ident_destroy (ident);
-  return (NULL);
+
+  return (inst);
 } /* }}} graph_instance_t *inst_get_selected */
 
 int inst_get_rrdargs (graph_config_t *cfg, /* {{{ */
@@ -380,90 +371,49 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
   return (0);
 } /* }}} int inst_get_params */
 
-int inst_append (graph_instance_t *head, graph_instance_t *inst) /* {{{ */
+int inst_compare_ident (graph_instance_t *inst, /* {{{ */
+    const graph_ident_t *ident)
 {
-  graph_instance_t *ptr;
+  if ((inst == NULL) || (ident == NULL))
+    return (0);
 
-  if ((head == NULL) || (inst == NULL))
-    return (EINVAL);
+  return (ident_compare (inst->select, ident));
+} /* }}} int inst_compare_ident */
 
-  ptr = head;
-  while (ptr->next != NULL)
-    ptr = ptr->next;
-
-  ptr->next = inst;
-
-  return (0);
-} /* }}} int inst_append */
-
-int inst_foreach (graph_instance_t *inst, /* {{{ */
-		inst_callback_t cb, void *user_data)
+_Bool inst_matches_ident (graph_instance_t *inst, /* {{{ */
+    const graph_ident_t *ident)
 {
-  graph_instance_t *ptr;
+  if ((inst == NULL) || (ident == NULL))
+    return (0);
 
-  if ((inst == NULL) || (cb == NULL))
-    return (EINVAL);
+  return (ident_matches (inst->select, ident));
+} /* }}} _Bool inst_matches_ident */
 
-  for (ptr = inst; ptr != NULL; ptr = ptr->next)
-  {
-    int status;
-
-    status = (*cb) (ptr, user_data);
-    if (status != 0)
-      return (status);
-  }
-
-  return (0);
-} /* }}} int inst_foreach */
-
-int inst_search (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
-    const char *term, inst_callback_t cb, void *user_data)
+_Bool inst_matches_string (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    const char *term)
 {
-  graph_instance_t *ptr;
   char buffer[1024];
   int status;
 
-  if ((inst == NULL) || (cb == NULL))
-    return (EINVAL);
+  if ((cfg == NULL) || (inst == NULL) || (term == NULL))
+    return (0);
 
-  for (ptr = inst; ptr != NULL; ptr = ptr->next)
+  status = inst_describe (cfg, inst, buffer, sizeof (buffer));
+  if (status != 0)
   {
-    status = inst_describe (cfg, ptr, buffer, sizeof (buffer));
-    if (status != 0)
-    {
-      fprintf (stderr, "inst_search: inst_describe failed\n");
-      return (status);
-    }
-
-    strtolower (buffer);
-
-    /* no match */
-    if (strstr (buffer, term) == NULL)
-      continue;
-
-    /* match */
-    status = (*cb) (ptr, user_data);
-    if (status != 0)
-      return (status);
+    fprintf (stderr, "inst_matches_string: inst_describe failed\n");
+    return (status);
   }
 
-  return (0);
-} /* }}} int inst_search */
+  strtolower (buffer);
 
-graph_instance_t *inst_find_matching (graph_instance_t *inst, /* {{{ */
-    const graph_ident_t *ident)
-{
-  graph_instance_t *ptr;
+  /* no match */
+  if (strstr (buffer, term) == NULL)
+    return (0);
 
-  if ((inst == NULL) || (ident == NULL))
-    return (NULL);
-
-  for (ptr = inst; ptr != NULL; ptr = ptr->next)
-    if (ident_matches (ptr->select, ident))
-      return (ptr);
-
-  return (NULL);
-} /* }}} graph_instance_t *inst_find_matching */
+  return (1);
+} /* }}} _Bool inst_matches_string */
 
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
