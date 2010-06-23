@@ -2,6 +2,7 @@
 #define GRAPH_H 1
 
 #include "graph_types.h"
+#include "graph_ident.h"
 #include "oconfig.h"
 #include "utils_array.h"
 
@@ -27,7 +28,14 @@ graph_def_t *graph_get_defs (graph_config_t *cfg);
 
 int graph_add_def (graph_config_t *cfg, graph_def_t *def);
 
-_Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident);
+_Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident);
+
+/* Compares the given string with the appropriate field of the selector. If the
+ * selector field is "/all/" or "/any/", returns true without checking the
+ * instances. See "graph_inst_search_field" for finding all matching instances.
+ * */
+_Bool graph_matches_field (graph_config_t *cfg,
+    graph_ident_field_t field, const char *field_value);
 
 int graph_inst_foreach (graph_config_t *cfg,
     inst_callback_t cb, void *user_data);
@@ -39,6 +47,12 @@ graph_instance_t *graph_inst_find_matching (graph_config_t *cfg,
     const graph_ident_t *ident);
 
 int graph_inst_search (graph_config_t *cfg, const char *term,
+    graph_inst_callback_t callback, void *user_data);
+
+/* Iterates over all instances and calls "inst_matches_field". If that method
+ * returns true, calls the callback with the graph and instance pointers. */
+int graph_inst_search_field (graph_config_t *cfg,
+    graph_ident_field_t field, const char *field_value,
     graph_inst_callback_t callback, void *user_data);
 
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);

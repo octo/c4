@@ -73,7 +73,7 @@ static int gl_register_file (const graph_ident_t *file, /* {{{ */
     graph_config_t *cfg = gl_active[i];
     int status;
 
-    if (!graph_matches (cfg, file))
+    if (!graph_matches_ident (cfg, file))
       continue;
 
     status = graph_add_file (cfg, file);
