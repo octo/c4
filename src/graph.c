@@ -388,6 +388,8 @@ int graph_inst_search_field (graph_config_t *cfg, /* {{{ */
     graph_inst_callback_t callback, void *user_data)
 {
   size_t i;
+  const char *selector_field;
+  _Bool need_check_instances = 0;
 
   if ((cfg == NULL) || (field_value == NULL) || (callback == NULL))
     return (EINVAL);
@@ -395,16 +397,24 @@ int graph_inst_search_field (graph_config_t *cfg, /* {{{ */
   if (!graph_matches_field (cfg, field, field_value))
     return (0);
 
+  selector_field = ident_get_field (cfg->select, field);
+  if (selector_field == NULL)
+    return (-1);
+
+  if (IS_ALL (selector_field) || IS_ANY (selector_field))
+    need_check_instances = 1;
+
   for (i = 0; i < cfg->instances_num; i++)
   {
-    if (inst_matches_field (cfg->instances[i], field, field_value))
-    {
-      int status;
+    int status;
 
-      status = (*callback) (cfg, cfg->instances[i], user_data);
-      if (status != 0)
-        return (status);
-    }
+    if (need_check_instances
+        && !inst_matches_field (cfg->instances[i], field, field_value))
+      continue;
+
+    status = (*callback) (cfg, cfg->instances[i], user_data);
+    if (status != 0)
+      return (status);
   }
 
   return (0);
