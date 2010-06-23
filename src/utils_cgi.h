@@ -40,7 +40,7 @@ void param_destroy (param_list_t *pl);
 const char *param_get (param_list_t *pl, const char *name);
 int param_set (param_list_t *pl,
     const char *name, const char *value);
-const char *param_as_string (param_list_t *pl);
+char *param_as_string (param_list_t *pl);
 int param_print_hidden (param_list_t *pl);
 
 char *uri_escape (const char *string);

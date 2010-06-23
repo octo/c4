@@ -344,7 +344,7 @@ int param_set (param_list_t *pl, const char *name, /* {{{ */
   return (0);
 } /* }}} int param_set */
 
-const char *param_as_string (param_list_t *pl) /* {{{ */
+char *param_as_string (param_list_t *pl) /* {{{ */
 {
   char buffer[4096];
   char key[2048];

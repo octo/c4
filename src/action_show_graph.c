@@ -85,6 +85,35 @@ static int show_breadcrump (show_graph_data_t *data) /* {{{ */
   return (0);
 } /* }}} int show_breadcrump */
 
+static int show_time_selector (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  param_list_t *pl;
+
+  pl = param_create (/* query string = */ NULL);
+  param_set (pl, "begin", NULL);
+  param_set (pl, "end", NULL);
+  param_set (pl, "button", NULL);
+
+  printf ("<form action=\"%s\" method=\"get\">\n", script_name ());
+
+  param_print_hidden (pl);
+
+  printf ("  <select name=\"begin\">\n"
+      "    <option value=\"-3600\">Hour</option>\n"
+      "    <option value=\"-86400\">Day</option>\n"
+      "    <option value=\"-604800\">Week</option>\n"
+      "    <option value=\"-2678400\">Month</option>\n"
+      "    <option value=\"-31622400\">Year</option>\n"
+      "  </select>\n"
+      "  <input type=\"submit\" name=\"button\" value=\"Go\" />\n");
+
+  printf ("</form>\n");
+
+  param_destroy (pl);
+
+  return (0);
+} /* }}} int show_time_selector */
+
 static int show_instance_list_cb (graph_instance_t *inst, /* {{{ */
     void *user_data)
 {
@@ -145,7 +174,9 @@ static int show_instance (void *user_data) /* {{{ */
   show_graph_data_t *data = user_data;
   char title[128];
   char descr[128];
-  char params[1024];
+  param_list_t *pl;
+  char *params;
+  char params_html[1024];
 
   show_breadcrump (data);
 
@@ -157,14 +188,27 @@ static int show_instance (void *user_data) /* {{{ */
   inst_describe (data->cfg, data->inst, descr, sizeof (descr));
   html_escape_buffer (descr, sizeof (descr));
 
-  memset (params, 0, sizeof (params));
-  inst_get_params (data->cfg, data->inst, params, sizeof (params));
-  html_escape_buffer (params, sizeof (params));
+  pl = param_create (/* query string = */ NULL);
+  param_set (pl, "action", "graph");
+  param_set (pl, "button", NULL);
 
-  printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s\" "
+  params = param_as_string (pl);
+  if (params == NULL)
+  {
+    printf ("<div class=\"error\">param_as_string failed.</div>\n");
+    param_destroy (pl);
+    return (-1);
+  }
+
+  memset (params_html, 0, sizeof (params_html));
+  html_escape_copy (params_html, params, sizeof (params_html));
+
+  printf ("<div class=\"graph-img\"><img src=\"%s?%s\" "
       "title=\"%s / %s\" /></div>\n",
       script_name (), params, title, descr);
 
+  param_destroy (pl);
+  free (params);
   return (0);
 } /* }}} int show_instance */
 
@@ -206,6 +250,7 @@ int action_show_graph (void) /* {{{ */
     pg_callbacks.top_right = html_print_search_box;
     pg_callbacks.middle_center = show_instance;
     pg_callbacks.middle_left = show_instance_list;
+    pg_callbacks.middle_right = show_time_selector;
 
     html_print_page (html_title, &pg_callbacks, &pg_data);
   }
