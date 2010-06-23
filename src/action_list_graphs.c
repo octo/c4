@@ -119,8 +119,14 @@ static int print_search_result (void *user_data) /* {{{ */
     else if (strncmp ("plugin:", term_lc, strlen ("plugin:")) == 0)
       gl_search_field (GIF_PLUGIN, term_lc + strlen ("plugin:"),
           print_graph_inst_html, /* user_data = */ &cb_data);
+    else if (strncmp ("plugin_instance:", term_lc, strlen ("plugin_instance:")) == 0)
+      gl_search_field (GIF_PLUGIN_INSTANCE, term_lc + strlen ("plugin_instance:"),
+          print_graph_inst_html, /* user_data = */ &cb_data);
     else if (strncmp ("type:", term_lc, strlen ("type:")) == 0)
       gl_search_field (GIF_TYPE, term_lc + strlen ("type:"),
+          print_graph_inst_html, /* user_data = */ &cb_data);
+    else if (strncmp ("type_instance:", term_lc, strlen ("type_instance:")) == 0)
+      gl_search_field (GIF_TYPE_INSTANCE, term_lc + strlen ("type_instance:"),
           print_graph_inst_html, /* user_data = */ &cb_data);
     else
       gl_search (term_lc,

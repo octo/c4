@@ -75,11 +75,11 @@ static int show_breadcrump (show_graph_data_t *data) /* {{{ */
   printf ("&nbsp;/ ");
   show_breadcrump_field (ident_get_plugin (ident), "plugin");
   printf ("&nbsp;&ndash; ");
-  show_breadcrump_field (ident_get_plugin_instance (ident), NULL);
+  show_breadcrump_field (ident_get_plugin_instance (ident), "plugin_instance");
   printf ("&nbsp;/ ");
   show_breadcrump_field (ident_get_type (ident), "type");
   printf ("&nbsp;&ndash; ");
-  show_breadcrump_field (ident_get_type_instance (ident), NULL);
+  show_breadcrump_field (ident_get_type_instance (ident), "type_instance");
   printf ("&quot;</div>\n");
 
   return (0);
