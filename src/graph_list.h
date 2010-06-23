@@ -26,6 +26,9 @@ int gl_search (const char *search, graph_inst_callback_t callback,
 int gl_search_field (graph_ident_field_t field, const char *field_value,
     graph_inst_callback_t callback, void *user_data);
 
+int gl_foreach_host (int (*callback) (const char *host, void *user_data),
+    void *user_data);
+
 int gl_update (void);
 
 #endif /* GRAPH_LIST_H */

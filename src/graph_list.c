@@ -7,12 +7,12 @@
 #include <errno.h>
 
 #include "graph_list.h"
-#include "graph.h"
-#include "graph_ident.h"
-#include "graph_def.h"
-#include "graph_config.h"
 #include "common.h"
 #include "filesystem.h"
+#include "graph.h"
+#include "graph_config.h"
+#include "graph_def.h"
+#include "graph_ident.h"
 #include "utils_cgi.h"
 
 #include <fcgiapp.h>
@@ -31,6 +31,9 @@ static size_t gl_active_num = 0;
 
 static graph_config_t **gl_staging = NULL;
 static size_t gl_staging_num = 0;
+
+static char **host_list = NULL;
+static size_t host_list_len = 0;
 
 static time_t gl_last_update = 0;
 
@@ -61,6 +64,50 @@ int gl_add_graph_internal (graph_config_t *cfg, /* {{{ */
 
   return (0);
 } /* }}} int gl_add_graph_internal */
+
+static int gl_register_host (const char *host) /* {{{ */
+{
+  char **tmp;
+  size_t i;
+
+  if (host == NULL)
+    return (EINVAL);
+
+  for (i = 0; i < host_list_len; i++)
+    if (strcmp (host_list[i], host) == 0)
+      return (0);
+
+  tmp = realloc (host_list, sizeof (*host_list) * (host_list_len + 1));
+  if (tmp == NULL)
+    return (ENOMEM);
+  host_list = tmp;
+
+  host_list[host_list_len] = strdup (host);
+  if (host_list[host_list_len] == NULL)
+    return (ENOMEM);
+
+  host_list_len++;
+  return (0);
+} /* }}} int gl_register_host */
+
+static int gl_clear_hosts (void) /* {{{ */
+{
+  size_t i;
+
+  for (i = 0; i < host_list_len; i++)
+    free (host_list[i]);
+  free (host_list);
+
+  host_list = NULL;
+  host_list_len = 0;
+
+  return (0);
+} /* }}} int gl_clear_hosts */
+
+static int gl_compare_hosts (const void *v0, const void *v1) /* {{{ */
+{
+  return (strcmp (v0, v1));
+} /* }}} int gl_compare_hosts */
 
 static int gl_register_file (const graph_ident_t *file, /* {{{ */
     __attribute__((unused)) void *user_data)
@@ -94,6 +141,8 @@ static int gl_register_file (const graph_ident_t *file, /* {{{ */
     gl_add_graph_internal (cfg, &gl_active, &gl_active_num);
     graph_add_file (cfg, file);
   }
+
+  gl_register_host (ident_get_host (file));
 
   return (0);
 } /* }}} int gl_register_file */
@@ -303,6 +352,22 @@ int gl_search_field (graph_ident_field_t field, /* {{{ */
   return (0);
 } /* }}} int gl_search_field */
 
+int gl_foreach_host (int (*callback) (const char *host, void *user_data), /* {{{ */
+    void *user_data)
+{
+  int status;
+  size_t i;
+
+  for (i = 0; i < host_list_len; i++)
+  {
+    status = (*callback) (host_list[i], user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_foreach_host */
+
 int gl_update (void) /* {{{ */
 {
   time_t now;
@@ -320,7 +385,12 @@ int gl_update (void) /* {{{ */
   graph_read_config ();
 
   gl_clear_instances ();
+  gl_clear_hosts ();
   status = fs_scan (/* callback = */ gl_register_file, /* user data = */ NULL);
+
+  if (host_list_len > 0)
+    qsort (host_list, host_list_len, sizeof (*host_list),
+        gl_compare_hosts);
 
   gl_last_update = now;
 
