@@ -34,6 +34,11 @@ _Bool inst_matches_ident (graph_instance_t *inst, const graph_ident_t *ident);
 _Bool inst_matches_string (graph_config_t *cfg, graph_instance_t *inst,
     const char *term);
 
+/* Compares the given string with the appropriate field of the selector or, if
+ * the selector field is "/all/", iterates over all the files of the instance
+ * and checks the appropriate field. Returns true if the field of the selector
+ * or of one of the files matches. The string must match entirely but
+ * comparison is done case-insensitive. */
 _Bool inst_matches_field (graph_instance_t *inst,
     graph_ident_field_t field, const char *field_value);
 
