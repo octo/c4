@@ -415,6 +415,46 @@ _Bool inst_matches_string (graph_config_t *cfg, /* {{{ */
   return (1);
 } /* }}} _Bool inst_matches_string */
 
+_Bool inst_matches_field (graph_instance_t *inst, /* {{{ */
+    graph_ident_field_t field, const char *field_value)
+{
+  const char *selector_field;
+  size_t i;
+
+  if ((inst == NULL) || (field_value == NULL))
+    return (0);
+
+  selector_field = ident_get_field (inst->select, field);
+  if (selector_field == NULL)
+    return (0);
+
+  assert (!IS_ANY (selector_field));
+  if (!IS_ALL (selector_field))
+  {
+    if (strcasecmp (selector_field, field_value) == 0)
+      return (1);
+    else
+      return (0);
+  }
+
+  /* The selector field is an ALL selector
+   * => we need to check the files to see if the instance matches. */
+  for (i = 0; i < inst->files_num; i++)
+  {
+    selector_field = ident_get_field (inst->files[i], field);
+    if (selector_field == NULL)
+      continue;
+
+    assert (!IS_ANY (selector_field));
+    assert (!IS_ALL (selector_field));
+
+    if (strcasecmp (selector_field, field_value) == 0)
+      return (1);
+  } /* for files */
+
+  return (0);
+} /* }}} _Bool inst_matches_field */
+
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {
