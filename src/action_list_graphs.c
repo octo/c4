@@ -148,100 +148,33 @@ static int print_search_result (void *user_data) /* {{{ */
   return (0);
 } /* }}} int print_search_result */
 
-struct print_host_list_data_s
+static int print_host_list_callback (const char *host, void *user_data) /* {{{ */
 {
-  str_array_t *array;
-  char *last_host;
-};
-typedef struct print_host_list_data_s print_host_list_data_t;
+  char *host_html;
 
-static int print_host_list_callback (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst, void *user_data)
-{
-  print_host_list_data_t *data = user_data;
-  graph_ident_t *ident;
-  const char *host;
+  /* Make compiler happy */
+  user_data = NULL;
 
-  /* make compiler happy */
-  cfg = NULL;
-
-  ident = inst_get_selector (inst);
-  if (ident == NULL)
-    return (-1);
-
-  host = ident_get_host (ident);
   if (host == NULL)
-  {
-    ident_destroy (ident);
-    return (-1);
-  }
+    return (EINVAL);
+  
+  host_html = html_escape (host);
+  if (host_html == NULL)
+    return (ENOMEM);
 
-  if (IS_ALL (host))
-    return (0);
+  printf ("  <li class=\"host\"><a href=\"%s?action=list_graphs;q=host:%s\">"
+      "%s</a></li>\n",
+      script_name (), host_html, host_html);
 
-  if ((data->last_host != NULL)
-      && (strcmp (data->last_host, host) == 0))
-  {
-    ident_destroy (ident);
-    return (0);
-  }
-
-  free (data->last_host);
-  data->last_host = strdup (host);
-
-  array_append (data->array, host);
-
-  ident_destroy (ident);
   return (0);
 } /* }}} int print_host_list_callback */
 
 static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
 {
-  print_host_list_data_t data;
-  int hosts_argc;
-  char **hosts_argv;
-  int i;
-
-  data.array = array_create ();
-  data.last_host = NULL;
-
-  gl_instance_get_all (print_host_list_callback, &data);
-
-  free (data.last_host);
-  data.last_host = NULL;
-
-  array_sort (data.array);
-
-  hosts_argc = array_argc (data.array);
-  hosts_argv = array_argv (data.array);
-
-  if (hosts_argc < 1)
-  {
-    array_destroy (data.array);
-    return (0);
-  }
-
   printf ("<div><h3>List of hosts</h3>\n"
       "<ul id=\"host-list\">\n");
-  for (i = 0; i < hosts_argc; i++)
-  {
-    char *host = hosts_argv[i];
-    char *host_html;
-
-    if ((data.last_host != NULL) && (strcmp (data.last_host, host) == 0))
-      continue;
-    data.last_host = host;
-
-    host_html = html_escape (host);
-
-    printf ("  <li><a href=\"%s?action=list_graphs&q=host:%s\">%s</a></li>\n",
-        script_name (), host_html, host_html);
-
-    free (host_html);
-  }
+  gl_foreach_host (print_host_list_callback, /* user data = */ NULL);
   printf ("</ul></div>\n");
-
-  array_destroy (data.array);
 
   return (0);
 } /* }}} int print_host_list */
