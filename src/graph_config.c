@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include "graph_config.h"
+#include "graph.h"
 #include "graph_list.h"
 #include "oconfig.h"
 #include "common.h"

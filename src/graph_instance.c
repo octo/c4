@@ -2,8 +2,10 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <assert.h>
 
 #include "graph_instance.h"
+#include "graph.h"
 #include "graph_def.h"
 #include "graph_ident.h"
 #include "graph_list.h"

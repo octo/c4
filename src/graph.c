@@ -8,8 +8,9 @@
 #include <assert.h>
 
 #include "graph.h"
-#include "graph_list.h"
 #include "graph_ident.h"
+#include "graph_instance.h"
+#include "graph_list.h"
 #include "graph_def.h"
 #include "graph_config.h"
 #include "common.h"

@@ -7,6 +7,7 @@
 #include "common.h"
 #include "graph.h"
 #include "graph_ident.h"
+#include "graph_instance.h"
 #include "graph_list.h"
 #include "utils_cgi.h"
 

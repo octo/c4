@@ -12,6 +12,8 @@
 
 #include "common.h"
 #include "action_graph.h"
+#include "graph.h"
+#include "graph_instance.h"
 #include "graph_list.h"
 #include "utils_cgi.h"
 #include "utils_array.h"
