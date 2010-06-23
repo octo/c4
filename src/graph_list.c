@@ -278,6 +278,30 @@ int gl_search (const char *term, graph_inst_callback_t callback, /* {{{ */
   return (0);
 } /* }}} int gl_search */
 
+int gl_search_field (graph_ident_field_t field, /* {{{ */
+    const char *field_value,
+    graph_inst_callback_t callback, void *user_data)
+{
+  size_t i;
+
+  if ((field_value == NULL) || (callback == NULL))
+    return (EINVAL);
+
+  for (i = 0; i < gl_active_num; i++)
+  {
+    int status;
+
+    status = graph_inst_search_field (gl_active[i],
+        field, field_value,
+        /* callback  = */ callback,
+        /* user data = */ user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_search_field */
+
 int gl_update (void) /* {{{ */
 {
   time_t now;
