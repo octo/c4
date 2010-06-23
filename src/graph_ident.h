@@ -33,12 +33,12 @@ graph_ident_t *ident_copy_with_selector (const graph_ident_t *selector,
 
 void ident_destroy (graph_ident_t *ident);
 
-const char *ident_get_host (graph_ident_t *ident);
-const char *ident_get_plugin (graph_ident_t *ident);
-const char *ident_get_plugin_instance (graph_ident_t *ident);
-const char *ident_get_type (graph_ident_t *ident);
-const char *ident_get_type_instance (graph_ident_t *ident);
-const char *ident_get_field (graph_ident_t *ident,
+const char *ident_get_host (const graph_ident_t *ident);
+const char *ident_get_plugin (const graph_ident_t *ident);
+const char *ident_get_plugin_instance (const graph_ident_t *ident);
+const char *ident_get_type (const graph_ident_t *ident);
+const char *ident_get_type_instance (const graph_ident_t *ident);
+const char *ident_get_field (const graph_ident_t *ident,
     graph_ident_field_t field);
 
 int ident_set_host (graph_ident_t *ident, const char *host);

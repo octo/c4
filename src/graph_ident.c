@@ -203,7 +203,7 @@ void ident_destroy (graph_ident_t *ident) /* {{{ */
 } /* }}} void ident_destroy */
 
 /* ident_get_* methods {{{ */
-const char *ident_get_host (graph_ident_t *ident) /* {{{ */
+const char *ident_get_host (const graph_ident_t *ident) /* {{{ */
 {
   if (ident == NULL)
     return (NULL);
@@ -211,7 +211,7 @@ const char *ident_get_host (graph_ident_t *ident) /* {{{ */
   return (ident->host);
 } /* }}} char *ident_get_host */
 
-const char *ident_get_plugin (graph_ident_t *ident) /* {{{ */
+const char *ident_get_plugin (const graph_ident_t *ident) /* {{{ */
 {
   if (ident == NULL)
     return (NULL);
@@ -219,7 +219,7 @@ const char *ident_get_plugin (graph_ident_t *ident) /* {{{ */
   return (ident->plugin);
 } /* }}} char *ident_get_plugin */
 
-const char *ident_get_plugin_instance (graph_ident_t *ident) /* {{{ */
+const char *ident_get_plugin_instance (const graph_ident_t *ident) /* {{{ */
 {
   if (ident == NULL)
     return (NULL);
@@ -227,7 +227,7 @@ const char *ident_get_plugin_instance (graph_ident_t *ident) /* {{{ */
   return (ident->plugin_instance);
 } /* }}} char *ident_get_plugin_instance */
 
-const char *ident_get_type (graph_ident_t *ident) /* {{{ */
+const char *ident_get_type (const graph_ident_t *ident) /* {{{ */
 {
   if (ident == NULL)
     return (NULL);
@@ -235,7 +235,7 @@ const char *ident_get_type (graph_ident_t *ident) /* {{{ */
   return (ident->type);
 } /* }}} char *ident_get_type */
 
-const char *ident_get_type_instance (graph_ident_t *ident) /* {{{ */
+const char *ident_get_type_instance (const graph_ident_t *ident) /* {{{ */
 {
   if (ident == NULL)
     return (NULL);
@@ -243,7 +243,7 @@ const char *ident_get_type_instance (graph_ident_t *ident) /* {{{ */
   return (ident->type_instance);
 } /* }}} char *ident_get_type_instance */
 
-const char *ident_get_field (graph_ident_t *ident, /* {{{ */
+const char *ident_get_field (const graph_ident_t *ident, /* {{{ */
     graph_ident_field_t field)
 {
   if ((ident == NULL) || (field >= _GIF_LAST))
