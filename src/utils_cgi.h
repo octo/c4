@@ -19,6 +19,9 @@ struct page_callbacks_s
 };
 typedef struct page_callbacks_s page_callbacks_t;
 
+struct param_list_s;
+typedef struct param_list_s param_list_t;
+
 #define PAGE_CALLBACKS_INIT \
 { NULL, NULL, NULL, \
   NULL, NULL, NULL, \
@@ -29,7 +32,20 @@ void param_finish (void);
 
 const char *param (const char *key);
 
-int uri_escape (char *dst, const char *src, size_t size);
+/* Create a new parameter list from "query_string". If "query_string" is NULL,
+ * the "QUERY_STRING" will be used. */
+param_list_t *param_create (const char *query_string);
+param_list_t *param_clone (param_list_t *pl);
+void param_destroy (param_list_t *pl);
+const char *param_get (param_list_t *pl, const char *name);
+int param_set (param_list_t *pl,
+    const char *name, const char *value);
+const char *param_as_string (param_list_t *pl);
+int param_print_hidden (param_list_t *pl);
+
+char *uri_escape (const char *string);
+char *uri_escape_buffer (char *buffer, size_t buffer_size);
+char *uri_escape_copy (char *dest, const char *src, size_t n);
 
 const char *script_name (void);
 
