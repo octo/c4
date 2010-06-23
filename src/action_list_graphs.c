@@ -227,7 +227,7 @@ static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
 
     host_html = html_escape (host);
 
-    printf ("  <li><a href=\"%s?action=list_graphs&q=%s\">%s</a></li>\n",
+    printf ("  <li><a href=\"%s?action=list_graphs&q=host:%s\">%s</a></li>\n",
         script_name (), host_html, host_html);
 
     free (host_html);
