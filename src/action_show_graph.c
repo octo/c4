@@ -28,7 +28,8 @@ struct show_graph_data_s
 };
 typedef struct show_graph_data_s show_graph_data_t;
 
-static void show_breadcrump_field (const char *str) /* {{{ */
+static void show_breadcrump_field (const char *str, /* {{{ */
+    const char *field_name)
 {
   if ((str == NULL) || (str[0] == 0))
     printf ("<em>none</em>");
@@ -39,8 +40,14 @@ static void show_breadcrump_field (const char *str) /* {{{ */
   else
   {
     char *str_html = html_escape (str);
-    printf ("<a href=\"%s?action=list_graphs;q=%s\">%s</a>",
-        script_name (), str_html, str_html);
+
+    if (field_name != NULL)
+      printf ("<a href=\"%s?action=list_graphs;q=%s:%s\">%s</a>",
+          script_name (), field_name, str_html, str_html);
+    else
+      printf ("<a href=\"%s?action=list_graphs;q=%s\">%s</a>",
+          script_name (), str_html, str_html);
+
     free (str_html);
   }
 } /* }}} void show_breadcrump_field */
@@ -62,15 +69,15 @@ static int show_breadcrump (show_graph_data_t *data) /* {{{ */
   }
 
   printf ("<div class=\"breadcrump\">%s: &quot;", prefix);
-  show_breadcrump_field (ident_get_host (ident));
+  show_breadcrump_field (ident_get_host (ident), "host");
   printf ("&nbsp;/ ");
-  show_breadcrump_field (ident_get_plugin (ident));
+  show_breadcrump_field (ident_get_plugin (ident), "plugin");
   printf ("&nbsp;&ndash; ");
-  show_breadcrump_field (ident_get_plugin_instance (ident));
+  show_breadcrump_field (ident_get_plugin_instance (ident), NULL);
   printf ("&nbsp;/ ");
-  show_breadcrump_field (ident_get_type (ident));
+  show_breadcrump_field (ident_get_type (ident), "type");
   printf ("&nbsp;&ndash; ");
-  show_breadcrump_field (ident_get_type_instance (ident));
+  show_breadcrump_field (ident_get_type_instance (ident), NULL);
   printf ("&quot;</div>\n");
 
   return (0);

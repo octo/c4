@@ -111,7 +111,20 @@ static int print_search_result (void *user_data) /* {{{ */
   else
   {
     char *term_lc = strtolower_copy (pg_data->search_term);
-    gl_search (term_lc, print_graph_inst_html, /* user_data = */ &cb_data);
+
+    if (strncmp ("host:", term_lc, strlen ("host:")) == 0)
+      gl_search_field (GIF_HOST, term_lc + strlen ("host:"),
+          print_graph_inst_html, /* user_data = */ &cb_data);
+    else if (strncmp ("plugin:", term_lc, strlen ("plugin:")) == 0)
+      gl_search_field (GIF_PLUGIN, term_lc + strlen ("plugin:"),
+          print_graph_inst_html, /* user_data = */ &cb_data);
+    else if (strncmp ("type:", term_lc, strlen ("type:")) == 0)
+      gl_search_field (GIF_TYPE, term_lc + strlen ("type:"),
+          print_graph_inst_html, /* user_data = */ &cb_data);
+    else
+      gl_search (term_lc,
+          print_graph_inst_html, /* user_data = */ &cb_data);
+
     free (term_lc);
   }
 
@@ -214,7 +227,7 @@ static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
 
     host_html = html_escape (host);
 
-    printf ("  <li><a href=\"%s?action=list_graphs&q=%s\">%s</a></li>\n",
+    printf ("  <li><a href=\"%s?action=list_graphs&q=host:%s\">%s</a></li>\n",
         script_name (), host_html, host_html);
 
     free (host_html);

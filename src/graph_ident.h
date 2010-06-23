@@ -10,6 +10,17 @@
 #define IS_ANY(str) (((str) != NULL) && (strcasecmp (ANY_TOKEN, (str)) == 0))
 #define IS_ALL(str) (((str) != NULL) && (strcasecmp (ALL_TOKEN, (str)) == 0))
 
+enum graph_ident_field_e
+{
+  GIF_HOST,
+  GIF_PLUGIN,
+  GIF_PLUGIN_INSTANCE,
+  GIF_TYPE,
+  GIF_TYPE_INSTANCE,
+  _GIF_LAST
+};
+typedef enum graph_ident_field_e graph_ident_field_t;
+
 graph_ident_t *ident_create (const char *host,
     const char *plugin, const char *plugin_instance,
     const char *type, const char *type_instance);
@@ -27,6 +38,8 @@ const char *ident_get_plugin (graph_ident_t *ident);
 const char *ident_get_plugin_instance (graph_ident_t *ident);
 const char *ident_get_type (graph_ident_t *ident);
 const char *ident_get_type_instance (graph_ident_t *ident);
+const char *ident_get_field (graph_ident_t *ident,
+    graph_ident_field_t field);
 
 int ident_set_host (graph_ident_t *ident, const char *host);
 int ident_set_plugin (graph_ident_t *ident, const char *plugin);

@@ -267,13 +267,33 @@ int graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
   return (def_append (cfg->defs, def));
 } /* }}} int graph_add_def */
 
-_Bool graph_matches (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
+_Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {
   if ((cfg == NULL) || (ident == NULL))
     return (0);
 
   return (ident_matches (cfg->select, ident));
-} /* }}} _Bool graph_matches */
+} /* }}} _Bool graph_matches_ident */
+
+_Bool graph_matches_field (graph_config_t *cfg, /* {{{ */
+    graph_ident_field_t field, const char *field_value)
+{
+  const char *selector_value;
+
+  if ((cfg == NULL) || (field_value == NULL))
+    return (0);
+
+  selector_value = ident_get_field (cfg->select, field);
+  if (selector_value == NULL)
+    return (0);
+
+  if (IS_ALL (selector_value) || IS_ANY (selector_value))
+    return (1);
+  else if (strcasecmp (selector_value, field_value) == 0)
+    return (1);
+
+  return (0);
+} /* }}} _Bool graph_matches_field */
 
 int graph_inst_foreach (graph_config_t *cfg, /* {{{ */
 		inst_callback_t cb, void *user_data)
@@ -362,6 +382,43 @@ int graph_inst_search (graph_config_t *cfg, const char *term, /* {{{ */
 
   return (0);
 } /* }}} int graph_inst_search */
+
+int graph_inst_search_field (graph_config_t *cfg, /* {{{ */
+    graph_ident_field_t field, const char *field_value,
+    graph_inst_callback_t callback, void *user_data)
+{
+  size_t i;
+  const char *selector_field;
+  _Bool need_check_instances = 0;
+
+  if ((cfg == NULL) || (field_value == NULL) || (callback == NULL))
+    return (EINVAL);
+
+  if (!graph_matches_field (cfg, field, field_value))
+    return (0);
+
+  selector_field = ident_get_field (cfg->select, field);
+  if (selector_field == NULL)
+    return (-1);
+
+  if (IS_ALL (selector_field) || IS_ANY (selector_field))
+    need_check_instances = 1;
+
+  for (i = 0; i < cfg->instances_num; i++)
+  {
+    int status;
+
+    if (need_check_instances
+        && !inst_matches_field (cfg->instances[i], field, field_value))
+      continue;
+
+    status = (*callback) (cfg, cfg->instances[i], user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int graph_inst_search_field */
 
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {

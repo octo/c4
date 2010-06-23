@@ -242,6 +242,26 @@ const char *ident_get_type_instance (graph_ident_t *ident) /* {{{ */
 
   return (ident->type_instance);
 } /* }}} char *ident_get_type_instance */
+
+const char *ident_get_field (graph_ident_t *ident, /* {{{ */
+    graph_ident_field_t field)
+{
+  if ((ident == NULL) || (field >= _GIF_LAST))
+    return (NULL);
+
+  if (field == GIF_HOST)
+    return (ident->host);
+  else if (field == GIF_PLUGIN)
+    return (ident->plugin);
+  else if (field == GIF_PLUGIN_INSTANCE)
+    return (ident->plugin_instance);
+  else if (field == GIF_TYPE)
+    return (ident->type);
+  else if (field == GIF_TYPE_INSTANCE)
+    return (ident->type_instance);
+  else
+    return (NULL); /* never reached */
+} /* }}} const char *ident_get_field */
 /* }}} ident_get_* methods */
 
 /* ident_set_* methods {{{ */
