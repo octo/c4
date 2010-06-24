@@ -217,7 +217,7 @@ int graph_get_params (graph_config_t *cfg, /* {{{ */
 #define COPY_FIELD(field) do {                                       \
   const char *str = ident_get_##field (cfg->select);                 \
   char uri_str[1024];                                                \
-  uri_escape (uri_str, str, sizeof (uri_str));                       \
+  uri_escape_copy (uri_str, str, sizeof (uri_str));                  \
   strlcat (buffer, #field, buffer_size);                             \
   strlcat (buffer, "=", buffer_size);                                \
   strlcat (buffer, uri_str, buffer_size);                            \
