@@ -212,7 +212,7 @@ static int show_instance (void *user_data) /* {{{ */
   return (0);
 } /* }}} int show_instance */
 
-static int show_graph (void *user_data)
+static int show_graph (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
 
