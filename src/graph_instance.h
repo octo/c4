@@ -19,6 +19,9 @@ int inst_add_file (graph_instance_t *inst, const graph_ident_t *file);
 
 graph_instance_t *inst_get_selected (graph_config_t *cfg);
 
+int inst_get_all_selected (graph_config_t *cfg,
+    graph_inst_callback_t callback, void *user_data);
+
 int inst_get_params (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);
 

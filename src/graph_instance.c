@@ -286,6 +286,29 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
   return (inst);
 } /* }}} graph_instance_t *inst_get_selected */
 
+int inst_get_all_selected (graph_config_t *cfg, /* {{{ */
+    graph_inst_callback_t callback, void *user_data)
+{
+  graph_ident_t *ident;
+  int status;
+
+  if ((cfg == NULL) || (callback == NULL))
+    return (EINVAL);
+
+  ident = inst_get_selector_from_params ();
+  if (ident == NULL)
+  {
+    fprintf (stderr, "inst_get_all_selected: "
+        "inst_get_selector_from_params failed\n");
+    return (EINVAL);
+  }
+
+  status = graph_inst_find_all_matching (cfg, ident, callback, user_data);
+
+  ident_destroy (ident);
+  return (status);
+} /* }}} int inst_get_all_selected */
+
 int inst_get_rrdargs (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
     str_array_t *args)
