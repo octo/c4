@@ -46,6 +46,10 @@ graph_instance_t *graph_inst_find_exact (graph_config_t *cfg,
 graph_instance_t *graph_inst_find_matching (graph_config_t *cfg,
     const graph_ident_t *ident);
 
+int graph_inst_find_all_matching (graph_config_t *cfg,
+    const graph_ident_t *ident,
+    graph_inst_callback_t callback, void *user_data);
+
 int graph_inst_search (graph_config_t *cfg, const char *term,
     graph_inst_callback_t callback, void *user_data);
 

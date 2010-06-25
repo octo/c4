@@ -342,6 +342,30 @@ graph_instance_t *graph_inst_find_matching (graph_config_t *cfg, /* {{{ */
   return (NULL);
 } /* }}} graph_instance_t *graph_inst_find_matching */
 
+int graph_inst_find_all_matching (graph_config_t *cfg, /* {{{ */
+    const graph_ident_t *ident,
+    graph_inst_callback_t callback, void *user_data)
+{
+  size_t i;
+
+  if ((cfg == NULL) || (ident == NULL) || (callback == NULL))
+    return (EINVAL);
+
+  for (i = 0; i < cfg->instances_num; i++)
+  {
+    int status;
+
+    if (!inst_matches_ident (cfg->instances[i], ident))
+      continue;
+
+    status = (*callback) (cfg, cfg->instances[i], user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int graph_inst_find_all_matching */
+
 int graph_inst_search (graph_config_t *cfg, const char *term, /* {{{ */
     graph_inst_callback_t cb,
     void *user_data)
