@@ -151,6 +151,36 @@ static const char *get_part_from_param (const char *prim_key, /* {{{ */
   return (param (sec_key));
 } /* }}} const char *get_part_from_param */
 
+static graph_ident_t *inst_get_selector_from_params (void) /* {{{ */
+{
+  const char *host = get_part_from_param ("inst_host", "host");
+  const char *plugin = get_part_from_param ("inst_plugin", "plugin");
+  const char *plugin_instance = get_part_from_param ("inst_plugin_instance",
+      "plugin_instance");
+  const char *type = get_part_from_param ("inst_type", "type");
+  const char *type_instance = get_part_from_param ("inst_type_instance",
+      "type_instance");
+
+  graph_ident_t *ident;
+
+  if ((host == NULL)
+      || (plugin == NULL) || (plugin_instance == NULL)
+      || (type == NULL) || (type_instance == NULL))
+  {
+    fprintf (stderr, "inst_get_selected: A parameter is NULL\n");
+    return (NULL);
+  }
+
+  ident = ident_create (host, plugin, plugin_instance, type, type_instance);
+  if (ident == NULL)
+  {
+    fprintf (stderr, "inst_get_selected: ident_create failed\n");
+    return (NULL);
+  }
+
+  return (ident);
+} /* }}} graph_ident_t *inst_get_selector_from_params */
+
 /*
  * Public functions
  */
@@ -231,14 +261,6 @@ int inst_add_file (graph_instance_t *inst, /* {{{ */
 
 graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
 {
-  const char *host = get_part_from_param ("inst_host", "host");
-  const char *plugin = get_part_from_param ("inst_plugin", "plugin");
-  const char *plugin_instance = get_part_from_param ("inst_plugin_instance",
-      "plugin_instance");
-  const char *type = get_part_from_param ("inst_type", "type");
-  const char *type_instance = get_part_from_param ("inst_type_instance",
-      "type_instance");
-
   graph_ident_t *ident;
   graph_instance_t *inst;
 
@@ -251,15 +273,7 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
     return (NULL);
   }
 
-  if ((host == NULL)
-      || (plugin == NULL) || (plugin_instance == NULL)
-      || (type == NULL) || (type_instance == NULL))
-  {
-    DEBUG ("inst_get_selected: A parameter is NULL.\n");
-    return (NULL);
-  }
-
-  ident = ident_create (host, plugin, plugin_instance, type, type_instance);
+  ident = inst_get_selector_from_params ();
   if (ident == NULL)
   {
     fprintf (stderr, "inst_get_selected: ident_create failed\n");
@@ -267,8 +281,8 @@ graph_instance_t *inst_get_selected (graph_config_t *cfg) /* {{{ */
   }
 
   inst = graph_inst_find_exact (cfg, ident);
-  ident_destroy (ident);
 
+  ident_destroy (ident);
   return (inst);
 } /* }}} graph_instance_t *inst_get_selected */
 
