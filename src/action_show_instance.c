@@ -136,7 +136,7 @@ static int show_instance_list_cb (graph_instance_t *inst, /* {{{ */
   html_escape_buffer (params, sizeof (params));
 
   printf ("    <li class=\"instance\">"
-      "<a href=\"%s?action=show_graph;%s\">%s</a></li>\n",
+      "<a href=\"%s?action=show_instance;%s\">%s</a></li>\n",
       script_name (), params, descr);
 
   return (0);
@@ -157,7 +157,7 @@ static int show_instance_list (void *user_data) /* {{{ */
   html_escape_buffer (params, sizeof (params));
 
   printf ("<ul class=\"graph_list\">\n"
-      "  <li class=\"graph\"><a href=\"%s?action=show_graph;%s\">%s</a>\n"
+      "  <li class=\"graph\"><a href=\"%s?action=show_instance;%s\">%s</a>\n"
       "  <ul class=\"instance_list\">\n",
       script_name (), params, title);
 
@@ -211,14 +211,6 @@ static int show_instance (void *user_data) /* {{{ */
 
   return (0);
 } /* }}} int show_instance */
-
-static int show_graph (void *user_data) /* {{{ */
-{
-  show_graph_data_t *data = user_data;
-
-  show_breadcrump (data);
-  return (show_instance_list (user_data));
-} /* }}} int show_graph */
 
 int action_show_instance (void) /* {{{ */
 {

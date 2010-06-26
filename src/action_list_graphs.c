@@ -79,7 +79,7 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   inst_describe (cfg, inst, desc, sizeof (desc));
   html_escape_buffer (desc, sizeof (desc));
 
-  printf ("    <li class=\"instance\"><a href=\"%s?action=show_graph;%s\">%s</a></li>\n",
+  printf ("    <li class=\"instance\"><a href=\"%s?action=show_instance;%s\">%s</a></li>\n",
       script_name (), params, desc);
 
   return (0);

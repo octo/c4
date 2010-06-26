@@ -37,7 +37,7 @@ static const action_t actions[] =
   { "graph",       action_graph },
   { "list_graphs", action_list_graphs },
   { "search_json", action_search_json },
-  { "show_graph",  action_show_instance },
+  { "show_instance", action_show_instance },
   { "usage",       action_usage }
 };
 static const size_t actions_num = sizeof (actions) / sizeof (actions[0]);
