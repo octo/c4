@@ -573,6 +573,8 @@ int html_print_page (const char *title, /* {{{ */
       "        <td id=\"layout-top-left\">");
   if (cb->top_left != NULL)
     (*cb->top_left) (user_data);
+  else
+    html_print_logo (NULL);
   printf ("</td>\n"
       "        <td id=\"layout-top-center\">");
   if (cb->top_center != NULL)
@@ -620,6 +622,16 @@ int html_print_page (const char *title, /* {{{ */
   free (title_html);
   return (0);
 } /* }}} int html_print_page */
+
+int html_print_logo (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  printf ("<a href=\"%s?action=list_graphs\" id=\"logo-canvas\">\n"
+      "  <h1>c<sup>4</sup></h1>\n"
+      "  <div id=\"logo-subscript\">collection&nbsp;4</div>\n"
+      "</a>\n");
+
+  return (0);
+} /* }}} int html_print_search_box */
 
 int html_print_search_box (__attribute__((unused)) void *user_data) /* {{{ */
 {

@@ -35,6 +35,24 @@ body
 	vertical-align: top;
 }
 
+#logo-canvas
+{
+	display: block;
+	text-decoration: none;
+	color: black;
+}
+
+#logo-canvas h1
+{
+	margin: 0;
+}
+
+#logo-subscript
+{
+	font-size: 90%;
+	font-style: italic;
+}
+
 #search-form
 {
 	position: relative;
