@@ -169,46 +169,46 @@ static int show_instance_list (void *user_data) /* {{{ */
   return (0);
 } /* }}} int show_instance_list */
 
-static int show_instance (void *user_data) /* {{{ */
+static int show_instance_cb (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    __attribute__((unused)) void *user_data)
 {
-  show_graph_data_t *data = user_data;
   char title[128];
   char descr[128];
-  param_list_t *pl;
-  char *params;
-  char params_html[1024];
-
-  show_breadcrump (data);
+  char params[1024];
 
   memset (title, 0, sizeof (title));
-  graph_get_title (data->cfg, title, sizeof (title));
+  graph_get_title (cfg, title, sizeof (title));
   html_escape_buffer (title, sizeof (title));
 
   memset (descr, 0, sizeof (descr));
-  inst_describe (data->cfg, data->inst, descr, sizeof (descr));
+  inst_describe (cfg, inst, descr, sizeof (descr));
   html_escape_buffer (descr, sizeof (descr));
 
-  pl = param_create (/* query string = */ NULL);
-  param_set (pl, "action", "graph");
-  param_set (pl, "button", NULL);
+  memset (params, 0, sizeof (params));
+  inst_get_params (cfg, inst, params, sizeof (params));
+  html_escape_buffer (params, sizeof (params));
 
-  params = param_as_string (pl);
-  if (params == NULL)
-  {
-    printf ("<div class=\"error\">param_as_string failed.</div>\n");
-    param_destroy (pl);
-    return (-1);
-  }
-
-  memset (params_html, 0, sizeof (params_html));
-  html_escape_copy (params_html, params, sizeof (params_html));
-
-  printf ("<div class=\"graph-img\"><img src=\"%s?%s\" "
+  printf ("<h3>Instance &quot;%s&quot;</h3>\n", descr);
+  printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s\" "
       "title=\"%s / %s\" /></div>\n",
       script_name (), params, title, descr);
 
-  param_destroy (pl);
-  free (params);
+  return (0);
+} /* }}} int show_instance_cb */
+
+static int show_instance (void *user_data) /* {{{ */
+{
+  show_graph_data_t *data = user_data;
+  int status;
+
+  fprintf (stderr, "show_instance: Calling inst_get_all_selected()\n");
+  status = inst_get_all_selected (data->cfg,
+      /* callback = */ show_instance_cb, /* user data = */ NULL);
+  if (status != 0)
+    fprintf (stderr, "show_instance: inst_get_all_selected failed "
+        "with status %i\n", status);
+
   return (0);
 } /* }}} int show_instance */
 
@@ -225,42 +225,24 @@ int action_show_graph (void) /* {{{ */
   page_callbacks_t pg_callbacks = PAGE_CALLBACKS_INIT;
   show_graph_data_t pg_data;
 
+  char tmp[128];
   char title[128];
 
   pg_data.cfg = gl_graph_get_selected ();
   if (pg_data.cfg == NULL)
     OUTPUT_ERROR ("gl_graph_get_selected () failed.\n");
 
-  memset (title, 0, sizeof (title));
-  graph_get_title (pg_data.cfg, title, sizeof (title));
+  memset (tmp, 0, sizeof (tmp));
+  graph_get_title (pg_data.cfg, tmp, sizeof (tmp));
+  snprintf (title, sizeof (title), "Graph \"%s\"", tmp);
+  title[sizeof (title) - 1] = 0;
 
-  pg_data.inst = inst_get_selected (pg_data.cfg);
-  if (pg_data.inst != NULL)
-  {
-    char descr[128];
-    char html_title[128];
+  pg_callbacks.top_right = html_print_search_box;
+  pg_callbacks.middle_center = show_instance;
+  pg_callbacks.middle_left = show_instance_list;
+  pg_callbacks.middle_right = show_time_selector;
 
-    memset (descr, 0, sizeof (descr));
-    inst_describe (pg_data.cfg, pg_data.inst, descr, sizeof (descr));
-
-    snprintf (html_title, sizeof (html_title), "Graph \"%s / %s\"",
-        title, descr);
-    html_title[sizeof (html_title) - 1] = 0;
-
-    pg_callbacks.top_right = html_print_search_box;
-    pg_callbacks.middle_center = show_instance;
-    pg_callbacks.middle_left = show_instance_list;
-    pg_callbacks.middle_right = show_time_selector;
-
-    html_print_page (html_title, &pg_callbacks, &pg_data);
-  }
-  else /* if (pg_data.inst == NULL) */
-  {
-    pg_callbacks.top_right = html_print_search_box;
-    pg_callbacks.middle_center = show_graph;
-
-    html_print_page (title, &pg_callbacks, &pg_data);
-  }
+  html_print_page (title, &pg_callbacks, &pg_data);
 
   return (0);
 } /* }}} int action_graph */
