@@ -6,7 +6,7 @@
 #include <inttypes.h>
 #include <assert.h>
 
-#include "action_show_graph.h"
+#include "action_show_instance.h"
 #include "common.h"
 #include "graph.h"
 #include "graph_ident.h"
@@ -220,7 +220,7 @@ static int show_graph (void *user_data) /* {{{ */
   return (show_instance_list (user_data));
 } /* }}} int show_graph */
 
-int action_show_graph (void) /* {{{ */
+int action_show_instance (void) /* {{{ */
 {
   page_callbacks_t pg_callbacks = PAGE_CALLBACKS_INIT;
   show_graph_data_t pg_data;
@@ -245,6 +245,6 @@ int action_show_graph (void) /* {{{ */
   html_print_page (title, &pg_callbacks, &pg_data);
 
   return (0);
-} /* }}} int action_graph */
+} /* }}} int action_show_instance */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
