@@ -377,12 +377,8 @@ int ident_compare (const graph_ident_t *i0, /* {{{ */
 _Bool ident_matches (const graph_ident_t *selector, /* {{{ */
     const graph_ident_t *ident)
 {
-  if ((selector == NULL) && (ident == NULL))
+  if ((selector == NULL) || (ident == NULL))
     return (0);
-  else if (selector == NULL)
-    return (-1);
-  else if (ident == NULL)
-    return (1);
 
   if (!part_matches (selector->host, ident->host))
     return (0);

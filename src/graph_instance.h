@@ -32,7 +32,13 @@ graph_ident_t *inst_get_selector (graph_instance_t *inst);
 
 int inst_compare_ident (graph_instance_t *inst, const graph_ident_t *ident);
 
-_Bool inst_matches_ident (graph_instance_t *inst, const graph_ident_t *ident);
+/* Returns true if "ident" matches the instance's selector. */
+_Bool inst_ident_matches (graph_instance_t *inst, const graph_ident_t *ident);
+
+/* Returns true if the instance's selector matches the (more general)
+ * "selector" ident. */
+_Bool inst_matches_ident (graph_instance_t *inst,
+    const graph_ident_t *selector);
 
 _Bool inst_matches_string (graph_config_t *cfg, graph_instance_t *inst,
     const char *term);

@@ -419,13 +419,22 @@ int inst_compare_ident (graph_instance_t *inst, /* {{{ */
   return (ident_compare (inst->select, ident));
 } /* }}} int inst_compare_ident */
 
-_Bool inst_matches_ident (graph_instance_t *inst, /* {{{ */
+_Bool inst_ident_matches (graph_instance_t *inst, /* {{{ */
     const graph_ident_t *ident)
 {
   if ((inst == NULL) || (ident == NULL))
     return (0);
 
   return (ident_matches (inst->select, ident));
+} /* }}} _Bool inst_ident_matches */
+
+_Bool inst_matches_ident (graph_instance_t *inst, /* {{{ */
+    const graph_ident_t *ident)
+{
+  if ((inst == NULL) || (ident == NULL))
+    return (0);
+
+  return (ident_matches (ident, inst->select));
 } /* }}} _Bool inst_matches_ident */
 
 _Bool inst_matches_string (graph_config_t *cfg, /* {{{ */

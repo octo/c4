@@ -336,7 +336,7 @@ graph_instance_t *graph_inst_find_matching (graph_config_t *cfg, /* {{{ */
     return (NULL);
 
   for (i = 0; i < cfg->instances_num; i++)
-    if (inst_matches_ident (cfg->instances[i], ident))
+    if (inst_ident_matches (cfg->instances[i], ident))
       return (cfg->instances[i]);
 
   return (NULL);
