@@ -1,7 +1,7 @@
 function format_instance(inst)
 {
   return ("<li class=\"instance\"><a href=\"" + location.pathname
-      + "?action=show_graph;" + inst.params + "\">" + inst.description
+      + "?action=show_instance;" + inst.params + "\">" + inst.description
       + "</a></li>");
 }
 
