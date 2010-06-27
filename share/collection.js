@@ -81,6 +81,22 @@ $(document).ready(function() {
     {
       update_search_suggestions ();
     });
+
+    $(".graph-img").append ("<div class=\"graph-buttons presets\">"
+        + "<div class=\"graph-button\" >H</div>"
+        + "<div class=\"graph-button\" >D</div>"
+        + "<div class=\"graph-button\" >W</div>"
+        + "<div class=\"graph-button\" >M</div>"
+        + "<div class=\"graph-button\" >Y</div>"
+        + "<div class=\"graph-button\" >!</div>"
+        + "</div>"
+        + "<div class=\"graph-buttons navigation\">"
+        + "<div class=\"graph-button\" >←</div>"
+        + "<div class=\"graph-button\" >−</div>"
+        + "<div class=\"graph-button\" >+</div>"
+        + "<div class=\"graph-button\" >→</div>"
+        + "</div>"
+        );
 });
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

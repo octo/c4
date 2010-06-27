@@ -47,6 +47,13 @@ a:hover
 	vertical-align: top;
 }
 
+#layout-middle-center h1,
+#layout-middle-center h2,
+#layout-middle-center h3
+{
+	clear: both;
+}
+
 #logo-canvas
 {
 	display: block;
@@ -153,3 +160,54 @@ a:hover
 	border-bottom: 1px solid silver;
 	background-color: rgb(252,252,252);
 }
+
+.graph-img
+{
+	position: relative;
+	float: left;
+	clear: both;
+}
+
+.graph-img .graph-buttons.navigation
+{
+	position: absolute;
+	right: 5px;
+	bottom: 5px;
+}
+
+.graph-img .graph-buttons.presets
+{
+	position: absolute;
+	right: 5px;
+	top: 5px;
+}
+
+.graph-buttons .graph-button
+{
+	width: 1em;
+	height: 1em;
+	border: 1px solid gray;
+	text-align: center;
+	background-color: rgba(255,255,255,.8);
+	color: gray;
+	cursor: pointer;
+}
+
+.graph-buttons .graph-button:hover
+{
+	border: 1px solid black;
+	background-color: white;
+	color: black;
+}
+
+.graph-buttons.navigation .graph-button
+{
+	float: left;
+	margin-left: 1px;
+}
+
+.graph-buttons.presets .graph-button
+{
+	margin-bottom: 1px;
+}
+
