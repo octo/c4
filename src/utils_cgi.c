@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -549,7 +551,9 @@ int html_print_page (const char *title, /* {{{ */
 {
   char *title_html;
 
-  printf ("Content-Type: text/html\n\n");
+  printf ("Content-Type: text/html\n"
+      "X-Generator: "PACKAGE_STRING"\n"
+      "\n\n");
 
   if (title == NULL)
     title = "c4: collection4 graph interface";
