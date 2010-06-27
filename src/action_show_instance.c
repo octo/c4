@@ -23,10 +23,13 @@
   return (0);                              \
 } while (0)
 
+#define MAX_SHOW_GRAPHS 10
+
 struct show_graph_data_s
 {
   graph_config_t *cfg;
   graph_instance_t *inst;
+  int graph_count;
 };
 typedef struct show_graph_data_s show_graph_data_t;
 
@@ -54,20 +57,21 @@ static void show_breadcrump_field (const char *str, /* {{{ */
   }
 } /* }}} void show_breadcrump_field */
 
-static int show_breadcrump (show_graph_data_t *data) /* {{{ */
+static int show_breadcrump (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst)
 {
   graph_ident_t *ident;
   char *prefix;
 
-  if (data->inst != NULL)
+  if (inst != NULL)
   {
     prefix = "Instance";
-    ident = inst_get_selector (data->inst);
+    ident = inst_get_selector (inst);
   }
   else
   {
     prefix = "Graph";
-    ident = graph_get_selector (data->cfg);
+    ident = graph_get_selector (cfg);
   }
 
   printf ("<div class=\"breadcrump\">%s: &quot;", prefix);
@@ -82,6 +86,7 @@ static int show_breadcrump (show_graph_data_t *data) /* {{{ */
   show_breadcrump_field (ident_get_type_instance (ident), "type_instance");
   printf ("&quot;</div>\n");
 
+  ident_destroy (ident);
   return (0);
 } /* }}} int show_breadcrump */
 
@@ -171,8 +176,9 @@ static int show_instance_list (void *user_data) /* {{{ */
 
 static int show_instance_cb (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
-    __attribute__((unused)) void *user_data)
+    void *user_data)
 {
+  show_graph_data_t *data = user_data;
   char title[128];
   char descr[128];
   char params[1024];
@@ -190,9 +196,19 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
   html_escape_buffer (params, sizeof (params));
 
   printf ("<h3>Instance &quot;%s&quot;</h3>\n", descr);
-  printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s\" "
-      "title=\"%s / %s\" /></div>\n",
-      script_name (), params, title, descr);
+
+  show_breadcrump (cfg, inst);
+
+  if (data->graph_count < MAX_SHOW_GRAPHS)
+    printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s\" "
+        "title=\"%s / %s\" /></div>\n",
+        script_name (), params, title, descr);
+  else
+    printf ("<a href=\"%s?action=show_instance;%s\">Show graph "
+        "&quot;%s / %s&quot;</a>\n",
+        script_name (), params, title, descr);
+
+  data->graph_count++;
 
   return (0);
 } /* }}} int show_instance_cb */
@@ -204,7 +220,7 @@ static int show_instance (void *user_data) /* {{{ */
 
   fprintf (stderr, "show_instance: Calling inst_get_all_selected()\n");
   status = inst_get_all_selected (data->cfg,
-      /* callback = */ show_instance_cb, /* user data = */ NULL);
+      /* callback = */ show_instance_cb, /* user data = */ data);
   if (status != 0)
     fprintf (stderr, "show_instance: inst_get_all_selected failed "
         "with status %i\n", status);
@@ -220,6 +236,7 @@ int action_show_instance (void) /* {{{ */
   char tmp[128];
   char title[128];
 
+  memset (&pg_data, 0, sizeof (pg_data));
   pg_data.cfg = gl_graph_get_selected ();
   if (pg_data.cfg == NULL)
     OUTPUT_ERROR ("gl_graph_get_selected () failed.\n");
