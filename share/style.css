@@ -3,6 +3,18 @@ body
 	font-family: sans-serif;
 }
 
+a
+{
+	color: rgb(0,0,240);
+	text-decoration: none;
+}
+
+a:hover
+{
+	color: rgb(32,32,255);
+	text-decoration: underline;
+}
+
 #layout-table
 {
 	width: 100%;
@@ -61,6 +73,44 @@ body
 #search-suggest
 {
 	position: absolute;
+	background-color: rgba(255,255,255,.8);
+	margin: 0;
+	padding: 0.5ex;
+	border: 1px solid black;
+	list-style: none;
+}
+
+#search-suggest ul.instance_list
+{
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+#search-suggest li
+{
+	margin: 0;
+	padding: 0;
+}
+
+#search-suggest a
+{
+	display: block;
+	margin: 0;
+	padding: 0;
+	color: #2d6195;
+	background-color: transparent;
+}
+
+#search-suggest li.instance a
+{
+	padding-left: 1em;
+}
+
+#search-suggest a:hover
+{
+	color: white;
+	background-color: #408dd8;
 }
 
 #search-output ul.graph_list
@@ -92,4 +142,14 @@ body
 	display: block;
 
 	font-size: 90%;
+}
+
+.breadcrump
+{
+	font-size: 90%;
+	margin: 1ex 0 1ex 0;
+	padding: 0 0 0 2em;
+	border-top: 1px solid silver;
+	border-bottom: 1px solid silver;
+	background-color: rgb(252,252,252);
 }
