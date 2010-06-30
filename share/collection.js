@@ -140,6 +140,29 @@ function zoom_relative (graph_id, factor_begin, factor_end)
   return (zoom_redraw (jq_obj));
 }
 
+function zoom_reference (graph_id) /* {{{ */
+{
+  var jq_obj;
+  var end;
+  var begin;
+
+  jq_obj = $("#" + graph_id);
+  if (jq_obj == null)
+    return (false);
+
+  begin = jq_obj.data ('begin');
+  end = jq_obj.data ('end');
+  if ((begin == null) || (end == null))
+    return (false);
+
+  $(".graph-img img").each (function ()
+  {
+    $(this).data ('begin', begin);
+    $(this).data ('end', end);
+    zoom_redraw ($(this));
+  });
+} /* }}} function zoom_reference */
+
 function zoom_earlier (graph_id) /* {{{ */
 {
   return (zoom_relative (graph_id, -0.2, -0.2));
@@ -213,7 +236,7 @@ $(document).ready(function() {
         + "<div class=\"graph-button\" onClick=\"zoom_week  ('"+id+"');\">W</div>"
         + "<div class=\"graph-button\" onClick=\"zoom_month ('"+id+"');\">M</div>"
         + "<div class=\"graph-button\" onClick=\"zoom_year  ('"+id+"');\">Y</div>"
-        + "<div class=\"graph-button\" >!</div>"
+        + "<div class=\"graph-button\" onClick=\"zoom_reference ('"+id+"');\">!</div>"
         + "</div>"
         + "<div class=\"graph-buttons navigation\">"
         + "<div class=\"graph-button\" onClick=\"zoom_earlier ('"+id+"');\">←</div>"
