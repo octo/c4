@@ -168,6 +168,16 @@ a:hover
 	clear: both;
 }
 
+div.graph-img div.graph-buttons
+{
+	display: none;
+}
+
+div.graph-img:hover div.graph-buttons
+{
+	display: block;
+}
+
 .graph-img .graph-buttons.navigation
 {
 	position: absolute;
@@ -193,7 +203,7 @@ a:hover
 	cursor: pointer;
 }
 
-.graph-buttons .graph-button:hover
+.graph-buttons div.graph-button:hover
 {
 	border: 1px solid black;
 	background-color: white;
