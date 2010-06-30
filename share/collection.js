@@ -51,7 +51,7 @@ function update_search_suggestions ()
   );
 } /* update_search_suggestions */
 
-function zoom_redraw (jq_obj)
+function zoom_redraw (jq_obj) /* {{{ */
 {
   var url = jq_obj.data ("base_url");
 
@@ -65,9 +65,9 @@ function zoom_redraw (jq_obj)
 
   jq_obj.attr ("src", url);
   return (true);
-}
+} /* }}} function zoom_redraw */
 
-function zoom_reset (graph_id, diff)
+function zoom_reset (graph_id, diff) /* {{{ */
 {
   var jq_obj;
   var end;
@@ -84,34 +84,34 @@ function zoom_reset (graph_id, diff)
   jq_obj.data ('end', end.toFixed (0));
 
   return (zoom_redraw (jq_obj));
-}
+} /* }}} function zoom_reset */
 
-function zoom_hour (graph_id)
+function zoom_hour (graph_id) /* {{{ */
 {
   zoom_reset (graph_id, 3600);
-}
+} /* }}} function zoom_hour */
 
-function zoom_day (graph_id)
+function zoom_day (graph_id) /* {{{ */
 {
   zoom_reset (graph_id, 86400);
-}
+} /* }}} function zoom_day */
 
-function zoom_week (graph_id)
+function zoom_week (graph_id) /* {{{ */
 {
   zoom_reset (graph_id, 7 * 86400);
-}
+} /* }}} function zoom_week */
 
-function zoom_month (graph_id)
+function zoom_month (graph_id) /* {{{ */
 {
   zoom_reset (graph_id, 31 * 86400);
-}
+} /* }}} function zoom_month */
 
-function zoom_year (graph_id)
+function zoom_year (graph_id) /* {{{ */
 {
   zoom_reset (graph_id, 366 * 86400);
-}
+} /* }}} function zoom_year */
 
-function zoom_relative (graph_id, factor_begin, factor_end)
+function zoom_relative (graph_id, factor_begin, factor_end) /* {{{ */
 {
   var jq_obj;
   var end;
@@ -138,7 +138,7 @@ function zoom_relative (graph_id, factor_begin, factor_end)
   jq_obj.data ('end', end + (diff * factor_end));
 
   return (zoom_redraw (jq_obj));
-}
+} /* }}} function zoom_relative */
 
 function zoom_reference (graph_id) /* {{{ */
 {
