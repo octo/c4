@@ -291,6 +291,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
 {
   char *file;
   int index;
+  char draw_def[64];
 
   if ((def == NULL) || (ident == NULL) || (args == NULL))
     return (EINVAL);
@@ -324,22 +325,44 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
   array_append_format (args->data, "VDEF:vdef_%04i_lst=def_%04i_avg,LAST",
       index, index);
 
+  if (def->stack)
+  {
+    if (args->last_stack_cdef[0] != 0)
+    {
+      array_append_format (args->calc, "CDEF:cdef_%04i_stack=%s,def_%04i_avg,+",
+          index, args->last_stack_cdef, index);
+      snprintf (draw_def, sizeof (draw_def), "cdef_%04i_stack", index);
+    }
+    else
+    {
+      snprintf (draw_def, sizeof (draw_def), "def_%04i_avg", index);
+    }
+  }
+  else
+  {
+    snprintf (draw_def, sizeof (draw_def), "def_%04i_avg", index);
+  }
+
+  if (def->area)
+    array_prepend_format (args->areas, "AREA:%s#%06"PRIx32,
+        draw_def, fade_color (def->color));
+
   /* Graph part */
-  array_append_format (args->draw, "%s:def_%04i_avg#%06"PRIx32":%s%s",
-      def->area ? "AREA" : "LINE1",
-      index, def->color,
-      (def->legend != NULL) ? def->legend : def->ds_name,
-      def->stack ? ":STACK" : "");
-  array_append_format (args->draw, "GPRINT:vdef_%04i_min:%s min,",
+  array_prepend_format (args->lines, "GPRINT:vdef_%04i_lst:%s last\\l",
       index, (def->format != NULL) ? def->format : "%6.2lf");
-  array_append_format (args->draw, "GPRINT:vdef_%04i_avg:%s avg,",
+  array_prepend_format (args->lines, "GPRINT:vdef_%04i_max:%s max,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
-  array_append_format (args->draw, "GPRINT:vdef_%04i_max:%s max,",
+  array_prepend_format (args->lines, "GPRINT:vdef_%04i_avg:%s avg,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
-  array_append_format (args->draw, "GPRINT:vdef_%04i_lst:%s last\\l",
+  array_prepend_format (args->lines, "GPRINT:vdef_%04i_min:%s min,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
+  array_prepend_format (args->lines, "LINE1:%s#%06"PRIx32":%s",
+      draw_def, def->color,
+      (def->legend != NULL) ? def->legend : def->ds_name);
 
   free (file);
+
+  memcpy (args->last_stack_cdef, draw_def, sizeof (args->last_stack_cdef));
 
   return (0);
 } /* }}} int def_get_rrdargs */
