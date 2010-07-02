@@ -28,5 +28,6 @@ collection_fcgi_SOURCES = main.c \
 			  graph_ident.c graph_ident.h \
 			  graph_instance.c graph_instance.h \
 			  graph_list.c graph_list.h \
+			  rrd_args.c rrd_args.h \
 			  utils_array.c utils_array.h \
 			  utils_cgi.c utils_cgi.h
