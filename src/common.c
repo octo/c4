@@ -159,6 +159,23 @@ static uint32_t rgb_to_uint32 (double *rgb) /* {{{ */
       | ((uint32_t) b));
 } /* }}} uint32_t rgb_to_uint32 */
 
+static int uint32_to_rgb (uint32_t color, double *rgb)
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+
+  r = (uint8_t) ((color >> 16) & 0x00ff);
+  g = (uint8_t) ((color >>  8) & 0x00ff);
+  b = (uint8_t) ((color >>  0) & 0x00ff);
+
+  rgb[0] = ((double) r) / 255.0;
+  rgb[1] = ((double) g) / 255.0;
+  rgb[2] = ((double) b) / 255.0;
+
+  return (0);
+} /* }}} int uint32_to_rgb */
+
 uint32_t get_random_color (void) /* {{{ */
 {
   double hsv[3] = { 0.0, 1.0, 1.0 };
@@ -170,6 +187,18 @@ uint32_t get_random_color (void) /* {{{ */
 
   return (rgb_to_uint32 (rgb));
 } /* }}} uint32_t get_random_color */
+
+uint32_t fade_color (uint32_t color) /* {{{ */
+{
+  double rgb[3];
+
+  uint32_to_rgb (color, rgb);
+  rgb[0] = 1.0 - ((1.0 - rgb[0]) * 0.1);
+  rgb[1] = 1.0 - ((1.0 - rgb[1]) * 0.1);
+  rgb[2] = 1.0 - ((1.0 - rgb[2]) * 0.1);
+
+  return (rgb_to_uint32 (rgb));
+} /* }}} uint32_t fade_color */
 
 int print_debug (const char *format, ...) /* {{{ */
 {

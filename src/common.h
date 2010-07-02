@@ -19,6 +19,7 @@ int ds_list_from_rrd_file (char *file,
     size_t *ret_dses_num, char ***ret_dses);
 
 uint32_t get_random_color (void);
+uint32_t fade_color (uint32_t color);
 
 char *strtolower (char *str);
 char *strtolower_copy (const char *str);
