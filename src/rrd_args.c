@@ -16,12 +16,14 @@ rrd_args_t *ra_create (void) /* {{{ */
   ra->options = array_create ();
   ra->data    = array_create ();
   ra->calc    = array_create ();
-  ra->draw    = array_create ();
+  ra->areas   = array_create ();
+  ra->lines   = array_create ();
 
   if ((ra->options == NULL)
       || (ra->data == NULL)
       || (ra->calc == NULL)
-      || (ra->draw == NULL))
+      || (ra->areas == NULL)
+      || (ra->lines == NULL))
   {
     ra_destroy (ra);
     return (NULL);
@@ -38,7 +40,8 @@ void ra_destroy (rrd_args_t *ra) /* {{{ */
   array_destroy (ra->options);
   array_destroy (ra->data);
   array_destroy (ra->calc);
-  array_destroy (ra->draw);
+  array_destroy (ra->areas);
+  array_destroy (ra->lines);
 
   free (ra);
 } /* }}} void ra_destroy */
@@ -51,7 +54,8 @@ int ra_argc (rrd_args_t *ra)
   return (array_argc (ra->options)
       + array_argc (ra->data)
       + array_argc (ra->calc)
-      + array_argc (ra->draw));
+      + array_argc (ra->areas)
+      + array_argc (ra->lines));
 } /* }}} int ra_argc */
 
 char **ra_argv (rrd_args_t *ra) /* {{{ */
@@ -95,7 +99,8 @@ char **ra_argv (rrd_args_t *ra) /* {{{ */
   APPEND_FIELD (options);
   APPEND_FIELD (data);
   APPEND_FIELD (calc);
-  APPEND_FIELD (draw);
+  APPEND_FIELD (areas);
+  APPEND_FIELD (lines);
 
 #undef APPEND_FIELD
 

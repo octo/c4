@@ -8,7 +8,8 @@ struct rrd_args_s
   str_array_t *options;
   str_array_t *data;
   str_array_t *calc;
-  str_array_t *draw;
+  str_array_t *areas;
+  str_array_t *lines;
 
   int index;
   char last_stack_cdef[64];
