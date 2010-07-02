@@ -256,6 +256,8 @@ graph_def_t *graph_get_defs (graph_config_t *cfg) /* {{{ */
 
 int graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
 {
+  graph_def_t *tmp;
+
   if ((cfg == NULL) || (def == NULL))
     return (EINVAL);
 
@@ -265,7 +267,11 @@ int graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
     return (0);
   }
 
-  return (def_append (cfg->defs, def));
+  /* Insert in reverse order. This makes the order in the config file and the
+   * order of the DEFs in the graph more natural. Really. */
+  tmp = cfg->defs;
+  cfg->defs = def;
+  return (def_append (cfg->defs, tmp));
 } /* }}} int graph_add_def */
 
 _Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
