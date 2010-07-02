@@ -104,7 +104,7 @@ int array_prepend (str_array_t *a, const char *entry) /* {{{ */
   }
   a->ptr = ptr;
 
-  memmove (a->ptr, a->ptr + 1, sizeof (*a->ptr) * a->size);
+  memmove (a->ptr + 1, a->ptr, sizeof (*a->ptr) * a->size);
   a->ptr[0] = cpy;
   a->size++;
 
