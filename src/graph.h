@@ -4,6 +4,7 @@
 #include "graph_types.h"
 #include "graph_ident.h"
 #include "oconfig.h"
+#include "rrd_args.h"
 #include "utils_array.h"
 
 /*
@@ -64,7 +65,7 @@ int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);
 int graph_clear_instances (graph_config_t *cfg);
 
 int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
-    str_array_t *args);
+    rrd_args_t *args);
 
 #endif /* GRAPH_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

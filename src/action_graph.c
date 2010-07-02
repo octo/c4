@@ -23,7 +23,7 @@
 
 struct graph_data_s
 {
-  str_array_t *args;
+  rrd_args_t *args;
   rrd_info_t *info;
   time_t mtime;
   time_t expires;
@@ -99,10 +99,10 @@ static int get_time_args (graph_data_t *data) /* {{{ */
   data->begin = begin;
   data->end = end;
 
-  array_append (data->args, "-s");
-  array_append_format (data->args, "%li", begin);
-  array_append (data->args, "-e");
-  array_append_format (data->args, "%li", end);
+  array_append (data->args->options, "-s");
+  array_append_format (data->args->options, "%li", begin);
+  array_append (data->args->options, "-e");
+  array_append_format (data->args->options, "%li", end);
 
   return (0);
 } /* }}} int get_time_args */
@@ -206,6 +206,9 @@ int action_graph (void) /* {{{ */
   graph_instance_t *inst;
   int status;
 
+  int argc;
+  char **argv;
+
   cfg = gl_graph_get_selected ();
   if (cfg == NULL)
     OUTPUT_ERROR ("gl_graph_get_selected () failed.\n");
@@ -214,31 +217,39 @@ int action_graph (void) /* {{{ */
   if (inst == NULL)
     OUTPUT_ERROR ("inst_get_selected (%p) failed.\n", (void *) cfg);
 
-  data.args = array_create ();
+  data.args = ra_create ();
   if (data.args == NULL)
     return (ENOMEM);
 
-  array_append (data.args, "graph");
-  array_append (data.args, "-");
-  array_append (data.args, "--imgformat");
-  array_append (data.args, "PNG");
+  array_append (data.args->options, "graph");
+  array_append (data.args->options, "-");
+  array_append (data.args->options, "--imgformat");
+  array_append (data.args->options, "PNG");
 
   get_time_args (&data);
 
   status = inst_get_rrdargs (cfg, inst, data.args);
   if (status != 0)
   {
-    array_destroy (data.args);
+    ra_destroy (data.args);
     OUTPUT_ERROR ("inst_get_rrdargs failed with status %i.\n", status);
   }
 
+  argc = ra_argc (data.args);
+  argv = ra_argv (data.args);
+  if ((argc < 0) || (argv == NULL))
+  {
+    ra_destroy (data.args);
+    return (-1);
+  }
+
   rrd_clear_error ();
-  data.info = rrd_graph_v (array_argc (data.args), array_argv (data.args));
+  data.info = rrd_graph_v (argc, argv);
   if ((data.info == NULL) || rrd_test_error ())
   {
     printf ("Content-Type: text/plain\n\n");
     printf ("rrd_graph_v failed: %s\n", rrd_get_error ());
-    emulate_graph (array_argc (data.args), array_argv (data.args));
+    emulate_graph (argc, argv);
   }
   else
   {
@@ -264,7 +275,8 @@ int action_graph (void) /* {{{ */
   if (data.info != NULL)
     rrd_info_free (data.info);
 
-  array_destroy (data.args);
+  ra_argv_free (argv);
+  ra_destroy (data.args);
   data.args = NULL;
 
   return (0);

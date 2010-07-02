@@ -5,6 +5,7 @@
 
 #include "graph_types.h"
 #include "graph_ident.h"
+#include "rrd_args.h"
 #include "utils_array.h"
 
 /*
@@ -26,7 +27,7 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);
 
 int inst_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
-    str_array_t *args);
+    rrd_args_t *args);
 
 graph_ident_t *inst_get_selector (graph_instance_t *inst);
 

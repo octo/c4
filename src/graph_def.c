@@ -287,7 +287,7 @@ int def_foreach (graph_def_t *def, def_callback_t callback, /* {{{ */
 } /* }}} int def_foreach */
 
 int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
-    str_array_t *args)
+    rrd_args_t *args)
 {
   char *file;
   int index;
@@ -304,38 +304,39 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
 
   DEBUG ("gl_ident_get_rrdargs: file = %s;\n", file);
 
-  index = array_argc (args);
+  index = args->index;
+  args->index++;
 
   /* CDEFs */
-  array_append_format (args, "DEF:def_%04i_min=%s:%s:MIN",
+  array_append_format (args->data, "DEF:def_%04i_min=%s:%s:MIN",
       index, file, def->ds_name);
-  array_append_format (args, "DEF:def_%04i_avg=%s:%s:AVERAGE",
+  array_append_format (args->data, "DEF:def_%04i_avg=%s:%s:AVERAGE",
       index, file, def->ds_name);
-  array_append_format (args, "DEF:def_%04i_max=%s:%s:MAX",
+  array_append_format (args->data, "DEF:def_%04i_max=%s:%s:MAX",
       index, file, def->ds_name);
   /* VDEFs */
-  array_append_format (args, "VDEF:vdef_%04i_min=def_%04i_min,MINIMUM",
+  array_append_format (args->data, "VDEF:vdef_%04i_min=def_%04i_min,MINIMUM",
       index, index);
-  array_append_format (args, "VDEF:vdef_%04i_avg=def_%04i_avg,AVERAGE",
+  array_append_format (args->data, "VDEF:vdef_%04i_avg=def_%04i_avg,AVERAGE",
       index, index);
-  array_append_format (args, "VDEF:vdef_%04i_max=def_%04i_max,MAXIMUM",
+  array_append_format (args->data, "VDEF:vdef_%04i_max=def_%04i_max,MAXIMUM",
       index, index);
-  array_append_format (args, "VDEF:vdef_%04i_lst=def_%04i_avg,LAST",
+  array_append_format (args->data, "VDEF:vdef_%04i_lst=def_%04i_avg,LAST",
       index, index);
 
   /* Graph part */
-  array_append_format (args, "%s:def_%04i_avg#%06"PRIx32":%s%s",
+  array_append_format (args->draw, "%s:def_%04i_avg#%06"PRIx32":%s%s",
       def->area ? "AREA" : "LINE1",
       index, def->color,
       (def->legend != NULL) ? def->legend : def->ds_name,
       def->stack ? ":STACK" : "");
-  array_append_format (args, "GPRINT:vdef_%04i_min:%s min,",
+  array_append_format (args->draw, "GPRINT:vdef_%04i_min:%s min,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
-  array_append_format (args, "GPRINT:vdef_%04i_avg:%s avg,",
+  array_append_format (args->draw, "GPRINT:vdef_%04i_avg:%s avg,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
-  array_append_format (args, "GPRINT:vdef_%04i_max:%s max,",
+  array_append_format (args->draw, "GPRINT:vdef_%04i_max:%s max,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
-  array_append_format (args, "GPRINT:vdef_%04i_lst:%s last\\l",
+  array_append_format (args->draw, "GPRINT:vdef_%04i_lst:%s last\\l",
       index, (def->format != NULL) ? def->format : "%6.2lf");
 
   free (file);

@@ -26,7 +26,7 @@ struct graph_instance_s /* {{{ */
 struct def_callback_data_s
 {
   graph_instance_t *inst;
-  str_array_t *args;
+  rrd_args_t *args;
 };
 typedef struct def_callback_data_s def_callback_data_t;
 
@@ -124,7 +124,7 @@ static int gl_instance_get_rrdargs_cb (graph_def_t *def, void *user_data) /* {{{
 {
   def_callback_data_t *data = user_data;
   graph_instance_t *inst = data->inst;
-  str_array_t *args = data->args;
+  rrd_args_t *args = data->args;
 
   size_t i;
 
@@ -311,7 +311,7 @@ int inst_get_all_selected (graph_config_t *cfg, /* {{{ */
 
 int inst_get_rrdargs (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
-    str_array_t *args)
+    rrd_args_t *args)
 {
   def_callback_data_t data = { inst, args };
   graph_def_t *defs;

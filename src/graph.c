@@ -470,27 +470,27 @@ int graph_clear_instances (graph_config_t *cfg) /* {{{ */
 } /* }}} int graph_clear_instances */
 
 int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
-    str_array_t *args)
+    rrd_args_t *args)
 {
   if ((cfg == NULL) || (inst == NULL) || (args == NULL))
     return (EINVAL);
 
   if (cfg->title != NULL)
   {
-    array_append (args, "-t");
-    array_append (args, cfg->title);
+    array_append (args->options, "-t");
+    array_append (args->options, cfg->title);
   }
 
   if (cfg->vertical_label != NULL)
   {
-    array_append (args, "-v");
-    array_append (args, cfg->vertical_label);
+    array_append (args->options, "-v");
+    array_append (args->options, cfg->vertical_label);
   }
 
   if (cfg->show_zero)
   {
-    array_append (args, "-l");
-    array_append (args, "0");
+    array_append (args->options, "-l");
+    array_append (args->options, "0");
   }
 
   return (0);

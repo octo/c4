@@ -75,6 +75,7 @@ char **ra_argv (rrd_args_t *ra) /* {{{ */
     return (NULL);
 
   pos = 0;
+  argv[0] = NULL;
 
 #define APPEND_FIELD(field) do                                               \
 {                                                                            \
@@ -89,7 +90,6 @@ char **ra_argv (rrd_args_t *ra) /* {{{ */
     pos += ary_argc;                                                         \
     argv[pos] = NULL;                                                        \
   }                                                                          \
-  free (ary_argv);                                                           \
 } while (0)
  
   APPEND_FIELD (options);
@@ -101,5 +101,13 @@ char **ra_argv (rrd_args_t *ra) /* {{{ */
 
   return (argv);
 } /* }}} char **ra_argv */
+
+void ra_argv_free (char **argv) /* {{{ */
+{
+  /* The pointers contained in the "argv" come from "array_argv". We don't need
+   * to free them. We only need to free what we actually alloced directly in
+   * "ra_argv". */
+  free (argv);
+} /* }}} void ra_argv_free */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

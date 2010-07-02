@@ -4,6 +4,7 @@
 #include "graph_types.h"
 #include "utils_array.h"
 #include "oconfig.h"
+#include "rrd_args.h"
 
 graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident,
     const char *ds_name);
@@ -22,7 +23,7 @@ _Bool def_matches (graph_def_t *def, graph_ident_t *ident);
 int def_foreach (graph_def_t *def, def_callback_t callback, void *user_data);
 
 int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident,
-    str_array_t *args);
+    rrd_args_t *args);
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
 #endif
