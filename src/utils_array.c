@@ -84,6 +84,49 @@ int array_append_format (str_array_t *a, const char *format, ...) /* {{{ */
   return (array_append (a, buffer));
 } /* }}} int array_append_format */
 
+int array_prepend (str_array_t *a, const char *entry) /* {{{ */
+{
+  char **ptr;
+  char *cpy;
+
+  if ((entry == NULL) || (a == NULL))
+    return (EINVAL);
+
+  cpy = strdup (entry);
+  if (cpy == NULL)
+    return (ENOMEM);
+
+  ptr = realloc (a->ptr, sizeof (*a->ptr) * (a->size + 1));
+  if (ptr == NULL)
+  {
+    free (cpy);
+    return (ENOMEM);
+  }
+  a->ptr = ptr;
+
+  memmove (a->ptr, a->ptr + 1, sizeof (*a->ptr) * a->size);
+  a->ptr[0] = cpy;
+  a->size++;
+
+  return (0);
+} /* }}} int array_prepend */
+
+int array_prepend_format (str_array_t *a, const char *format, ...) /* {{{ */
+{
+  char buffer[1024];
+  va_list ap;
+  int status;
+
+  va_start (ap, format);
+  status = vsnprintf (buffer, sizeof (buffer), format, ap);
+  va_end(ap);
+
+  if ((status < 0) || (((size_t) status) >= sizeof (buffer)))
+    return (ENOMEM);
+
+  return (array_prepend (a, buffer));
+} /* }}} int array_prepend_format */
+
 int array_sort (str_array_t *a) /* {{{ */
 {
   if (a == NULL)

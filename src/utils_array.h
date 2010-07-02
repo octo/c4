@@ -6,8 +6,13 @@ typedef struct str_array_s str_array_t;
 
 str_array_t *array_create (void);
 void array_destroy (str_array_t *a);
+
 int array_append (str_array_t *a, const char *entry);
 int array_append_format (str_array_t *a, const char *format, ...)
+  __attribute__((format(printf,2,3)));
+
+int array_prepend (str_array_t *a, const char *entry);
+int array_prepend_format (str_array_t *a, const char *format, ...)
   __attribute__((format(printf,2,3)));
 
 int array_sort (str_array_t *a);
