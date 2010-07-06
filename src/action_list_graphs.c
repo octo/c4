@@ -239,9 +239,10 @@ static int list_graphs_html (const char *term) /* {{{ */
   char title[512];
 
   if (term != NULL)
-    snprintf (title, sizeof (title), "c4: Graphs matching \"%s\"", term);
+    snprintf (title, sizeof (title), "Graphs matching \"%s\"",
+        term);
   else
-    strncpy (title, "c4: List of all graphs", sizeof (title));
+    strncpy (title, "List of all graphs", sizeof (title));
   title[sizeof (title) - 1] = 0;
 
   memset (&pg_data, 0, sizeof (pg_data));

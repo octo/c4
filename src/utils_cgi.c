@@ -579,7 +579,7 @@ int html_print_page (const char *title, /* {{{ */
       "\n\n");
 
   if (title == NULL)
-    title = "c4: collection4 graph interface";
+    title = "C&#x2084;: collection4 graph interface";
 
   title_html = html_escape (title);
 
@@ -654,7 +654,7 @@ int html_print_page (const char *title, /* {{{ */
 int html_print_logo (__attribute__((unused)) void *user_data) /* {{{ */
 {
   printf ("<a href=\"%s?action=list_graphs\" id=\"logo-canvas\">\n"
-      "  <h1>c<sup>4</sup></h1>\n"
+      "  <h1>C<sub>4</sub></h1>\n"
       "  <div id=\"logo-subscript\">collection&nbsp;4</div>\n"
       "</a>\n");
 
