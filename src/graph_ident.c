@@ -34,6 +34,7 @@
 #include "graph_ident.h"
 #include "common.h"
 #include "filesystem.h"
+#include "utils_cgi.h"
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
@@ -476,6 +477,12 @@ char *ident_to_file (const graph_ident_t *ident) /* {{{ */
   return (strdup (buffer));
 } /* }}} char *ident_to_file */
 
+#define ADD_FIELD(field) do {                              \
+  char json[1024];                                         \
+  json_escape_copy (json, ident->field, sizeof (json));    \
+  strlcat (buffer, json, sizeof (buffer));                 \
+} while (0)
+
 char *ident_to_json (const graph_ident_t *ident) /* {{{ */
 {
   char buffer[4096];
@@ -483,19 +490,21 @@ char *ident_to_json (const graph_ident_t *ident) /* {{{ */
   buffer[0] = 0;
 
   strlcat (buffer, "{\"host\":\"", sizeof (buffer));
-  strlcat (buffer, ident->host, sizeof (buffer));
+  ADD_FIELD (host);
   strlcat (buffer, "\",\"plugin\":\"", sizeof (buffer));
-  strlcat (buffer, ident->plugin, sizeof (buffer));
+  ADD_FIELD (plugin);
   strlcat (buffer, "\",\"plugin_instance\":\"", sizeof (buffer));
-  strlcat (buffer, ident->plugin_instance, sizeof (buffer));
+  ADD_FIELD (plugin_instance);
   strlcat (buffer, "\",\"type\":\"", sizeof (buffer));
-  strlcat (buffer, ident->type, sizeof (buffer));
+  ADD_FIELD (type);
   strlcat (buffer, "\",\"type_instance\":\"", sizeof (buffer));
-  strlcat (buffer, ident->type_instance, sizeof (buffer));
+  ADD_FIELD (type_instance);
   strlcat (buffer, "\"}", sizeof (buffer));
 
   return (strdup (buffer));
 } /* }}} char *ident_to_json */
+
+#undef ADD_FIELD
 
 time_t ident_get_mtime (const graph_ident_t *ident) /* {{{ */
 {
