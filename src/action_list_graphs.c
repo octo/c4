@@ -115,6 +115,27 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int print_graph_inst_html */
 
+static int print_graph_html (graph_config_t *cfg, /* {{{ */
+    __attribute__((unused)) void *user_data)
+{
+  char params[1024];
+  char title[1024];
+
+  memset (title, 0, sizeof (title));
+  graph_get_title (cfg, title, sizeof (title));
+  html_escape_buffer (title, sizeof (title));
+
+  memset (params, 0, sizeof (params));
+  graph_get_params (cfg, params, sizeof (params));
+  html_escape_buffer (params, sizeof (params));
+
+  printf ("      <li class=\"graph\"><a href=\"%s?action=show_graph;%s\">"
+      "%s</a></li>\n",
+      script_name (), params, title);
+
+  return (0);
+} /* }}} int print_graph_html */
+
 struct page_data_s
 {
   const char *search_term;
@@ -138,7 +159,9 @@ static int print_search_result (void *user_data) /* {{{ */
 
   printf ("    <ul id=\"search-output\" class=\"graph_list\">\n");
   if (pg_data->search_term == NULL)
-    gl_instance_get_all (print_graph_inst_html, /* user_data = */ &cb_data);
+  {
+    gl_graph_get_all (print_graph_html, /* user_data = */ &cb_data);
+  }
   else
   {
     char *term_lc = strtolower_copy (pg_data->search_term);
