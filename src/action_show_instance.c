@@ -142,60 +142,25 @@ static int show_time_selector (__attribute__((unused)) void *user_data) /* {{{ *
   return (0);
 } /* }}} int show_time_selector */
 
-static int show_instance_list_cb (graph_instance_t *inst, /* {{{ */
-    void *user_data)
+static int left_menu (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
-  char descr[128];
   char params[1024];
-
-  memset (descr, 0, sizeof (descr));
-  inst_describe (data->cfg, inst, descr, sizeof (descr));
-  html_escape_buffer (descr, sizeof (descr));
-
-  if (inst == data->inst)
-  {
-    printf ("    <li class=\"instance\"><strong>%s</strong></li>\n", descr);
-    return (0);
-  }
-
-  memset (params, 0, sizeof (params));
-  inst_get_params (data->cfg, inst, params, sizeof (params));
-  html_escape_buffer (params, sizeof (params));
-
-  printf ("    <li class=\"instance\">"
-      "<a href=\"%s?action=show_instance;%s\">%s</a></li>\n",
-      script_name (), params, descr);
-
-  return (0);
-} /* }}} int show_instance_list_cb */
-
-static int show_instance_list (void *user_data) /* {{{ */
-{
-  show_graph_data_t *data = user_data;
-  char title[128];
-  char params[1024];
-
-  memset (title, 0, sizeof (title));
-  graph_get_title (data->cfg, title, sizeof (title));
-  html_escape_buffer (title, sizeof (title));
 
   memset (params, 0, sizeof (params));
   graph_get_params (data->cfg, params, sizeof (params));
   html_escape_buffer (params, sizeof (params));
 
-  printf ("<ul class=\"graph_list\">\n"
-      "  <li class=\"graph\"><a href=\"%s?action=show_instance;%s\">%s</a>\n"
-      "  <ul class=\"instance_list\">\n",
-      script_name (), params, title);
-
-  graph_inst_foreach (data->cfg, show_instance_list_cb, user_data);
-
-  printf ("  </ul>\n"
-      "</ul>\n");
+  printf ("\n<ul class=\"menu left\">\n"
+      "  <li><a href=\"%s?action=show_graph;%s\">"
+      "Available instances</a></li>\n"
+      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
+      "</ul>\n",
+      script_name (), params,
+      script_name ());
 
   return (0);
-} /* }}} int show_instance_list */
+} /* }}} int left_menu */
 
 static int show_instance_cb (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
@@ -288,7 +253,7 @@ int action_show_instance (void) /* {{{ */
 
   pg_callbacks.top_right = html_print_search_box;
   pg_callbacks.middle_center = show_instance;
-  pg_callbacks.middle_left = show_instance_list;
+  pg_callbacks.middle_left = left_menu;
   pg_callbacks.middle_right = show_time_selector;
 
   html_print_page (title, &pg_callbacks, &pg_data);

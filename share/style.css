@@ -74,6 +74,12 @@ a:hover
 	font-style: italic;
 }
 
+ul.menu
+{
+	border: 1px solid silver;
+	background-color: #fcfcfc;
+}
+
 #search-form
 {
 	position: relative;
