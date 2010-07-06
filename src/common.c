@@ -182,7 +182,7 @@ static uint32_t rgb_to_uint32 (double *rgb) /* {{{ */
       | ((uint32_t) b));
 } /* }}} uint32_t rgb_to_uint32 */
 
-static int uint32_to_rgb (uint32_t color, double *rgb)
+static int uint32_to_rgb (uint32_t color, double *rgb) /* {{{ */
 {
   uint8_t r;
   uint8_t g;
@@ -256,12 +256,12 @@ char *strtolower (char *str) /* {{{ */
   return (str);
 } /* }}} char *strtolower */
 
-char *strtolower_copy (const char *str)
+char *strtolower_copy (const char *str) /* {{{ */
 {
   if (str == NULL)
     return (NULL);
 
   return (strtolower (strdup (str)));
-}
+} /* }}} char *strtolower_copy */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
