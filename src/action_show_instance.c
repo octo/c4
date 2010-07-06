@@ -206,6 +206,11 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
   char descr[128];
   char params[1024];
 
+  long begin;
+  long end;
+  char time_params[128];
+  int status;
+
   memset (title, 0, sizeof (title));
   graph_get_title (cfg, title, sizeof (title));
   html_escape_buffer (title, sizeof (title));
@@ -218,14 +223,26 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
   inst_get_params (cfg, inst, params, sizeof (params));
   html_escape_buffer (params, sizeof (params));
 
+  time_params[0] = 0;
+  begin = 0;
+  end = 0;
+
+  status = get_time_args (&begin, &end, /* now = */ NULL);
+  if (status == 0)
+  {
+    snprintf (time_params, sizeof (time_params), ";begin=%li;end=%li",
+        begin, end);
+    time_params[sizeof (time_params) - 1] = 0;
+  }
+
   printf ("<h3>Instance &quot;%s&quot;</h3>\n", descr);
 
   show_breadcrump (cfg, inst);
 
   if (data->graph_count < MAX_SHOW_GRAPHS)
-    printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s\" "
+    printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s%s\" "
         "title=\"%s / %s\" /></div>\n",
-        script_name (), params, title, descr);
+        script_name (), params, time_params, title, descr);
   else
     printf ("<a href=\"%s?action=show_instance;%s\">Show graph "
         "&quot;%s / %s&quot;</a>\n",
