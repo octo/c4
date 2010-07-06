@@ -83,6 +83,16 @@ static int show_time_selector (__attribute__((unused)) void *user_data) /* {{{ *
   return (0);
 } /* }}} int show_time_selector */
 
+static int left_menu (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  printf ("\n<ul class=\"menu left\">\n"
+      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
+      "</ul>\n",
+      script_name ());
+
+  return (0);
+} /* }}} int left_menu */
+
 static int show_instance_cb (graph_instance_t *inst, /* {{{ */
     void *user_data)
 {
@@ -136,6 +146,7 @@ int action_show_graph (void) /* {{{ */
   title[sizeof (title) - 1] = 0;
 
   pg_callbacks.top_right = html_print_search_box;
+  pg_callbacks.middle_left = left_menu;
   pg_callbacks.middle_center = show_graph;
   pg_callbacks.middle_right = show_time_selector;
 
