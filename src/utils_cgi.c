@@ -643,6 +643,7 @@ int html_print_page (const char *title, /* {{{ */
   printf ("</td>\n"
       "      </tr>\n"
       "    </table>\n"
+      "    <div class=\"footer\">"PACKAGE_STRING"</div>\n"
       "  </body>\n"
       "</html>\n");
 
