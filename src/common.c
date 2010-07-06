@@ -39,6 +39,7 @@
 
 #include "common.h"
 #include "graph_list.h"
+#include "utils_cgi.h"
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
@@ -263,5 +264,79 @@ char *strtolower_copy (const char *str) /* {{{ */
 
   return (strtolower (strdup (str)));
 } /* }}} char *strtolower_copy */
+
+int get_time_args (long *ret_begin, long *ret_end, /* {{{ */
+    long *ret_now)
+{
+  const char *begin_str;
+  const char *end_str;
+  long now;
+  long begin;
+  long end;
+  char *endptr;
+  long tmp;
+
+  if ((ret_begin == NULL) || (ret_end == NULL))
+    return (EINVAL);
+
+  begin_str = param ("begin");
+  end_str = param ("end");
+
+  now = (long) time (NULL);
+  if (ret_now != NULL)
+    *ret_now = now;
+  *ret_begin = now - 86400;
+  *ret_end = now;
+
+  if (begin_str != NULL)
+  {
+    endptr = NULL;
+    errno = 0;
+    tmp = strtol (begin_str, &endptr, /* base = */ 0);
+    if ((endptr == begin_str) || (errno != 0))
+      return (-1);
+    if (tmp <= 0)
+      begin = now + tmp;
+    else
+      begin = tmp;
+  }
+  else /* if (begin_str == NULL) */
+  {
+    begin = now - 86400;
+  }
+
+  if (end_str != NULL)
+  {
+    endptr = NULL;
+    errno = 0;
+    tmp = strtol (end_str, &endptr, /* base = */ 0);
+    if ((endptr == end_str) || (errno != 0))
+      return (-1);
+    end = tmp;
+    if (tmp <= 0)
+      end = now + tmp;
+    else
+      end = tmp;
+  }
+  else /* if (end_str == NULL) */
+  {
+    end = now;
+  }
+
+  if (begin == end)
+    return (-1);
+
+  if (begin > end)
+  {
+    tmp = begin;
+    begin = end;
+    end = tmp;
+  }
+
+  *ret_begin = begin;
+  *ret_end = end;
+
+  return (0);
+} /* }}} int get_time_args */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

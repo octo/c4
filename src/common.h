@@ -47,5 +47,14 @@ uint32_t fade_color (uint32_t color);
 char *strtolower (char *str);
 char *strtolower_copy (const char *str);
 
+/*
+ * Parses the time parameters "begin" and "end" and returns the specified time
+ * in epoch in the longs pointed to by "ret_begin" and "ret_end". Returns
+ * non-zero on failure. If the optional "ret_now" pointer is not-NULL, the
+ * current time will be assigned to it.
+ */
+int get_time_args (long *ret_begin, long *ret_end,
+    long *ret_now);
+
 #endif /* COMMON_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
