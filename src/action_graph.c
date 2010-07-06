@@ -21,6 +21,8 @@
  *   Florian octo Forster <ff at octo.it>
  **/
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -208,6 +210,7 @@ static int output_graph (graph_data_t *data) /* {{{ */
   if (status == 0)
     printf ("Expires: %s\n", time_buffer);
 
+  printf ("X-Generator: "PACKAGE_STRING"\n");
   printf ("\n");
 
   fwrite (img->value.u_blo.ptr, img->value.u_blo.size,
