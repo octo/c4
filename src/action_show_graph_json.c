@@ -79,6 +79,11 @@ static int show_instance_cb (graph_instance_t *inst, /* {{{ */
 int action_show_graph_json (void) /* {{{ */
 {
   show_graph_data_t data;
+
+  time_t now;
+  char time_buffer[128];
+  int status;
+
   char title[1024];
   graph_ident_t *ident;
   char *ident_json;
@@ -100,7 +105,15 @@ int action_show_graph_json (void) /* {{{ */
     return (ENOMEM);
   }
 
-  printf ("Content-Type: text/plain\n\n");
+  printf ("Content-Type: text/plain\n");
+
+  now = time (NULL);
+  status = time_to_rfc1123 (now + 300, time_buffer, sizeof (time_buffer));
+  if (status == 0)
+    printf ("Expires: %s\n"
+        "Cache-Control: public\n",
+        time_buffer);
+  printf ("\n");
 
   memset (title, 0, sizeof (title));
   graph_get_title (data.cfg, title, sizeof (title));
