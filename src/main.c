@@ -40,6 +40,7 @@
 #include "action_list_graphs.h"
 #include "action_search_json.h"
 #include "action_show_graph.h"
+#include "action_show_graph_json.h"
 #include "action_show_instance.h"
 
 /* Include this last, so the macro magic of <fcgi_stdio.h> doesn't interfere
@@ -62,6 +63,7 @@ static const action_t actions[] =
   { "list_graphs", action_list_graphs },
   { "search_json", action_search_json },
   { "show_graph",  action_show_graph },
+  { "show_graph_json",  action_show_graph_json },
   { "show_instance", action_show_instance },
   { "usage",       action_usage }
 };
