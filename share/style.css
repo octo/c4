@@ -153,6 +153,12 @@ a:hover
 	font-size: 90%;
 }
 
+#search-output li.instance.more
+{
+	padding-top: .5ex;
+	font-style: italic;
+}
+
 .breadcrump
 {
 	font-size: 90%;

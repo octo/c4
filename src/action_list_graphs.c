@@ -88,7 +88,14 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   {
     if (!data->inst_more)
     {
-      printf ("    <li class=\"instance more\">More ...</li>\n");
+      memset (params, 0, sizeof (params));
+      graph_get_params (cfg, params, sizeof (params));
+      html_escape_buffer (params, sizeof (params));
+
+      printf ("    <li class=\"instance more\"><a href=\"%s"
+          "?action=show_graph;%s\">More &#x2026;</a></li>\n",
+          script_name (), params);
+
       data->inst_more = 1;
     }
     return (0);
