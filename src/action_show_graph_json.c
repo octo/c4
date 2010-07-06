@@ -105,7 +105,7 @@ int action_show_graph_json (void) /* {{{ */
     return (ENOMEM);
   }
 
-  printf ("Content-Type: text/plain\n");
+  printf ("Content-Type: application/json\n");
 
   now = time (NULL);
   status = time_to_rfc1123 (now + 300, time_buffer, sizeof (time_buffer));
