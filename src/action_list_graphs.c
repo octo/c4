@@ -48,6 +48,7 @@ struct callback_data_s
   int inst_index;
   int inst_limit;
   _Bool inst_more;
+  const char *search_term;
 };
 typedef struct callback_data_s callback_data_t;
 
@@ -88,13 +89,26 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   {
     if (!data->inst_more)
     {
+      char *search_term_html = html_escape (data->search_term);
+      char param_search_term[1024];
+
       memset (params, 0, sizeof (params));
       graph_get_params (cfg, params, sizeof (params));
       html_escape_buffer (params, sizeof (params));
 
+      param_search_term[0] = 0;
+      if (search_term_html != NULL)
+      {
+        snprintf (param_search_term, sizeof (param_search_term), ";q=%s",
+            search_term_html);
+        param_search_term[sizeof (param_search_term) - 1] = 0;
+      }
+
+      free (search_term_html);
+
       printf ("    <li class=\"instance more\"><a href=\"%s"
-          "?action=show_graph;%s\">More &#x2026;</a></li>\n",
-          script_name (), params);
+          "?action=show_graph;%s%s\">More &#x2026;</a></li>\n",
+          script_name (), params, param_search_term);
 
       data->inst_more = 1;
     }
@@ -147,7 +161,8 @@ static int print_search_result (void *user_data) /* {{{ */
   page_data_t *pg_data = user_data;
   callback_data_t cb_data = { /* cfg = */ NULL,
     /* graph_index = */ -1, /* graph_limit = */ 20, /* graph_more = */ 0,
-    /* inst_index = */  -1, /* inst_limit = */   5, /* inst more = */  0 };
+    /* inst_index = */  -1, /* inst_limit = */   5, /* inst more = */  0,
+    /* search_term = */ pg_data->search_term };
 
   if (pg_data->search_term != NULL)
   {
