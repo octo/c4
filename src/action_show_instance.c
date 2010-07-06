@@ -200,7 +200,7 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
     time_params[sizeof (time_params) - 1] = 0;
   }
 
-  printf ("<h3>Instance &quot;%s&quot;</h3>\n", descr);
+  printf ("<h2>Instance &quot;%s&quot;</h2>\n", descr);
 
   show_breadcrump (cfg, inst);
 
