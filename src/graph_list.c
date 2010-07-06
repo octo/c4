@@ -63,7 +63,7 @@ static time_t gl_last_update = 0;
 /*
  * Private functions
  */
-int gl_add_graph_internal (graph_config_t *cfg, /* {{{ */
+static int gl_add_graph_internal (graph_config_t *cfg, /* {{{ */
     graph_config_t ***gl_array, size_t *gl_array_num)
 {
   graph_config_t **tmp;
