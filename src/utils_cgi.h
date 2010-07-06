@@ -70,6 +70,10 @@ char *uri_escape (const char *string);
 char *uri_escape_buffer (char *buffer, size_t buffer_size);
 char *uri_escape_copy (char *dest, const char *src, size_t n);
 
+char *json_escape (const char *string);
+char *json_escape_buffer (char *buffer, size_t buffer_size);
+char *json_escape_copy (char *dest, const char *src, size_t n);
+
 const char *script_name (void);
 
 int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size);

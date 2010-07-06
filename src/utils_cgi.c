@@ -473,6 +473,89 @@ char *uri_escape (const char *string) /* {{{ */
   return (strdup (buffer));
 } /* }}} char *uri_escape */
 
+#define COPY_ENTITY(e) do {    \
+  size_t len = strlen (e);     \
+  if (dest_size < (len + 1))   \
+    break;                     \
+  strcpy (dest_ptr, (e));      \
+  dest_ptr += len;             \
+  dest_size -= len;            \
+} while (0)
+
+char *json_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
+{
+  char *dest_ptr;
+  size_t dest_size;
+  size_t pos;
+
+  dest[0] = 0;
+  dest_ptr = dest;
+  dest_size = n;
+  for (pos = 0; src[pos] != 0; pos++)
+  {
+    if (src[pos] == '"')
+      COPY_ENTITY ("\\\"");
+    else if (src[pos] == '\\')
+      COPY_ENTITY ("\\\\");
+    else if (((uint8_t) src[pos]) < 32)
+    {
+      if (src[pos] == '\n')
+        COPY_ENTITY ("\\n");
+      else if (src[pos] == '\r')
+        COPY_ENTITY ("\\r");
+      else if (src[pos] == '\t')
+        COPY_ENTITY ("\\t");
+      else if (src[pos] == '\b')
+        COPY_ENTITY ("\\b");
+      else if (src[pos] == '\f')
+        COPY_ENTITY ("\\f");
+      else
+      {
+        char buffer[8];
+        sprintf (buffer, "\\u%04"PRIx8, (uint8_t) src[pos]);
+        buffer[sizeof (buffer) - 1] = 0;
+        COPY_ENTITY (buffer);
+      }
+    }
+    else
+    {
+      *dest_ptr = src[pos];
+      dest_ptr++;
+      dest_size--;
+      *dest_ptr = 0;
+    }
+
+    if (dest_size <= 1)
+      break;
+  }
+
+  return (dest);
+} /* }}} char *json_escape_copy */
+
+#undef COPY_ENTITY
+
+char *json_escape_buffer (char *buffer, size_t buffer_size)
+{
+  char temp[buffer_size];
+
+  json_escape_copy (temp, buffer, buffer_size);
+  memcpy (buffer, temp, buffer_size);
+
+  return (buffer);
+} /* }}} char *json_escape_buffer */
+
+char *json_escape (const char *string) /* {{{ */
+{
+  char buffer[4096];
+
+  if (string == NULL)
+    return (NULL);
+
+  json_escape_copy (buffer, string, sizeof (buffer));
+
+  return (strdup (buffer));
+} /* }}} char *json_escape */
+
 const char *script_name (void) /* {{{ */
 {
   char *ret;
@@ -504,11 +587,11 @@ int time_to_rfc1123 (time_t t, char *buffer, size_t buffer_size) /* {{{ */
 
 #define COPY_ENTITY(e) do {    \
   size_t len = strlen (e);     \
-  if (dest_size < (len + 1)) \
+  if (dest_size < (len + 1))   \
     break;                     \
-  strcpy (dest_ptr, (e));    \
-  dest_ptr += len;           \
-  dest_size -= len;          \
+  strcpy (dest_ptr, (e));      \
+  dest_ptr += len;             \
+  dest_size -= len;            \
 } while (0)
 
 char *html_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
