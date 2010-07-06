@@ -51,6 +51,7 @@
 struct show_graph_data_s
 {
   graph_config_t *cfg;
+  const char *search_term;
 };
 typedef struct show_graph_data_s show_graph_data_t;
 
@@ -83,10 +84,26 @@ static int show_time_selector (__attribute__((unused)) void *user_data) /* {{{ *
   return (0);
 } /* }}} int show_time_selector */
 
-static int left_menu (__attribute__((unused)) void *user_data) /* {{{ */
+static int left_menu (void *user_data) /* {{{ */
 {
-  printf ("\n<ul class=\"menu left\">\n"
-      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
+  show_graph_data_t *data = user_data;
+
+  printf ("\n<ul class=\"menu left\">\n");
+
+  if ((data->search_term != NULL) && (data->search_term[0] != 0))
+  {
+    char params[1024];
+
+    memset (params, 0, sizeof (params));
+    graph_get_params (data->cfg, params, sizeof (params));
+    html_escape_buffer (params, sizeof (params));
+
+    printf ("  <li><a href=\"%s?action=show_graph;%s\">"
+        "All instances</a></li>\n",
+        script_name (), params);
+  }
+
+  printf ("  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
       "</ul>\n",
       script_name ());
 
@@ -99,6 +116,51 @@ static int show_instance_cb (graph_instance_t *inst, /* {{{ */
   show_graph_data_t *data = user_data;
   char descr[128];
   char params[1024];
+
+  if ((data->search_term != NULL) && (data->search_term[0] != 0))
+  {
+    _Bool matches = 0;
+    char *term_lc = strtolower_copy (data->search_term);
+
+    if (strncmp ("host:", term_lc, strlen ("host:")) == 0)
+    {
+      if (inst_matches_field (inst, GIF_HOST, term_lc + strlen ("host:")))
+        matches = 1;
+    }
+    else if (strncmp ("plugin:", term_lc, strlen ("plugin:")) == 0)
+    {
+      if (inst_matches_field (inst, GIF_PLUGIN, term_lc + strlen ("plugin:")))
+        matches = 1;
+    }
+    else if (strncmp ("plugin_instance:", term_lc,
+          strlen ("plugin_instance:")) == 0)
+    {
+      if (inst_matches_field (inst, GIF_PLUGIN_INSTANCE,
+            term_lc + strlen ("plugin_instance:")))
+        matches = 1;
+    }
+    else if (strncmp ("type:", term_lc, strlen ("type:")) == 0)
+    {
+      if (inst_matches_field (inst, GIF_TYPE, term_lc + strlen ("type:")))
+        matches = 1;
+    }
+    else if (strncmp ("type_instance:", term_lc,
+          strlen ("type_instance:")) == 0)
+    {
+      if (inst_matches_field (inst, GIF_TYPE_INSTANCE,
+            term_lc + strlen ("type_instance:")))
+        matches = 1;
+    }
+    else if (inst_matches_string (data->cfg, inst, term_lc))
+    {
+      matches = 1;
+    }
+
+    free (term_lc);
+
+    if (!matches)
+      return (0);
+  } /* if (data->search_term) */
 
   memset (descr, 0, sizeof (descr));
   inst_describe (data->cfg, inst, descr, sizeof (descr));
@@ -119,7 +181,16 @@ static int show_graph (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
 
-  printf ("<h2>Available instances</h2>\n");
+  if ((data->search_term == NULL) || (data->search_term[0] == 0))
+    printf ("<h2>All instances</h2>\n");
+  else
+  {
+    char *search_term_html = html_escape (data->search_term);
+    printf ("<h2>Instances matching &quot;%s&quot;</h2>\n",
+        search_term_html);
+    free (search_term_html);
+  }
+
   printf ("<ul class=\"instance_list\">\n");
   graph_inst_foreach (data->cfg, show_instance_cb, data);
   printf ("</ul>\n");
@@ -139,6 +210,8 @@ int action_show_graph (void) /* {{{ */
   pg_data.cfg = gl_graph_get_selected ();
   if (pg_data.cfg == NULL)
     OUTPUT_ERROR ("gl_graph_get_selected () failed.\n");
+
+  pg_data.search_term = param ("q");
 
   memset (tmp, 0, sizeof (tmp));
   graph_get_title (pg_data.cfg, tmp, sizeof (tmp));

@@ -152,8 +152,7 @@ static int left_menu (void *user_data) /* {{{ */
   html_escape_buffer (params, sizeof (params));
 
   printf ("\n<ul class=\"menu left\">\n"
-      "  <li><a href=\"%s?action=show_graph;%s\">"
-      "Available instances</a></li>\n"
+      "  <li><a href=\"%s?action=show_graph;%s\">All instances</a></li>\n"
       "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
       "</ul>\n",
       script_name (), params,
