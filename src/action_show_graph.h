@@ -1,5 +1,5 @@
 /**
- * collection4 - action_show_instance.h
+ * collection4 - action_show_graph.h
  * Copyright (C) 2010  Florian octo Forster
  * 
  * This program is free software; you can redistribute it and/or
@@ -21,10 +21,10 @@
  *   Florian octo Forster <ff at octo.it>
  **/
 
-#ifndef ACTION_SHOW_INSTANCE_H
-#define ACTION_SHOW_INSTANCE_H 1
+#ifndef ACTION_SHOW_GRAPH_H
+#define ACTION_SHOW_GRAPH_H 1
 
-int action_show_instance (void);
+int action_show_graph (void);
 
-#endif /* ACTION_SHOW_INSTANCE_H */
+#endif /* ACTION_SHOW_GRAPH_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
