@@ -158,7 +158,7 @@ static int gl_clear_hosts (void) /* {{{ */
 
 static int gl_compare_hosts (const void *v0, const void *v1) /* {{{ */
 {
-  return (strcmp (v0, v1));
+  return (strcmp (*(char * const *) v0, *(char * const *) v1));
 } /* }}} int gl_compare_hosts */
 
 static int gl_register_file (const graph_ident_t *file, /* {{{ */
