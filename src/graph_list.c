@@ -44,7 +44,7 @@
 /*
  * Defines
  */
-#define UPDATE_INTERVAL 10
+#define UPDATE_INTERVAL 900
 
 /*
  * Global variables
