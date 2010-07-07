@@ -85,6 +85,8 @@ int graph_inst_search_field (graph_config_t *cfg,
 
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);
 
+int graph_sort_instances (graph_config_t *cfg);
+
 int graph_clear_instances (graph_config_t *cfg);
 
 int graph_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
