@@ -433,6 +433,12 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
   return (0);
 } /* }}} int inst_get_params */
 
+int inst_compare (const graph_instance_t *i0, /* {{{ */
+    const graph_instance_t *i1)
+{
+  return (ident_compare (i0->select, i1->select));
+} /* }}} int inst_compare */
+
 int inst_compare_ident (graph_instance_t *inst, /* {{{ */
     const graph_ident_t *ident)
 {

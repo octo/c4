@@ -54,6 +54,8 @@ int inst_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
 
 graph_ident_t *inst_get_selector (graph_instance_t *inst);
 
+int inst_compare (const graph_instance_t *i0, const graph_instance_t *i1);
+
 int inst_compare_ident (graph_instance_t *inst, const graph_ident_t *ident);
 
 /* Returns true if "ident" matches the instance's selector. */
