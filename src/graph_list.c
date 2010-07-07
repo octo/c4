@@ -55,6 +55,11 @@ static size_t gl_active_num = 0;
 static graph_config_t **gl_staging = NULL;
 static size_t gl_staging_num = 0;
 
+/* Graphs created on-the-fly for files which don't match any existing graph
+ * definition. */
+static graph_config_t **gl_dynamic = NULL;
+static size_t gl_dynamic_num = 0;
+
 static char **host_list = NULL;
 static size_t host_list_len = 0;
 
@@ -87,6 +92,30 @@ static int gl_add_graph_internal (graph_config_t *cfg, /* {{{ */
 
   return (0);
 } /* }}} int gl_add_graph_internal */
+
+static void gl_destroy (graph_config_t ***gl_array, /* {{{ */
+    size_t *gl_array_num)
+{
+  size_t i;
+
+  if ((gl_array == NULL) || (gl_array_num == NULL))
+    return;
+
+#define ARRAY_PTR  (*gl_array)
+#define ARRAY_SIZE (*gl_array_num)
+
+  for (i = 0; i < ARRAY_SIZE; i++)
+  {
+    graph_destroy (ARRAY_PTR[i]);
+    ARRAY_PTR[i] = NULL;
+  }
+  free (ARRAY_PTR);
+  ARRAY_PTR = NULL;
+  ARRAY_SIZE = 0;
+
+#undef ARRAY_SIZE
+#undef ARRAY_PTR
+} /* }}} void gl_destroy */
 
 static int gl_register_host (const char *host) /* {{{ */
 {
@@ -161,7 +190,7 @@ static int gl_register_file (const graph_ident_t *file, /* {{{ */
   if (num_graphs == 0)
   {
     cfg = graph_create (file);
-    gl_add_graph_internal (cfg, &gl_active, &gl_active_num);
+    gl_add_graph_internal (cfg, &gl_dynamic, &gl_dynamic_num);
     graph_add_file (cfg, file);
   }
 
@@ -192,7 +221,6 @@ static int gl_clear_instances (void) /* {{{ */
   return (0);
 } /* }}} int gl_clear_instances */
 
-
 /*
  * Global functions
  */
@@ -205,7 +233,6 @@ int gl_config_submit (void) /* {{{ */
 {
   graph_config_t **old;
   size_t old_num;
-  size_t i;
 
   old = gl_active;
   old_num = gl_active_num;
@@ -216,12 +243,7 @@ int gl_config_submit (void) /* {{{ */
   gl_staging = NULL;
   gl_staging_num = 0;
 
-  for (i = 0; i < old_num; i++)
-  {
-    graph_destroy (old[i]);
-    old[i] = NULL;
-  }
-  free (old);
+  gl_destroy (&old, &old_num);
 
   return (0);
 } /* }}} int graph_config_submit */
@@ -241,6 +263,15 @@ int gl_graph_get_all (graph_callback_t callback, /* {{{ */
     int status;
 
     status = (*callback) (gl_active[i], user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  for (i = 0; i < gl_dynamic_num; i++)
+  {
+    int status;
+
+    status = (*callback) (gl_dynamic[i], user_data);
     if (status != 0)
       return (status);
   }
@@ -274,6 +305,15 @@ graph_config_t *gl_graph_get_selected (void) /* {{{ */
 
     ident_destroy (ident);
     return (gl_active[i]);
+  }
+
+  for (i = 0; i < gl_dynamic_num; i++)
+  {
+    if (graph_compare (gl_dynamic[i], ident) != 0)
+      continue;
+
+    ident_destroy (ident);
+    return (gl_dynamic[i]);
   }
 
   ident_destroy (ident);
@@ -328,6 +368,15 @@ int gl_instance_get_all (graph_inst_callback_t callback, /* {{{ */
       return (status);
   }
 
+  for (i = 0; i < gl_dynamic_num; i++)
+  {
+    int status;
+
+    status = gl_graph_instance_get_all (gl_dynamic[i], callback, user_data);
+    if (status != 0)
+      return (status);
+  }
+
   return (0);
 } /* }}} int gl_instance_get_all */
 /* }}} gl_instance_get_all, gl_graph_instance_get_all */
@@ -342,6 +391,17 @@ int gl_search (const char *term, graph_inst_callback_t callback, /* {{{ */
     int status;
 
     status = graph_inst_search (gl_active[i], term,
+        /* callback  = */ callback,
+        /* user data = */ user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  for (i = 0; i < gl_dynamic_num; i++)
+  {
+    int status;
+
+    status = graph_inst_search (gl_dynamic[i], term,
         /* callback  = */ callback,
         /* user data = */ user_data);
     if (status != 0)
@@ -365,6 +425,18 @@ int gl_search_field (graph_ident_field_t field, /* {{{ */
     int status;
 
     status = graph_inst_search_field (gl_active[i],
+        field, field_value,
+        /* callback  = */ callback,
+        /* user data = */ user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  for (i = 0; i < gl_dynamic_num; i++)
+  {
+    int status;
+
+    status = graph_inst_search_field (gl_dynamic[i],
         field, field_value,
         /* callback  = */ callback,
         /* user data = */ user_data);
@@ -405,10 +477,13 @@ int gl_update (void) /* {{{ */
   if ((gl_last_update + UPDATE_INTERVAL) >= now)
     return (0);
 
-  graph_read_config ();
-
+  /* Clear state */
   gl_clear_instances ();
   gl_clear_hosts ();
+  gl_destroy (&gl_dynamic, &gl_dynamic_num);
+
+  graph_read_config ();
+
   status = fs_scan (/* callback = */ gl_register_file, /* user data = */ NULL);
 
   if (host_list_len > 0)
