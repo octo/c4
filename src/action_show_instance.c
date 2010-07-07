@@ -222,7 +222,6 @@ static int show_instance (void *user_data) /* {{{ */
   show_graph_data_t *data = user_data;
   int status;
 
-  fprintf (stderr, "show_instance: Calling inst_get_all_selected()\n");
   status = inst_get_all_selected (data->cfg,
       /* callback = */ show_instance_cb, /* user data = */ data);
   if (status != 0)
