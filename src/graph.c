@@ -299,8 +299,10 @@ int graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
 
 _Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {
+#if C4_DEBUG
   if ((cfg == NULL) || (ident == NULL))
     return (0);
+#endif
 
   return (ident_matches (cfg->select, ident));
 } /* }}} _Bool graph_matches_ident */

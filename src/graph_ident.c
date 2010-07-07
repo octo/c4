@@ -94,8 +94,10 @@ static char *part_copy_with_selector (const char *selector, /* {{{ */
 static _Bool part_matches (const char *selector, /* {{{ */
     const char *part)
 {
+#if C4_DEBUG
   if ((selector == NULL) && (part == NULL))
     return (1);
+#endif
 
   if (selector == NULL) /* && (part != NULL) */
     return (0);
@@ -401,8 +403,10 @@ int ident_compare (const graph_ident_t *i0, /* {{{ */
 _Bool ident_matches (const graph_ident_t *selector, /* {{{ */
     const graph_ident_t *ident)
 {
+#if C4_DEBUG
   if ((selector == NULL) || (ident == NULL))
     return (0);
+#endif
 
   if (!part_matches (selector->host, ident->host))
     return (0);

@@ -445,8 +445,10 @@ int inst_compare_ident (graph_instance_t *inst, /* {{{ */
 _Bool inst_ident_matches (graph_instance_t *inst, /* {{{ */
     const graph_ident_t *ident)
 {
+#if C4_DEBUG
   if ((inst == NULL) || (ident == NULL))
     return (0);
+#endif
 
   return (ident_matches (inst->select, ident));
 } /* }}} _Bool inst_ident_matches */
