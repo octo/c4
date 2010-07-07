@@ -484,6 +484,12 @@ int graph_compare (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
   return (ident_compare (cfg->select, ident));
 } /* }}} int graph_compare */
 
+static int graph_sort_instances_cb (const void *v0, const void *v1) /* {{{ */
+{
+  return (ident_compare (*(graph_ident_t * const *) v0,
+        *(graph_ident_t * const *) v1));
+} /* }}} int graph_sort_instances_cb */
+
 int graph_sort_instances (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)
@@ -493,7 +499,7 @@ int graph_sort_instances (graph_config_t *cfg) /* {{{ */
     return (0);
 
   qsort (cfg->instances, cfg->instances_num, sizeof (*cfg->instances),
-      (void *) ident_compare);
+      graph_sort_instances_cb);
 
   return (0);
 } /* }}} int graph_sort_instances */
