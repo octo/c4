@@ -467,6 +467,7 @@ int gl_update (void) /* {{{ */
 {
   time_t now;
   int status;
+  size_t i;
 
   /*
   printf ("Content-Type: text/plain\n\n");
@@ -491,6 +492,9 @@ int gl_update (void) /* {{{ */
         gl_compare_hosts);
 
   gl_last_update = now;
+
+  for (i = 0; i < gl_active_num; i++)
+    graph_sort_instances (gl_active[i]);
 
   return (status);
 } /* }}} int gl_update */
