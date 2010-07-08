@@ -490,6 +490,14 @@ static int graph_sort_instances_cb (const void *v0, const void *v1) /* {{{ */
         *(graph_instance_t * const *) v1));
 } /* }}} int graph_sort_instances_cb */
 
+size_t graph_num_instances (graph_config_t *cfg) /* {{{ */
+{
+  if (cfg == NULL)
+    return ((size_t) -1);
+
+  return (cfg->instances_num);
+} /* }}} size_t graph_num_instances */
+
 int graph_sort_instances (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)

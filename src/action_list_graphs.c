@@ -135,6 +135,9 @@ static int print_graph_html (graph_config_t *cfg, /* {{{ */
   char params[1024];
   char title[1024];
 
+  if (graph_num_instances (cfg) < 1)
+    return (0);
+
   memset (title, 0, sizeof (title));
   graph_get_title (cfg, title, sizeof (title));
   html_escape_buffer (title, sizeof (title));
