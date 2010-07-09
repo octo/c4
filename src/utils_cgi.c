@@ -751,7 +751,7 @@ int html_print_search_box (__attribute__((unused)) void *user_data) /* {{{ */
   term_html = html_escape (param ("q"));
 
   printf ("<form action=\"%s\" method=\"get\" id=\"search-form\">\n"
-      "  <input type=\"hidden\" name=\"action\" value=\"list_graphs\" />\n"
+      "  <input type=\"hidden\" name=\"action\" value=\"search\" />\n"
       "  <input type=\"text\" name=\"q\" value=\"%s\" id=\"search-input\" />\n"
       "  <input type=\"submit\" name=\"button\" value=\"Search\" />\n"
       "</form>\n",
