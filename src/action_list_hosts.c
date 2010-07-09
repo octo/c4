@@ -35,6 +35,16 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
+static int left_menu (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  printf ("\n<ul class=\"menu left\">\n"
+      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
+      "</ul>\n",
+      script_name ());
+
+  return (0);
+} /* }}} int left_menu */
+
 static int print_one_host (const char *host, /* {{{ */
     __attribute__((unused)) void *user_data)
 {
@@ -71,6 +81,7 @@ int action_list_hosts (void) /* {{{ */
   title[sizeof (title) - 1] = 0;
 
   pg_callbacks.top_right = html_print_search_box;
+  pg_callbacks.middle_left = left_menu;
   pg_callbacks.middle_center = print_all_hosts;
 
   html_print_page (title, &pg_callbacks, /* user data = */ NULL);
