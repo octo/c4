@@ -17,6 +17,7 @@ collection_fcgi_SOURCES = main.c \
 			  oconfig.c oconfig.h aux_types.h scanner.l parser.y \
 			  action_graph.c action_graph.h \
 			  action_list_graphs.c action_list_graphs.h \
+			  action_list_hosts.c action_list_hosts.h \
 			  action_search.c action_search.h \
 			  action_search_json.c action_search_json.h \
 			  action_show_graph.c action_show_graph.h \
