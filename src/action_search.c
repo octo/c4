@@ -21,10 +21,13 @@
  *   Florian octo Forster <ff at octo.it>
  **/
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "action_search.h"
 #include "common.h"
@@ -51,6 +54,17 @@ struct callback_data_s
   const char *search_term;
 };
 typedef struct callback_data_s callback_data_t;
+
+static int left_menu (__attribute__((unused)) void *user_data) /* {{{ */
+{
+  printf ("\n<ul class=\"menu left\">\n"
+      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
+      "  <li><a href=\"%s?action=list_hosts\">All hosts</a></li>\n"
+      "</ul>\n",
+      script_name (), script_name ());
+
+  return (0);
+} /* }}} int left_menu */
 
 static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
@@ -129,30 +143,6 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int print_graph_inst_html */
 
-static int print_graph_html (graph_config_t *cfg, /* {{{ */
-    __attribute__((unused)) void *user_data)
-{
-  char params[1024];
-  char title[1024];
-
-  if (graph_num_instances (cfg) < 1)
-    return (0);
-
-  memset (title, 0, sizeof (title));
-  graph_get_title (cfg, title, sizeof (title));
-  html_escape_buffer (title, sizeof (title));
-
-  memset (params, 0, sizeof (params));
-  graph_get_params (cfg, params, sizeof (params));
-  html_escape_buffer (params, sizeof (params));
-
-  printf ("      <li class=\"graph\"><a href=\"%s?action=show_graph;%s\">"
-      "%s</a></li>\n",
-      script_name (), params, title);
-
-  return (0);
-} /* }}} int print_graph_html */
-
 struct page_data_s
 {
   const char *search_term;
@@ -166,45 +156,40 @@ static int print_search_result (void *user_data) /* {{{ */
     /* graph_index = */ -1, /* graph_limit = */ 20, /* graph_more = */ 0,
     /* inst_index = */  -1, /* inst_limit = */   5, /* inst more = */  0,
     /* search_term = */ pg_data->search_term };
+  char *term_lc;
+  char *search_term_html;
 
-  if (pg_data->search_term != NULL)
-  {
-    char *search_term_html = html_escape (pg_data->search_term);
-    printf ("    <h2>Search results for &quot;%s&quot;</h2>\n",
-        search_term_html);
-    free (search_term_html);
-  }
+  assert (pg_data->search_term != NULL);
+
+  search_term_html = html_escape (pg_data->search_term);
+  printf ("    <h2>Search results for &quot;%s&quot;</h2>\n",
+      search_term_html);
+  free (search_term_html);
 
   printf ("    <ul id=\"search-output\" class=\"graph_list\">\n");
-  if (pg_data->search_term == NULL)
-  {
-    gl_graph_get_all (print_graph_html, /* user_data = */ &cb_data);
-  }
+
+  term_lc = strtolower_copy (pg_data->search_term);
+
+  if (strncmp ("host:", term_lc, strlen ("host:")) == 0)
+    gl_search_field (GIF_HOST, term_lc + strlen ("host:"),
+        print_graph_inst_html, /* user_data = */ &cb_data);
+  else if (strncmp ("plugin:", term_lc, strlen ("plugin:")) == 0)
+    gl_search_field (GIF_PLUGIN, term_lc + strlen ("plugin:"),
+        print_graph_inst_html, /* user_data = */ &cb_data);
+  else if (strncmp ("plugin_instance:", term_lc, strlen ("plugin_instance:")) == 0)
+    gl_search_field (GIF_PLUGIN_INSTANCE, term_lc + strlen ("plugin_instance:"),
+        print_graph_inst_html, /* user_data = */ &cb_data);
+  else if (strncmp ("type:", term_lc, strlen ("type:")) == 0)
+    gl_search_field (GIF_TYPE, term_lc + strlen ("type:"),
+        print_graph_inst_html, /* user_data = */ &cb_data);
+  else if (strncmp ("type_instance:", term_lc, strlen ("type_instance:")) == 0)
+    gl_search_field (GIF_TYPE_INSTANCE, term_lc + strlen ("type_instance:"),
+        print_graph_inst_html, /* user_data = */ &cb_data);
   else
-  {
-    char *term_lc = strtolower_copy (pg_data->search_term);
+    gl_search (term_lc,
+        print_graph_inst_html, /* user_data = */ &cb_data);
 
-    if (strncmp ("host:", term_lc, strlen ("host:")) == 0)
-      gl_search_field (GIF_HOST, term_lc + strlen ("host:"),
-          print_graph_inst_html, /* user_data = */ &cb_data);
-    else if (strncmp ("plugin:", term_lc, strlen ("plugin:")) == 0)
-      gl_search_field (GIF_PLUGIN, term_lc + strlen ("plugin:"),
-          print_graph_inst_html, /* user_data = */ &cb_data);
-    else if (strncmp ("plugin_instance:", term_lc, strlen ("plugin_instance:")) == 0)
-      gl_search_field (GIF_PLUGIN_INSTANCE, term_lc + strlen ("plugin_instance:"),
-          print_graph_inst_html, /* user_data = */ &cb_data);
-    else if (strncmp ("type:", term_lc, strlen ("type:")) == 0)
-      gl_search_field (GIF_TYPE, term_lc + strlen ("type:"),
-          print_graph_inst_html, /* user_data = */ &cb_data);
-    else if (strncmp ("type_instance:", term_lc, strlen ("type_instance:")) == 0)
-      gl_search_field (GIF_TYPE_INSTANCE, term_lc + strlen ("type_instance:"),
-          print_graph_inst_html, /* user_data = */ &cb_data);
-    else
-      gl_search (term_lc,
-          print_graph_inst_html, /* user_data = */ &cb_data);
-
-    free (term_lc);
-  }
+  free (term_lc);
 
   if (cb_data.cfg != NULL)
     printf ("      </ul></li>\n");
@@ -219,37 +204,55 @@ static int print_search_result (void *user_data) /* {{{ */
   return (0);
 } /* }}} int print_search_result */
 
-static int print_host_list_callback (const char *host, void *user_data) /* {{{ */
+static int print_search_form (void *user_data) /* {{{ */
 {
-  char *host_html;
+  page_data_t *pg_data = user_data;
+  char search_term_html[1024];
 
-  /* Make compiler happy */
-  user_data = NULL;
+  if (pg_data->search_term != NULL)
+  {
+    html_escape_copy (search_term_html, pg_data->search_term,
+        sizeof (search_term_html));
+  }
+  else
+  {
+    search_term_html[0] = 0;
+  }
 
-  if (host == NULL)
-    return (EINVAL);
-  
-  host_html = html_escape (host);
-  if (host_html == NULL)
-    return (ENOMEM);
-
-  printf ("  <li class=\"host\"><a href=\"%s?action=search;q=host:%s\">"
-      "%s</a></li>\n",
-      script_name (), host_html, host_html);
+  printf ("<form action=\"%s\" method=\"get\">\n"
+      "  <input type=\"hidden\" name=\"action\" value=\"search\" />\n"
+      "  <fieldset>\n"
+      "    <legend>Advanced search</legend>\n"
+#if 0
+      "      <span class=\"nbr\">\n"
+      "        <input type=\"checkbox\" name=\"sfh\" value=\"1\" checked=\"checked\" id=\"search_for_host\" />\n"
+      "        <label for=\"search_for_host\">Host</label>\n"
+      "      </span>\n"
+      "      <span class=\"nbr\">\n"
+      "        <input type=\"checkbox\" name=\"sfp\" value=\"1\" checked=\"checked\" id=\"search_for_plugin\" />\n"
+      "        <label for=\"search_for_plugin\">Plugin</label>\n"
+      "      </span>\n"
+      "      <span class=\"nbr\">\n"
+      "        <input type=\"checkbox\" name=\"sfpi\" value=\"1\" checked=\"checked\" id=\"search_for_plugin_instance\" />\n"
+      "        <label for=\"search_for_plugin_instance\">Plugin instance</label>\n"
+      "      </span>\n"
+      "      <span class=\"nbr\">\n"
+      "        <input type=\"checkbox\" name=\"sft\" value=\"1\" checked=\"checked\" id=\"search_for_type\" />\n"
+      "        <label for=\"search_for_type\">Type</label>\n"
+      "      </span>\n"
+      "      <span class=\"nbr\">\n"
+      "        <input type=\"checkbox\" name=\"sfti\" value=\"1\" checked=\"checked\" id=\"search_for_type_instance\" />\n"
+      "        <label for=\"search_for_type_instance\">Type instance</label>\n"
+      "      </span>\n"
+#endif
+      "    <div>Search for <input type=\"text\" name=\"q\" value=\"%s\" size=\"50\" /></div>\n"
+      "    <input type=\"submit\" name=\"button\" value=\"Advanced search\" />"
+      "  </fieldset>\n"
+      "</form>\n",
+      script_name (), search_term_html);
 
   return (0);
-} /* }}} int print_host_list_callback */
-
-static int print_host_list (__attribute__((unused)) void *user_data) /* {{{ */
-{
-	return (0);
-  printf ("<div><h3>List of hosts</h3>\n"
-      "<ul id=\"host-list\">\n");
-  gl_foreach_host (print_host_list_callback, /* user data = */ NULL);
-  printf ("</ul></div>\n");
-
-  return (0);
-} /* }}} int print_host_list */
+} /* }}} int print_search_form */
 
 static int search_html (const char *term) /* {{{ */
 {
@@ -261,15 +264,18 @@ static int search_html (const char *term) /* {{{ */
     snprintf (title, sizeof (title), "Graphs matching \"%s\"",
         term);
   else
-    strncpy (title, "List of all graphs", sizeof (title));
+    strncpy (title, "Search", sizeof (title));
   title[sizeof (title) - 1] = 0;
 
   memset (&pg_data, 0, sizeof (pg_data));
   pg_data.search_term = term;
 
   pg_callbacks.top_right = html_print_search_box;
-  pg_callbacks.middle_left = print_host_list;
-  pg_callbacks.middle_center = print_search_result;
+  pg_callbacks.middle_left = left_menu;
+  if (term != NULL)
+    pg_callbacks.middle_center = print_search_result;
+  else
+    pg_callbacks.middle_center = print_search_form;
 
   html_print_page (title, &pg_callbacks, &pg_data);
 
@@ -284,6 +290,11 @@ int action_search (void) /* {{{ */
   gl_update ();
 
   search = strtolower_copy (param ("q"));
+  if ((search != NULL) && (search[0] == 0))
+  {
+    free (search);
+    search = NULL;
+  }
   status = search_html (search);
   free (search);
 
