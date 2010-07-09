@@ -70,10 +70,10 @@ static void show_breadcrump_field (const char *str, /* {{{ */
     char *str_html = html_escape (str);
 
     if (field_name != NULL)
-      printf ("<a href=\"%s?action=list_graphs;q=%s:%s\">%s</a>",
+      printf ("<a href=\"%s?action=search;q=%s:%s\">%s</a>",
           script_name (), field_name, str_html, str_html);
     else
-      printf ("<a href=\"%s?action=list_graphs;q=%s\">%s</a>",
+      printf ("<a href=\"%s?action=search;q=%s\">%s</a>",
           script_name (), str_html, str_html);
 
     free (str_html);
