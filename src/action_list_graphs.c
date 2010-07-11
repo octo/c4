@@ -38,9 +38,10 @@
 static int left_menu (__attribute__((unused)) void *user_data) /* {{{ */
 {
   printf ("\n<ul class=\"menu left\">\n"
+      "  <li><a href=\"%s?action=search\">Search</a></li>\n"
       "  <li><a href=\"%s?action=list_hosts\">All hosts</a></li>\n"
       "</ul>\n",
-      script_name ());
+      script_name (), script_name ());
 
   return (0);
 } /* }}} int left_menu */
