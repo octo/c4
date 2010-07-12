@@ -52,7 +52,7 @@ graph_def_t *graph_get_defs (graph_config_t *cfg);
 
 int graph_add_def (graph_config_t *cfg, graph_def_t *def);
 
-_Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident);
+_Bool graph_ident_matches (graph_config_t *cfg, const graph_ident_t *ident);
 
 /* Compares the given string with the appropriate field of the selector. If the
  * selector field is "/all/" or "/any/", returns true without checking the

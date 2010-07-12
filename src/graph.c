@@ -297,7 +297,7 @@ int graph_add_def (graph_config_t *cfg, graph_def_t *def) /* {{{ */
   return (def_append (cfg->defs, tmp));
 } /* }}} int graph_add_def */
 
-_Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
+_Bool graph_ident_matches (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
 {
 #if C4_DEBUG
   if ((cfg == NULL) || (ident == NULL))
@@ -305,7 +305,7 @@ _Bool graph_matches_ident (graph_config_t *cfg, const graph_ident_t *ident) /* {
 #endif
 
   return (ident_matches (cfg->select, ident));
-} /* }}} _Bool graph_matches_ident */
+} /* }}} _Bool graph_ident_matches */
 
 _Bool graph_matches_field (graph_config_t *cfg, /* {{{ */
     graph_ident_field_t field, const char *field_value)
