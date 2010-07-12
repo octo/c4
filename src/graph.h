@@ -81,7 +81,7 @@ int graph_inst_find_all_matching (graph_config_t *cfg,
     const graph_ident_t *ident,
     graph_inst_callback_t callback, void *user_data);
 
-int graph_inst_search (graph_config_t *cfg, const char *term,
+int graph_search_inst_string (graph_config_t *cfg, const char *term,
     graph_inst_callback_t callback, void *user_data);
 
 /* Iterates over all instances and calls "inst_matches_field". If that method

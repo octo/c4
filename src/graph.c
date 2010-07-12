@@ -408,7 +408,7 @@ int graph_inst_find_all_matching (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int graph_inst_find_all_matching */
 
-int graph_inst_search (graph_config_t *cfg, const char *term, /* {{{ */
+int graph_search_inst_string (graph_config_t *cfg, const char *term, /* {{{ */
     graph_inst_callback_t cb,
     void *user_data)
 {
@@ -419,7 +419,7 @@ int graph_inst_search (graph_config_t *cfg, const char *term, /* {{{ */
   status = graph_get_title (cfg, buffer, sizeof (buffer));
   if (status != 0)
   {
-    fprintf (stderr, "graph_inst_search: graph_get_title failed\n");
+    fprintf (stderr, "graph_search_inst_string: graph_get_title failed\n");
     return (status);
   }
 
@@ -448,7 +448,7 @@ int graph_inst_search (graph_config_t *cfg, const char *term, /* {{{ */
   }
 
   return (0);
-} /* }}} int graph_inst_search */
+} /* }}} int graph_search_inst_string */
 
 int graph_inst_search_field (graph_config_t *cfg, /* {{{ */
     graph_ident_field_t field, const char *field_value,

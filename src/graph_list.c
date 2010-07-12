@@ -390,7 +390,7 @@ int gl_search_string (const char *term, graph_inst_callback_t callback, /* {{{ *
   {
     int status;
 
-    status = graph_inst_search (gl_active[i], term,
+    status = graph_search_inst_string (gl_active[i], term,
         /* callback  = */ callback,
         /* user data = */ user_data);
     if (status != 0)
@@ -401,7 +401,7 @@ int gl_search_string (const char *term, graph_inst_callback_t callback, /* {{{ *
   {
     int status;
 
-    status = graph_inst_search (gl_dynamic[i], term,
+    status = graph_search_inst_string (gl_dynamic[i], term,
         /* callback  = */ callback,
         /* user data = */ user_data);
     if (status != 0)
