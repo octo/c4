@@ -37,6 +37,7 @@
 #include "graph_def.h"
 #include "graph_ident.h"
 #include "utils_cgi.h"
+#include "utils_search.h"
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
@@ -380,6 +381,53 @@ int gl_instance_get_all (graph_inst_callback_t callback, /* {{{ */
   return (0);
 } /* }}} int gl_instance_get_all */
 /* }}} gl_instance_get_all, gl_graph_instance_get_all */
+
+int gl_search (search_info_t *si, /* {{{ */
+    graph_inst_callback_t callback, void *user_data)
+{
+  size_t i;
+  graph_ident_t *ident;
+
+  if ((si == NULL) || (callback == NULL))
+    return (EINVAL);
+
+  ident = search_to_ident (si);
+  if (ident == NULL)
+  {
+    fprintf (stderr, "gl_search: search_to_ident failed\n");
+    return (-1);
+  }
+
+  for (i = 0; i < gl_active_num; i++)
+  {
+    int status;
+
+    if (!graph_matches_ident (gl_active[i], ident))
+      continue;
+
+    status = graph_search_inst (gl_active[i], si,
+        /* callback  = */ callback,
+        /* user data = */ user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  for (i = 0; i < gl_dynamic_num; i++)
+  {
+    int status;
+
+    if (!graph_matches_ident (gl_dynamic[i], ident))
+      continue;
+
+    status = graph_search_inst (gl_dynamic[i], si,
+        /* callback  = */ callback,
+        /* user data = */ user_data);
+    if (status != 0)
+      return (status);
+  }
+
+  return (0);
+} /* }}} int gl_search */
 
 int gl_search_string (const char *term, graph_inst_callback_t callback, /* {{{ */
     void *user_data)

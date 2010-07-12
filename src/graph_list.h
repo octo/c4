@@ -26,6 +26,7 @@
 
 #include "graph_types.h"
 #include "graph_ident.h"
+#include "utils_search.h"
 
 /*
  * Functions
@@ -42,6 +43,9 @@ int gl_graph_instance_get_all (graph_config_t *cfg, graph_inst_callback_t callba
     void *user_data);
 
 int gl_instance_get_all (graph_inst_callback_t callback, void *user_data);
+
+int gl_search (search_info_t *si, graph_inst_callback_t callback,
+    void *user_data);
 
 int gl_search_string (const char *search, graph_inst_callback_t callback,
     void *user_data);
