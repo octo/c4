@@ -34,4 +34,5 @@ collection_fcgi_SOURCES = main.c \
 			  graph_list.c graph_list.h \
 			  rrd_args.c rrd_args.h \
 			  utils_array.c utils_array.h \
-			  utils_cgi.c utils_cgi.h
+			  utils_cgi.c utils_cgi.h \
+			  utils_search.c utils_search.h
