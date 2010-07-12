@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "utils_search.h"
 #include "utils_array.h"
@@ -150,6 +151,39 @@ static char *next_token (const char **buffer) /* {{{ */
   return (ret);
 } /* }}} char *next_token */
 
+static int store_token_field (char **field, const char *token)
+{
+  char *copy;
+
+  if ((field == NULL) || (token == NULL))
+    return (EINVAL);
+
+  copy = strdup (token);
+  if (copy == NULL)
+    return (ENOMEM);
+
+  free (*field);
+  *field = copy;
+
+  return (0);
+} /* }}} int store_token_field */
+
+static int store_token (search_info_t *si, const char *token)
+{
+  if (strncmp ("host:", token, strlen ("host:")) == 0)
+    return (store_token_field (&si->host, token + strlen ("host:")));
+  else if (strncmp ("plugin:", token, strlen ("plugin:")) == 0)
+    return (store_token_field (&si->plugin, token + strlen ("plugin:")));
+  else if (strncmp ("plugin_instance:", token, strlen ("plugin_instance:")) == 0)
+    return (store_token_field (&si->plugin_instance, token + strlen ("plugin_instance:")));
+  else if (strncmp ("type:", token, strlen ("type:")) == 0)
+    return (store_token_field (&si->type, token + strlen ("type:")));
+  else if (strncmp ("type_instance:", token, strlen ("type_instance:")) == 0)
+    return (store_token_field (&si->type_instance, token + strlen ("type_instance:")));
+
+  return (array_append (si->terms, token));
+} /* }}} int store_token */
+
 search_info_t *search_parse (const char *search) /* {{{ */
 {
   const char *ptr;
@@ -172,8 +206,7 @@ search_info_t *search_parse (const char *search) /* {{{ */
 
   while ((token = next_token (&ptr)) != NULL)
   {
-    array_append (si->terms, token);
-
+    store_token (si, token);
     free (token);
   }
 
