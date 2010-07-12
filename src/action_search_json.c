@@ -149,7 +149,7 @@ static int list_graphs_json (const char *term) /* {{{ */
   if (term == NULL)
     gl_instance_get_all (json_print_graph_instance, /* user_data = */ &data);
   else
-    gl_search (term, json_print_graph_instance, /* user_data = */ &data);
+    gl_search_string (term, json_print_graph_instance, /* user_data = */ &data);
 
   if (!data.first)
     json_end_graph ();

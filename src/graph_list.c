@@ -381,7 +381,7 @@ int gl_instance_get_all (graph_inst_callback_t callback, /* {{{ */
 } /* }}} int gl_instance_get_all */
 /* }}} gl_instance_get_all, gl_graph_instance_get_all */
 
-int gl_search (const char *term, graph_inst_callback_t callback, /* {{{ */
+int gl_search_string (const char *term, graph_inst_callback_t callback, /* {{{ */
     void *user_data)
 {
   size_t i;
@@ -409,7 +409,7 @@ int gl_search (const char *term, graph_inst_callback_t callback, /* {{{ */
   }
 
   return (0);
-} /* }}} int gl_search */
+} /* }}} int gl_search_string */
 
 int gl_search_field (graph_ident_field_t field, /* {{{ */
     const char *field_value,

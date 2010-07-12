@@ -43,7 +43,7 @@ int gl_graph_instance_get_all (graph_config_t *cfg, graph_inst_callback_t callba
 
 int gl_instance_get_all (graph_inst_callback_t callback, void *user_data);
 
-int gl_search (const char *search, graph_inst_callback_t callback,
+int gl_search_string (const char *search, graph_inst_callback_t callback,
     void *user_data);
 
 int gl_search_field (graph_ident_field_t field, const char *field_value,

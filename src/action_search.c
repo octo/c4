@@ -186,7 +186,7 @@ static int print_search_result (void *user_data) /* {{{ */
     gl_search_field (GIF_TYPE_INSTANCE, term_lc + strlen ("type_instance:"),
         print_graph_inst_html, /* user_data = */ &cb_data);
   else
-    gl_search (term_lc,
+    gl_search_string (term_lc,
         print_graph_inst_html, /* user_data = */ &cb_data);
 
   free (term_lc);
