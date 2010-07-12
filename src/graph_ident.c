@@ -426,6 +426,27 @@ _Bool ident_matches (const graph_ident_t *selector, /* {{{ */
   return (1);
 } /* }}} _Bool ident_matches */
 
+_Bool ident_intersect (const graph_ident_t *s0, /* {{{ */
+    const graph_ident_t *s1)
+{
+#define INTERSECT_PART(p) do {                                               \
+  if (!IS_ANY (s0->p) && !IS_ALL (s0->p)                                     \
+      && !IS_ANY (s1->p) && !IS_ALL (s1->p)                                  \
+      && (strcmp (s0->p, s1->p) != 0))                                       \
+    return (0);                                                              \
+} while (0)
+
+  INTERSECT_PART (host);
+  INTERSECT_PART (plugin);
+  INTERSECT_PART (plugin_instance);
+  INTERSECT_PART (type);
+  INTERSECT_PART (type_instance);
+
+#undef INTERSECT_PART
+
+  return (1);
+} /* }}} _Bool ident_intersect */
+
 char *ident_to_string (const graph_ident_t *ident) /* {{{ */
 {
   char buffer[PATH_MAX];

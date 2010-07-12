@@ -78,6 +78,12 @@ int ident_compare (const graph_ident_t *i0,
 _Bool ident_matches (const graph_ident_t *selector,
     const graph_ident_t *ident);
 
+/* The "ident_intersect" function takes two selectors and returns true if a
+ * file may apply to both selectors. If the selectors contradict one another,
+ * for example one issuing "plugin = cpu" and the other "plugin = memory",
+ * then false is returned. */
+_Bool ident_intersect (const graph_ident_t *s0, const graph_ident_t *s1);
+
 char *ident_to_string (const graph_ident_t *ident);
 char *ident_to_file (const graph_ident_t *ident);
 char *ident_to_json (const graph_ident_t *ident);
