@@ -408,6 +408,61 @@ int graph_inst_find_all_matching (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int graph_inst_find_all_matching */
 
+/* When this function is called from graph_list, it will already have checked
+ * that the selector of the graph matches the field selections contained in
+ * the search_info_t. So if the graphs title matches, this means that the
+ * field selections and the search term(s) apply to the graph in general; thus
+ * we return all instances. Otherwise, use the somewhat expensive
+ * "search_graph_inst_matches" function to look for matching instances. */
+int graph_search_inst (graph_config_t *cfg, search_info_t *si, /* {{{ */
+    graph_inst_callback_t cb,
+    void *user_data)
+{
+  char title[1024];
+  int status;
+  size_t i;
+
+  if ((cfg == NULL) || (si == NULL) || (cb == NULL))
+    return (EINVAL);
+
+  status = graph_get_title (cfg, title, sizeof (title));
+  if (status != 0)
+  {
+    fprintf (stderr, "graph_search_inst: graph_get_title failed\n");
+    return (status);
+  }
+  strtolower (title);
+
+  if (search_graph_title_matches (si, title))
+  {
+    /* The title of the graph matches, so return all instances. */
+    for (i = 0; i < cfg->instances_num; i++)
+    {
+      status = (*cb) (cfg, cfg->instances[i], user_data);
+      if (status != 0)
+        return (status);
+    }
+  }
+  else
+  {
+    /* The title doesn't match, so use the more expensive
+     * "search_graph_inst_matches" to look for matching instances. Since part
+     * of the terms may match the title and other terms may match the
+     * instance, the title must be passed along to that function again. */
+    for (i = 0; i < cfg->instances_num; i++)
+    {
+      if (search_graph_inst_matches (si, cfg, cfg->instances[i], title))
+      {
+        status = (*cb) (cfg, cfg->instances[i], user_data);
+        if (status != 0)
+          return (status);
+      }
+    }
+  }
+
+  return (0);
+} /* }}} int graph_search_inst */
+
 int graph_search_inst_string (graph_config_t *cfg, const char *term, /* {{{ */
     graph_inst_callback_t cb,
     void *user_data)

@@ -29,6 +29,7 @@
 #include "oconfig.h"
 #include "rrd_args.h"
 #include "utils_array.h"
+#include "utils_search.h"
 
 /*
  * Functions
@@ -61,10 +62,10 @@ _Bool graph_ident_matches (graph_config_t *cfg, const graph_ident_t *ident);
 _Bool graph_matches_ident (graph_config_t *cfg,
     const graph_ident_t *selector);
 
-/* Compares the given string with the appropriate field of the selector. If the
- * selector field is "/all/" or "/any/", returns true without checking the
- * instances. See "graph_inst_search_field" for finding all matching instances.
- * */
+/* Compares the given string with the appropriate field of the selector. If
+ * the selector field is "/all/" or "/any/", returns true without checking the
+ * instances. See "graph_inst_search_field" for finding all matching
+ * instances. */
 _Bool graph_matches_field (graph_config_t *cfg,
     graph_ident_field_t field, const char *field_value);
 
@@ -79,6 +80,12 @@ graph_instance_t *graph_inst_find_matching (graph_config_t *cfg,
 
 int graph_inst_find_all_matching (graph_config_t *cfg,
     const graph_ident_t *ident,
+    graph_inst_callback_t callback, void *user_data);
+
+/* Search for instances using a search_info_t. The code assumes that the
+ * graph's selector has already been checked against the search_info_t, using
+ * "search_to_ident" and "graph_matches_ident". */
+int graph_search_inst (graph_config_t *cfg, search_info_t *si,
     graph_inst_callback_t callback, void *user_data);
 
 int graph_search_inst_string (graph_config_t *cfg, const char *term,
