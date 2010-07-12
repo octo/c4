@@ -402,7 +402,7 @@ int gl_search (search_info_t *si, /* {{{ */
   {
     int status;
 
-    if (!graph_matches_ident (gl_active[i], ident))
+    if (!graph_ident_intersect (gl_active[i], ident))
       continue;
 
     status = graph_search_inst (gl_active[i], si,
@@ -416,7 +416,7 @@ int gl_search (search_info_t *si, /* {{{ */
   {
     int status;
 
-    if (!graph_matches_ident (gl_dynamic[i], ident))
+    if (!graph_ident_intersect (gl_dynamic[i], ident))
       continue;
 
     status = graph_search_inst (gl_dynamic[i], si,
