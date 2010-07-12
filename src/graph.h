@@ -62,6 +62,12 @@ _Bool graph_ident_matches (graph_config_t *cfg, const graph_ident_t *ident);
 _Bool graph_matches_ident (graph_config_t *cfg,
     const graph_ident_t *selector);
 
+/* Returns true if a file may apply to both, the graphs selector and the
+ * selector given as argument. If the selectors contradict one another,
+ * returns false. */
+_Bool graph_ident_intersect (graph_config_t *cfg,
+    const graph_ident_t *selector);
+
 /* Compares the given string with the appropriate field of the selector. If
  * the selector field is "/all/" or "/any/", returns true without checking the
  * instances. See "graph_inst_search_field" for finding all matching

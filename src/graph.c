@@ -318,6 +318,17 @@ _Bool graph_matches_ident (graph_config_t *cfg, /* {{{ */
   return (ident_matches (selector, cfg->select));
 } /* }}} _Bool graph_matches_ident */
 
+_Bool graph_ident_intersect (graph_config_t *cfg, /* {{{ */
+    const graph_ident_t *selector)
+{
+#if C4_DEBUG
+  if ((cfg == NULL) || (selector == NULL))
+    return (0);
+#endif
+
+  return (ident_intersect (cfg->select, selector));
+} /* }}} _Bool graph_ident_intersect */
+
 _Bool graph_matches_field (graph_config_t *cfg, /* {{{ */
     graph_ident_field_t field, const char *field_value)
 {
