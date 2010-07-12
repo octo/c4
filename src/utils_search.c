@@ -44,6 +44,9 @@ struct search_info_s
   str_array_t *terms;
 };
 
+/*
+ * Private functions
+ */
 static char *read_quoted_string (const char **buffer) /* {{{ */
 {
   const char *ptr = *buffer;
@@ -151,7 +154,7 @@ static char *next_token (const char **buffer) /* {{{ */
   return (ret);
 } /* }}} char *next_token */
 
-static int store_token_field (char **field, const char *token)
+static int store_token_field (char **field, const char *token) /* {{{ */
 {
   char *copy;
 
@@ -168,7 +171,7 @@ static int store_token_field (char **field, const char *token)
   return (0);
 } /* }}} int store_token_field */
 
-static int store_token (search_info_t *si, const char *token)
+static int store_token (search_info_t *si, const char *token) /* {{{ */
 {
   if (strncmp ("host:", token, strlen ("host:")) == 0)
     return (store_token_field (&si->host, token + strlen ("host:")));
@@ -184,6 +187,9 @@ static int store_token (search_info_t *si, const char *token)
   return (array_append (si->terms, token));
 } /* }}} int store_token */
 
+/*
+ * Public functions
+ */
 search_info_t *search_parse (const char *search) /* {{{ */
 {
   const char *ptr;
