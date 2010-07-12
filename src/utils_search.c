@@ -28,6 +28,7 @@
 #include <errno.h>
 
 #include "utils_search.h"
+#include "graph_instance.h"
 #include "utils_array.h"
 
 #include <fcgiapp.h>
@@ -232,5 +233,43 @@ void search_destroy (search_info_t *si) /* {{{ */
 
   array_destroy (si->terms);
 } /* }}} void search_destroy */
+
+_Bool search_graph_inst_matches (search_info_t *si, /* {{{ */
+    graph_config_t *cfg, graph_instance_t *inst)
+{
+  char **argv;
+  int argc;
+  int i;
+
+  if ((si == NULL) || (cfg == NULL) || (inst == NULL))
+    return (0);
+
+  if ((si->host != NULL)
+      && !inst_matches_field (inst, GIF_HOST, si->host))
+    return (0);
+  else if ((si->plugin != NULL)
+      && !inst_matches_field (inst, GIF_PLUGIN, si->plugin))
+    return (0);
+  else if ((si->plugin_instance != NULL)
+      && !inst_matches_field (inst, GIF_PLUGIN_INSTANCE, si->plugin_instance))
+    return (0);
+  else if ((si->type != NULL)
+      && !inst_matches_field (inst, GIF_TYPE, si->type))
+    return (0);
+  else if ((si->type_instance != NULL)
+      && !inst_matches_field (inst, GIF_TYPE_INSTANCE, si->type_instance))
+    return (0);
+
+  if (si->terms == NULL)
+    return (1);
+
+  argc = array_argc (si->terms);
+  argv = array_argv (si->terms);
+  for (i = 0; i < argc; i++)
+    if (!inst_matches_string (cfg, inst, argv[i]))
+      return (0);
+
+  return (1);
+} /* }}} _Bool search_graph_inst_matches */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

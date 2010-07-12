@@ -24,11 +24,16 @@
 #ifndef UTILS_SEARCH_H
 #define UTILS_SEARCH_H 1
 
+#include "graph_types.h"
+
 struct search_info_s;
 typedef struct search_info_s search_info_t;
 
 search_info_t *search_parse (const char *search);
 void search_destroy (search_info_t *si);
+
+_Bool search_graph_inst_matches (search_info_t *si,
+    graph_config_t *cfg, graph_instance_t *inst);
 
 #endif /* UTILS_SEARCH_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
