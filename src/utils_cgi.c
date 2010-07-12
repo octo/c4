@@ -104,6 +104,7 @@ static char *uri_unescape_copy (char *dest, const char *src, size_t n) /* {{{ */
       *dest_ptr = *src_ptr;
     }
 
+    n--;
     src_ptr++;
     dest_ptr++;
     *dest_ptr = 0;
@@ -111,7 +112,7 @@ static char *uri_unescape_copy (char *dest, const char *src, size_t n) /* {{{ */
 
   assert (*dest_ptr == 0);
   return (dest);
-} /* }}} char *uri_unescape */
+} /* }}} char *uri_unescape_copy */
 
 static char *uri_unescape (const char *string) /* {{{ */
 {
