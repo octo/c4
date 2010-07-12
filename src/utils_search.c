@@ -234,8 +234,43 @@ void search_destroy (search_info_t *si) /* {{{ */
   array_destroy (si->terms);
 } /* }}} void search_destroy */
 
+graph_ident_t *search_to_ident (search_info_t *si) /* {{{ */
+{
+  if (si == NULL)
+    return (NULL);
+
+  return (ident_create ((si->host == NULL) ? ANY_TOKEN : si->host,
+        (si->plugin == NULL) ? ANY_TOKEN : si->plugin,
+        (si->plugin_instance == NULL) ? ANY_TOKEN : si->plugin_instance,
+        (si->type == NULL) ? ANY_TOKEN : si->type,
+        (si->type_instance == NULL) ? ANY_TOKEN : si->type_instance));
+} /* }}} graph_ident_t *search_to_ident */
+
+_Bool search_graph_title_matches (search_info_t *si, /* {{{ */
+    const char *title)
+{
+  char **argv;
+  int argc;
+  int i;
+
+  if ((si == NULL) || (title == NULL))
+    return (0);
+
+  if (si->terms == NULL)
+    return (1);
+
+  argc = array_argc (si->terms);
+  argv = array_argv (si->terms);
+  for (i = 0; i < argc; i++)
+    if (strstr (title, argv[i]) == NULL)
+      return (0);
+
+  return (1);
+} /* }}} _Bool search_graph_title_matches */
+
 _Bool search_graph_inst_matches (search_info_t *si, /* {{{ */
-    graph_config_t *cfg, graph_instance_t *inst)
+    graph_config_t *cfg, graph_instance_t *inst,
+    const char *title)
 {
   char **argv;
   int argc;
@@ -266,8 +301,15 @@ _Bool search_graph_inst_matches (search_info_t *si, /* {{{ */
   argc = array_argc (si->terms);
   argv = array_argv (si->terms);
   for (i = 0; i < argc; i++)
-    if (!inst_matches_string (cfg, inst, argv[i]))
-      return (0);
+  {
+    if (inst_matches_string (cfg, inst, argv[i]))
+      continue;
+
+    if ((title != NULL) && (strstr (title, argv[i]) != NULL))
+      continue;
+
+    return (0);
+  }
 
   return (1);
 } /* }}} _Bool search_graph_inst_matches */

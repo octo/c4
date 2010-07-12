@@ -32,8 +32,13 @@ typedef struct search_info_s search_info_t;
 search_info_t *search_parse (const char *search);
 void search_destroy (search_info_t *si);
 
+graph_ident_t *search_to_ident (search_info_t *si);
+
+_Bool search_graph_title_matches (search_info_t *si, const char *title);
+
 _Bool search_graph_inst_matches (search_info_t *si,
-    graph_config_t *cfg, graph_instance_t *inst);
+    graph_config_t *cfg, graph_instance_t *inst,
+    const char *title);
 
 #endif /* UTILS_SEARCH_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
