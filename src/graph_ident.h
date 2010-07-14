@@ -88,6 +88,9 @@ char *ident_to_string (const graph_ident_t *ident);
 char *ident_to_file (const graph_ident_t *ident);
 char *ident_to_json (const graph_ident_t *ident);
 
+int ident_describe (const graph_ident_t *ident, const graph_ident_t *selector,
+    char *buffer, size_t buffer_size);
+
 time_t ident_get_mtime (const graph_ident_t *ident);
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

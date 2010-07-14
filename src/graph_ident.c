@@ -531,6 +531,39 @@ char *ident_to_json (const graph_ident_t *ident) /* {{{ */
 
 #undef ADD_FIELD
 
+int ident_describe (const graph_ident_t *ident, /* {{{ */
+    const graph_ident_t *selector,
+    char *buffer, size_t buffer_size)
+{
+  if ((ident == NULL) || (selector == NULL)
+      || (buffer == NULL) || (buffer_size < 2))
+    return (EINVAL);
+
+  buffer[0] = 0;
+
+#define CHECK_FIELD(field) do {                                              \
+  if (strcasecmp (selector->field, ident->field) != 0)                       \
+  {                                                                          \
+    if (buffer[0] != 0)                                                      \
+      strlcat (buffer, "/", buffer_size);                                    \
+    strlcat (buffer, ident->field, buffer_size);                             \
+  }                                                                          \
+} while (0)
+
+  CHECK_FIELD (host);
+  CHECK_FIELD (plugin);
+  CHECK_FIELD (plugin_instance);
+  CHECK_FIELD (type);
+  CHECK_FIELD (type_instance);
+
+#undef CHECK_FIELD
+
+  if (buffer[0] == 0)
+    strlcat (buffer, "default", buffer_size);
+
+  return (0);
+} /* }}} int ident_describe */
+
 time_t ident_get_mtime (const graph_ident_t *ident) /* {{{ */
 {
   char *file;
