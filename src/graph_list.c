@@ -391,18 +391,25 @@ int gl_search (search_info_t *si, /* {{{ */
   if ((si == NULL) || (callback == NULL))
     return (EINVAL);
 
-  ident = search_to_ident (si);
-  if (ident == NULL)
+  if (search_has_selector (si))
   {
-    fprintf (stderr, "gl_search: search_to_ident failed\n");
-    return (-1);
+    ident = search_to_ident (si);
+    if (ident == NULL)
+    {
+      fprintf (stderr, "gl_search: search_to_ident failed\n");
+      return (-1);
+    }
+  }
+  else
+  {
+    ident = NULL;
   }
 
   for (i = 0; i < gl_active_num; i++)
   {
     int status;
 
-    if (!graph_ident_intersect (gl_active[i], ident))
+    if ((ident != NULL) && !graph_ident_intersect (gl_active[i], ident))
       continue;
 
     status = graph_search_inst (gl_active[i], si,
@@ -416,7 +423,7 @@ int gl_search (search_info_t *si, /* {{{ */
   {
     int status;
 
-    if (!graph_ident_intersect (gl_dynamic[i], ident))
+    if ((ident != NULL) && !graph_ident_intersect (gl_dynamic[i], ident))
       continue;
 
     status = graph_search_inst (gl_dynamic[i], si,
