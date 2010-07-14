@@ -419,12 +419,44 @@ int graph_inst_find_all_matching (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int graph_inst_find_all_matching */
 
+/* Lightweight variant of the "graph_search_inst" which is used if the
+ * search_info_t doesn't select any field values explicitely. */
+static int graph_search_inst_noselector (graph_config_t *cfg, /* {{{ */
+    search_info_t *si, graph_inst_callback_t cb, void *user_data)
+{
+  char title[1024];
+  int status;
+  size_t i;
+
+  /* parameters have already been checked in "graph_search_inst" */
+
+  status = graph_get_title (cfg, title, sizeof (title));
+  if (status != 0)
+  {
+    fprintf (stderr, "graph_search_inst_noselector: "
+        "graph_get_title failed\n");
+    return (status);
+  }
+  strtolower (title);
+
+  for (i = 0; i < cfg->instances_num; i++)
+  {
+    if (search_graph_inst_matches (si, cfg, cfg->instances[i], title))
+    {
+      status = (*cb) (cfg, cfg->instances[i], user_data);
+      if (status != 0)
+        return (status);
+    }
+  } /* for (cfg->instances_num) */
+
+  return (0);
+} /* }}} int graph_search_inst_noselector */
+
 /* When this function is called from graph_list, it will already have checked
- * that the selector of the graph matches the field selections contained in
- * the search_info_t. So if the graphs title matches, this means that the
- * field selections and the search term(s) apply to the graph in general; thus
- * we return all instances. Otherwise, use the somewhat expensive
- * "search_graph_inst_matches" function to look for matching instances. */
+ * that the selector of the graph does not contradict the field selections contained in
+ * the search_info_t. We still have to check if the instance contradicts the
+ * search parameters, though, since the "ANY" wildcard is filled in now -
+ * possibly with contradicting values. */
 int graph_search_inst (graph_config_t *cfg, search_info_t *si, /* {{{ */
     graph_inst_callback_t cb,
     void *user_data)
@@ -432,45 +464,58 @@ int graph_search_inst (graph_config_t *cfg, search_info_t *si, /* {{{ */
   char title[1024];
   int status;
   size_t i;
+  graph_ident_t *search_selector;
 
   if ((cfg == NULL) || (si == NULL) || (cb == NULL))
     return (EINVAL);
 
+  if (!search_has_selector (si))
+    return (graph_search_inst_noselector (cfg, si, cb, user_data));
+
+  search_selector = search_to_ident (si);
+  if (search_selector == NULL)
+    return (ENOMEM);
+
   status = graph_get_title (cfg, title, sizeof (title));
   if (status != 0)
   {
+    ident_destroy (search_selector);
     fprintf (stderr, "graph_search_inst: graph_get_title failed\n");
     return (status);
   }
   strtolower (title);
 
-  if (search_graph_title_matches (si, title))
+  for (i = 0; i < cfg->instances_num; i++)
   {
-    /* The title of the graph matches, so return all instances. */
-    for (i = 0; i < cfg->instances_num; i++)
+    graph_ident_t *inst_selector;
+
+    inst_selector = inst_get_selector (cfg->instances[i]);
+    if (inst_selector == NULL)
+      continue;
+
+    /* If the two selectors contradict one another, there is no point in
+     * calling the (more costly) "search_graph_inst_matches" function. */
+    if (!ident_intersect (search_selector, inst_selector))
+    {
+      ident_destroy (inst_selector);
+      continue;
+    }
+
+    if (search_graph_inst_matches (si, cfg, cfg->instances[i], title))
     {
       status = (*cb) (cfg, cfg->instances[i], user_data);
       if (status != 0)
-        return (status);
-    }
-  }
-  else
-  {
-    /* The title doesn't match, so use the more expensive
-     * "search_graph_inst_matches" to look for matching instances. Since part
-     * of the terms may match the title and other terms may match the
-     * instance, the title must be passed along to that function again. */
-    for (i = 0; i < cfg->instances_num; i++)
-    {
-      if (search_graph_inst_matches (si, cfg, cfg->instances[i], title))
       {
-        status = (*cb) (cfg, cfg->instances[i], user_data);
-        if (status != 0)
-          return (status);
+        ident_destroy (search_selector);
+        ident_destroy (inst_selector);
+        return (status);
       }
     }
-  }
 
+    ident_destroy (inst_selector);
+  } /* for (cfg->instances_num) */
+
+  ident_destroy (search_selector);
   return (0);
 } /* }}} int graph_search_inst */
 
