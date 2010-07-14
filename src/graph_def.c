@@ -182,11 +182,11 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
     return (NULL);
   }
 
-  ret->color = get_random_color ();
+  ret->color = UINT32_MAX;
   ret->next = NULL;
 
   ret->select = ident_copy_with_selector (selector, ident,
-      IDENT_FLAG_REPLACE_ALL);
+      IDENT_FLAG_REPLACE_ANY);
   if (ret->select == NULL)
   {
     ident_destroy (selector);
@@ -316,6 +316,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
   int index;
   char draw_def[64];
   char legend[256];
+  uint32_t color;
 
   if ((def == NULL) || (ident == NULL) || (args == NULL))
     return (EINVAL);
@@ -345,6 +346,10 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
       legend[sizeof (legend) - 1] = 0;
     }
   }
+
+  color = def->color;
+  if (color > 0x00ffffff)
+    color = get_random_color ();
 
   index = args->index;
   args->index++;
@@ -386,7 +391,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
 
   if (def->area)
     array_prepend_format (args->areas, "AREA:%s#%06"PRIx32,
-        draw_def, fade_color (def->color));
+        draw_def, fade_color (color));
 
   /* Graph part */
   array_prepend_format (args->lines, "GPRINT:vdef_%04i_lst:%s last\\l",
@@ -398,7 +403,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
   array_prepend_format (args->lines, "GPRINT:vdef_%04i_min:%s min,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
   array_prepend_format (args->lines, "LINE1:%s#%06"PRIx32":%s",
-      draw_def, def->color, legend);
+      draw_def, color, legend);
 
   free (file);
 
