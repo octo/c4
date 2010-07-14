@@ -32,6 +32,11 @@ typedef struct search_info_s search_info_t;
 search_info_t *search_parse (const char *search);
 void search_destroy (search_info_t *si);
 
+/* Returns true if at least one of the ident fields is defined (not a
+ * wildcard), false otherwise. If no field has been specified, searching is a
+ * lot easier. */
+_Bool search_has_selector (search_info_t *si);
+
 graph_ident_t *search_to_ident (search_info_t *si);
 
 _Bool search_graph_title_matches (search_info_t *si, const char *title);

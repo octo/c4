@@ -234,6 +234,19 @@ void search_destroy (search_info_t *si) /* {{{ */
   array_destroy (si->terms);
 } /* }}} void search_destroy */
 
+_Bool search_has_selector (search_info_t *si) /* {{{ */
+{
+  if (si == NULL)
+    return (0);
+
+  if ((si->host != NULL)
+      || (si->plugin != NULL) || (si->plugin_instance != NULL)
+      || (si->type != NULL) || (si->type_instance != NULL))
+    return (1);
+
+  return (0);
+} /* }}} _Bool search_has_selector */
+
 graph_ident_t *search_to_ident (search_info_t *si) /* {{{ */
 {
   if (si == NULL)
