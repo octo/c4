@@ -538,6 +538,7 @@ int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {
   graph_ident_t *cfg_select;
+  int status;
 
   if ((cfg == NULL) || (inst == NULL)
       || (buffer == NULL) || (buffer_size < 2))
@@ -550,31 +551,12 @@ int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     return (-1);
   }
 
-  buffer[0] = 0;
-
-#define CHECK_FIELD(field) do {                                              \
-  if (IS_ANY (ident_get_##field (cfg_select)))                               \
-  {                                                                          \
-    if (buffer[0] != 0)                                                      \
-      strlcat (buffer, "/", buffer_size);                                    \
-    strlcat (buffer, ident_get_##field (inst->select), buffer_size);         \
-  }                                                                          \
-} while (0)
-
-  CHECK_FIELD (host);
-  CHECK_FIELD (plugin);
-  CHECK_FIELD (plugin_instance);
-  CHECK_FIELD (type);
-  CHECK_FIELD (type_instance);
-
-#undef CHECK_FIELD
-
-  if (buffer[0] == 0)
-    strlcat (buffer, "default", buffer_size);
+  status = ident_describe (inst->select, cfg_select,
+      buffer, buffer_size);
 
   ident_destroy (cfg_select);
 
-  return (0);
+  return (status);
 } /* }}} int inst_describe */
 
 time_t inst_get_mtime (graph_instance_t *inst) /* {{{ */
