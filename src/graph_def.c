@@ -315,6 +315,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
   char *file;
   int index;
   char draw_def[64];
+  char legend[256];
 
   if ((def == NULL) || (ident == NULL) || (args == NULL))
     return (EINVAL);
@@ -327,6 +328,23 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
   }
 
   DEBUG ("gl_ident_get_rrdargs: file = %s;\n", file);
+
+  if (def->legend != NULL)
+  {
+    strncpy (legend, def->legend, sizeof (legend));
+    legend[sizeof (legend) - 1] = 0;
+  }
+  else
+  {
+    ident_describe (ident, def->select,
+        legend, sizeof (legend));
+
+    if ((legend[0] == 0) || (strcmp ("default", legend) == 0))
+    {
+      strncpy (legend, def->ds_name, sizeof (legend));
+      legend[sizeof (legend) - 1] = 0;
+    }
+  }
 
   index = args->index;
   args->index++;
@@ -380,8 +398,7 @@ int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident, /* {{{ */
   array_prepend_format (args->lines, "GPRINT:vdef_%04i_min:%s min,",
       index, (def->format != NULL) ? def->format : "%6.2lf");
   array_prepend_format (args->lines, "LINE1:%s#%06"PRIx32":%s",
-      draw_def, def->color,
-      (def->legend != NULL) ? def->legend : def->ds_name);
+      draw_def, def->color, legend);
 
   free (file);
 
