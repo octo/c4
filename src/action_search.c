@@ -36,6 +36,7 @@
 #include "graph_instance.h"
 #include "graph_list.h"
 #include "utils_cgi.h"
+#include "utils_search.h"
 
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
@@ -145,7 +146,8 @@ static int print_graph_inst_html (graph_config_t *cfg, /* {{{ */
 
 struct page_data_s
 {
-  const char *search_term;
+  char *search_term;
+  search_info_t *search_info;
 };
 typedef struct page_data_s page_data_t;
 
@@ -156,7 +158,6 @@ static int print_search_result (void *user_data) /* {{{ */
     /* graph_index = */ -1, /* graph_limit = */ 20, /* graph_more = */ 0,
     /* inst_index = */  -1, /* inst_limit = */   5, /* inst more = */  0,
     /* search_term = */ pg_data->search_term };
-  char *term_lc;
   char *search_term_html;
 
   assert (pg_data->search_term != NULL);
@@ -168,28 +169,9 @@ static int print_search_result (void *user_data) /* {{{ */
 
   printf ("    <ul id=\"search-output\" class=\"graph_list\">\n");
 
-  term_lc = strtolower_copy (pg_data->search_term);
+  gl_search (pg_data->search_info, print_graph_inst_html,
+      /* user_data = */ &cb_data);
 
-  if (strncmp ("host:", term_lc, strlen ("host:")) == 0)
-    gl_search_field (GIF_HOST, term_lc + strlen ("host:"),
-        print_graph_inst_html, /* user_data = */ &cb_data);
-  else if (strncmp ("plugin:", term_lc, strlen ("plugin:")) == 0)
-    gl_search_field (GIF_PLUGIN, term_lc + strlen ("plugin:"),
-        print_graph_inst_html, /* user_data = */ &cb_data);
-  else if (strncmp ("plugin_instance:", term_lc, strlen ("plugin_instance:")) == 0)
-    gl_search_field (GIF_PLUGIN_INSTANCE, term_lc + strlen ("plugin_instance:"),
-        print_graph_inst_html, /* user_data = */ &cb_data);
-  else if (strncmp ("type:", term_lc, strlen ("type:")) == 0)
-    gl_search_field (GIF_TYPE, term_lc + strlen ("type:"),
-        print_graph_inst_html, /* user_data = */ &cb_data);
-  else if (strncmp ("type_instance:", term_lc, strlen ("type_instance:")) == 0)
-    gl_search_field (GIF_TYPE_INSTANCE, term_lc + strlen ("type_instance:"),
-        print_graph_inst_html, /* user_data = */ &cb_data);
-  else
-    gl_search_string (term_lc,
-        print_graph_inst_html, /* user_data = */ &cb_data);
-
-  free (term_lc);
 
   if (cb_data.cfg != NULL)
     printf ("      </ul></li>\n");
@@ -254,49 +236,53 @@ static int print_search_form (void *user_data) /* {{{ */
   return (0);
 } /* }}} int print_search_form */
 
-static int search_html (const char *term) /* {{{ */
+static int search_html (page_data_t *pg_data) /* {{{ */
 {
-  page_data_t pg_data;
   page_callbacks_t pg_callbacks = PAGE_CALLBACKS_INIT;
   char title[512];
 
-  if (term != NULL)
+  if (pg_data->search_term != NULL)
     snprintf (title, sizeof (title), "Graphs matching \"%s\"",
-        term);
+        pg_data->search_term);
   else
     strncpy (title, "Search", sizeof (title));
   title[sizeof (title) - 1] = 0;
 
-  memset (&pg_data, 0, sizeof (pg_data));
-  pg_data.search_term = term;
-
   pg_callbacks.top_right = html_print_search_box;
   pg_callbacks.middle_left = left_menu;
-  if (term != NULL)
+  if (pg_data->search_term != NULL)
     pg_callbacks.middle_center = print_search_result;
   else
     pg_callbacks.middle_center = print_search_form;
 
-  html_print_page (title, &pg_callbacks, &pg_data);
+  html_print_page (title, &pg_callbacks, pg_data);
 
   return (0);
 } /* }}} int search_html */
 
 int action_search (void) /* {{{ */
 {
-  char *search;
+  page_data_t pg_data;
   int status;
 
   gl_update ();
 
-  search = strtolower_copy (param ("q"));
-  if ((search != NULL) && (search[0] == 0))
+  pg_data.search_term = strtolower_copy (param ("q"));
+  if ((pg_data.search_term != NULL) && (pg_data.search_term[0] == 0))
   {
-    free (search);
-    search = NULL;
+    free (pg_data.search_term);
+    pg_data.search_term = NULL;
+    pg_data.search_info = NULL;
   }
-  status = search_html (search);
-  free (search);
+  else
+  {
+    pg_data.search_info = search_parse (pg_data.search_term);
+  }
+
+  status = search_html (&pg_data);
+
+  free (pg_data.search_term);
+  search_destroy (pg_data.search_info);
 
   return (status);
 } /* }}} int action_search */
