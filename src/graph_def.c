@@ -158,15 +158,22 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
   graph_def_t *ret;
 
   if ((cfg == NULL) || (ident == NULL) || (ds_name == NULL))
+  {
+    fprintf (stderr, "def_create: An argument is NULL\n");
     return (NULL);
+  }
 
   selector = graph_get_selector (cfg);
   if (selector == NULL)
+  {
+    fprintf (stderr, "def_create: graph_get_selector failed\n");
     return (NULL);
+  }
 
   ret = malloc (sizeof (*ret));
   if (ret == NULL)
   {
+    fprintf (stderr, "def_create: malloc failed\n");
     ident_destroy (selector);
     return (NULL);
   }
@@ -177,6 +184,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
   ret->ds_name = strdup (ds_name);
   if (ret->ds_name == NULL)
   {
+    fprintf (stderr, "def_create: Unable to copy DS name\n");
     ident_destroy (selector);
     free (ret);
     return (NULL);
@@ -189,6 +197,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
       IDENT_FLAG_REPLACE_ANY);
   if (ret->select == NULL)
   {
+    fprintf (stderr, "def_create: ident_copy_with_selector failed\n");
     ident_destroy (selector);
     free (ret->ds_name);
     free (ret);
