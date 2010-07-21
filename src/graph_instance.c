@@ -534,6 +534,32 @@ _Bool inst_matches_field (graph_instance_t *inst, /* {{{ */
   return (0);
 } /* }}} _Bool inst_matches_field */
 
+int inst_to_json (const graph_instance_t *inst, /* {{{ */
+    yajl_gen handler)
+{
+  size_t i;
+
+  if ((inst == NULL) || (handler == NULL))
+    return (EINVAL);
+
+  /* TODO: error handling */
+  yajl_gen_map_open (handler);
+  yajl_gen_string (handler,
+      (unsigned char *) "select",
+      (unsigned int) strlen ("select"));
+  ident_to_json (inst->select, handler);
+  yajl_gen_string (handler,
+      (unsigned char *) "files",
+      (unsigned int) strlen ("files"));
+  yajl_gen_array_open (handler);
+  for (i = 0; i < inst->files_num; i++)
+    ident_to_json (inst->files[i], handler);
+  yajl_gen_array_close (handler);
+  yajl_gen_map_close (handler);
+
+  return (0);
+} /* }}} int inst_to_json */
+
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {

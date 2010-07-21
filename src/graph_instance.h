@@ -26,6 +26,8 @@
 
 #include <time.h>
 
+#include <yajl/yajl_gen.h>
+
 #include "graph_types.h"
 #include "graph_ident.h"
 #include "rrd_args.h"
@@ -76,6 +78,8 @@ _Bool inst_matches_string (graph_config_t *cfg, graph_instance_t *inst,
  * comparison is done case-insensitive. */
 _Bool inst_matches_field (graph_instance_t *inst,
     graph_ident_field_t field, const char *field_value);
+
+int inst_to_json (const graph_instance_t *inst, yajl_gen handler);
 
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst,
     char *buffer, size_t buffer_size);
