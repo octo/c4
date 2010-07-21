@@ -42,6 +42,10 @@ void graph_destroy (graph_config_t *graph);
 
 int graph_config_add (const oconfig_item_t *ci);
 
+/* Add "inst" to the internal list. The instance is *not* copied and may not be
+ * freed from the outside. */
+int graph_add_inst (graph_config_t *graph, graph_instance_t *inst);
+
 int graph_add_file (graph_config_t *cfg, const graph_ident_t *file);
 
 int graph_get_title (graph_config_t *cfg,

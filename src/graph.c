@@ -188,6 +188,25 @@ int graph_config_add (const oconfig_item_t *ci) /* {{{ */
   return (0);
 } /* }}} graph_config_add */
 
+int graph_add_inst (graph_config_t *graph, graph_instance_t *inst) /* {{{ */
+{
+  graph_instance_t **tmp;
+
+  if ((graph == NULL) || (inst == NULL))
+    return (EINVAL);
+
+  tmp = realloc (graph->instances,
+      sizeof (*graph->instances) * (graph->instances_num + 1));
+  if (tmp == NULL)
+    return (ENOMEM);
+  graph->instances = tmp;
+
+  graph->instances[graph->instances_num] = inst;
+  graph->instances_num++;
+
+  return (0);
+} /* }}} int graph_add_inst */
+
 int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{{ */
 {
   graph_instance_t *inst;
@@ -195,20 +214,11 @@ int graph_add_file (graph_config_t *cfg, const graph_ident_t *file) /* {{{ */
   inst = graph_inst_find_matching (cfg, file);
   if (inst == NULL)
   {
-    graph_instance_t **tmp;
-
-    tmp = realloc (cfg->instances,
-        sizeof (*cfg->instances) * (cfg->instances_num + 1));
-    if (tmp == NULL)
-      return (ENOMEM);
-    cfg->instances = tmp;
-
     inst = inst_create (cfg, file);
     if (inst == NULL)
       return (ENOMEM);
 
-    cfg->instances[cfg->instances_num] = inst;
-    cfg->instances_num++;
+    graph_add_inst (cfg, inst);
   }
 
   return (inst_add_file (inst, file));
@@ -614,7 +624,7 @@ size_t graph_num_instances (graph_config_t *cfg) /* {{{ */
   return (cfg->instances_num);
 } /* }}} size_t graph_num_instances */
 
-int graph_to_json (const graph_config_t *cfg,
+int graph_to_json (const graph_config_t *cfg, /* {{{ */
     yajl_gen handler)
 {
   size_t i;
@@ -637,7 +647,7 @@ int graph_to_json (const graph_config_t *cfg,
   yajl_gen_map_close (handler);
 
   return (0);
-}
+} /* }}} int graph_to_json */
 
 static int graph_sort_instances_cb (const void *v0, const void *v1) /* {{{ */
 {
