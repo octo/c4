@@ -24,6 +24,8 @@
 #ifndef GRAPH_H
 #define GRAPH_H 1
 
+#include <yajl/yajl_gen.h>
+
 #include "graph_types.h"
 #include "graph_ident.h"
 #include "oconfig.h"
@@ -104,6 +106,8 @@ int graph_inst_search_field (graph_config_t *cfg,
     graph_inst_callback_t callback, void *user_data);
 
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);
+
+int graph_to_json (const graph_config_t *cfg, yajl_gen handler);
 
 size_t graph_num_instances (graph_config_t *cfg);
 

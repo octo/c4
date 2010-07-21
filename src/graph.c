@@ -606,12 +606,6 @@ int graph_compare (graph_config_t *cfg, const graph_ident_t *ident) /* {{{ */
   return (ident_compare (cfg->select, ident));
 } /* }}} int graph_compare */
 
-static int graph_sort_instances_cb (const void *v0, const void *v1) /* {{{ */
-{
-  return (inst_compare (*(graph_instance_t * const *) v0,
-        *(graph_instance_t * const *) v1));
-} /* }}} int graph_sort_instances_cb */
-
 size_t graph_num_instances (graph_config_t *cfg) /* {{{ */
 {
   if (cfg == NULL)
@@ -619,6 +613,34 @@ size_t graph_num_instances (graph_config_t *cfg) /* {{{ */
 
   return (cfg->instances_num);
 } /* }}} size_t graph_num_instances */
+
+int graph_to_json (const graph_config_t *cfg,
+    yajl_gen handler)
+{
+  size_t i;
+
+  if ((cfg == NULL) || (handler == NULL))
+    return (EINVAL);
+
+  yajl_gen_map_open (handler);
+  yajl_gen_string (handler,
+      (unsigned char *) "select",
+      (unsigned int) strlen ("select"));
+  ident_to_json (cfg->select, handler);
+  yajl_gen_array_open (handler);
+  for (i = 0; i < cfg->instances_num; i++)
+    inst_to_json (cfg->instances[i], handler);
+  yajl_gen_array_close (handler);
+  yajl_gen_map_close (handler);
+
+  return (0);
+}
+
+static int graph_sort_instances_cb (const void *v0, const void *v1) /* {{{ */
+{
+  return (inst_compare (*(graph_instance_t * const *) v0,
+        *(graph_instance_t * const *) v1));
+} /* }}} int graph_sort_instances_cb */
 
 int graph_sort_instances (graph_config_t *cfg) /* {{{ */
 {
