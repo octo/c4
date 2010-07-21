@@ -222,6 +222,51 @@ static int gl_clear_instances (void) /* {{{ */
   return (0);
 } /* }}} int gl_clear_instances */
 
+static void gl_dump_cb (void *ctx, /* {{{ */
+    const char *str, unsigned int len)
+{
+  FILE *fh = ctx;
+
+  /* FIXME: Has everything been written? */
+  fwrite ((void *) str, /* size = */ 1, /* nmemb = */ len, fh);
+} /* }}} void gl_dump_cb */
+
+static int gl_dump (void) /* {{{ */
+{
+  FILE *fh;
+  yajl_gen handler;
+  yajl_gen_config handler_config = { /* pretty = */ 1, /* indent = */ "  " };
+  size_t i;
+
+  /* FIXME: Lock the file */
+  fh = fopen ("/tmp/collection4.json", "w");
+  if (fh == NULL)
+    return (errno);
+
+  handler = yajl_gen_alloc2 (gl_dump_cb, &handler_config,
+      /* alloc funcs = */ NULL, /* ctx = */ fh);
+  if (handler == NULL)
+  {
+    fclose (fh);
+    return (-1);
+  }
+
+  yajl_gen_array_open (handler);
+
+  for (i = 0; i < gl_active_num; i++)
+    graph_to_json (gl_active[i], handler);
+
+  for (i = 0; i < gl_dynamic_num; i++)
+    graph_to_json (gl_dynamic[i], handler);
+
+  yajl_gen_array_close (handler);
+
+  yajl_gen_free (handler);
+  fclose (fh);
+
+  return (0);
+} /* }}} int gl_dump */
+
 /*
  * Global functions
  */
@@ -550,6 +595,8 @@ int gl_update (void) /* {{{ */
 
   for (i = 0; i < gl_active_num; i++)
     graph_sort_instances (gl_active[i]);
+
+  gl_dump ();
 
   return (status);
 } /* }}} int gl_update */
