@@ -40,69 +40,51 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
-struct show_graph_data_s
+static int write_buffer (char *buffer, size_t buffer_size) /* {{{ */
 {
-  graph_config_t *cfg;
-  _Bool first;
-};
-typedef struct show_graph_data_s show_graph_data_t;
+  size_t status;
 
-static int show_instance_cb (graph_instance_t *inst, /* {{{ */
-    void *user_data)
-{
-  show_graph_data_t *data = user_data;
-  graph_ident_t *ident;
-  char *ident_json;
-
-  ident = inst_get_selector (inst);
-  if (ident == NULL)
-    return (ENOMEM);
-
-  ident_json = ident_to_json (ident);
-  if (ident_json == NULL)
+  while (buffer_size > 0)
   {
-    ident_destroy (ident);
-    return (ENOMEM);
+    status = fwrite (buffer, buffer_size, /* nmemb = */ 1, stdout);
+    if (status == 0)
+      return (errno);
+
+    buffer += status;
+    buffer_size -= status;
   }
 
-  if (!data->first)
-    printf (",\n");
-  data->first = 0;
-
-  printf ("    %s", ident_json);
-
-  free (ident_json);
-  ident_destroy (ident);
   return (0);
-} /* }}} int show_instance_cb */
+} /* }}} int write_buffer */
 
 int action_show_graph_json (void) /* {{{ */
 {
-  show_graph_data_t data;
+  graph_config_t *cfg;
+
+  yajl_gen_config handler_config;
+  yajl_gen handler;
+
+  const unsigned char *buffer;
+  unsigned int buffer_length;
 
   time_t now;
   char time_buffer[128];
   int status;
 
-  char title[1024];
-  graph_ident_t *ident;
-  char *ident_json;
-
-  memset (&data, 0, sizeof (data));
-  data.first = 1;
-  data.cfg = gl_graph_get_selected ();
-  if (data.cfg == NULL)
+  cfg = gl_graph_get_selected ();
+  if (cfg == NULL)
     return (ENOMEM);
 
-  ident = graph_get_selector (data.cfg);
-  if (ident == NULL)
-    return (ENOMEM);
+  memset (&handler_config, 0, sizeof (handler_config));
+  handler_config.beautify = 1;
+  handler_config.indentString = "  ";
 
-  ident_json = ident_to_json (ident);
-  if (ident_json == NULL)
+  handler = yajl_gen_alloc (&handler_config,
+      /* alloc functions = */ NULL);
+  if (handler == NULL)
   {
-    ident_destroy (ident);
-    return (ENOMEM);
+    graph_destroy (cfg);
+    return (-1);
   }
 
   printf ("Content-Type: application/json\n");
@@ -115,20 +97,22 @@ int action_show_graph_json (void) /* {{{ */
         time_buffer);
   printf ("\n");
 
-  memset (title, 0, sizeof (title));
-  graph_get_title (data.cfg, title, sizeof (title));
-  json_escape_buffer (title, sizeof (title));
+  status = graph_to_json (cfg, handler);
+  if (status != 0)
+  {
+    graph_destroy (cfg);
+    yajl_gen_free (handler);
+    return (status);
+  }
 
-  printf ("{\n");
-  printf ("  \"title\": \"%s\",\n", title);
-  printf ("  \"selector\": %s,\n", ident_json);
-  printf ("  \"instances\":\n");
-  printf ("  [\n");
-  graph_inst_foreach (data.cfg, show_instance_cb, &data);
-  printf ("\n  ]\n}\n");
+  buffer = NULL;
+  buffer_length = 0;
+  status = (int) yajl_gen_get_buf (handler, &buffer, &buffer_length);
 
-  free (ident_json);
-  ident_destroy (ident);
+  write_buffer ((char *) buffer, (size_t) buffer_length);
+
+  graph_destroy (cfg);
+  yajl_gen_free (handler);
   return (0);
 } /* }}} int action_show_graph_json */
 
