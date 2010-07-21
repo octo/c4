@@ -25,6 +25,9 @@
 #define GRAPH_IDENT_H 1
 
 #include <time.h>
+
+#include <yajl/yajl_gen.h>
+
 #include "graph_types.h"
 
 #define ANY_TOKEN "/any/"
@@ -86,7 +89,8 @@ _Bool ident_intersect (const graph_ident_t *s0, const graph_ident_t *s1);
 
 char *ident_to_string (const graph_ident_t *ident);
 char *ident_to_file (const graph_ident_t *ident);
-char *ident_to_json (const graph_ident_t *ident);
+int ident_to_json (const graph_ident_t *ident,
+    yajl_gen handler);
 
 int ident_describe (const graph_ident_t *ident, const graph_ident_t *selector,
     char *buffer, size_t buffer_size);

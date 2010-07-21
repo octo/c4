@@ -502,34 +502,39 @@ char *ident_to_file (const graph_ident_t *ident) /* {{{ */
   return (strdup (buffer));
 } /* }}} char *ident_to_file */
 
-#define ADD_FIELD(field) do {                              \
-  char json[1024];                                         \
-  json_escape_copy (json, ident->field, sizeof (json));    \
-  strlcat (buffer, json, sizeof (buffer));                 \
+int ident_to_json (const graph_ident_t *ident, /* {{{ */
+    yajl_gen handler)
+{
+  yajl_gen_status status;
+
+  if ((ident == NULL) || (handler == NULL))
+    return (EINVAL);
+
+#define ADD_STRING(str) do {                              \
+  status = yajl_gen_string (handler,                      \
+      (unsigned char *) (str),                            \
+      (unsigned int) strlen (str));                       \
+  if (status != yajl_gen_status_ok)                       \
+    return ((int) status);                                \
 } while (0)
 
-char *ident_to_json (const graph_ident_t *ident) /* {{{ */
-{
-  char buffer[4096];
-
-  buffer[0] = 0;
-
-  strlcat (buffer, "{\"host\":\"", sizeof (buffer));
-  ADD_FIELD (host);
-  strlcat (buffer, "\",\"plugin\":\"", sizeof (buffer));
-  ADD_FIELD (plugin);
-  strlcat (buffer, "\",\"plugin_instance\":\"", sizeof (buffer));
-  ADD_FIELD (plugin_instance);
-  strlcat (buffer, "\",\"type\":\"", sizeof (buffer));
-  ADD_FIELD (type);
-  strlcat (buffer, "\",\"type_instance\":\"", sizeof (buffer));
-  ADD_FIELD (type_instance);
-  strlcat (buffer, "\"}", sizeof (buffer));
-
-  return (strdup (buffer));
-} /* }}} char *ident_to_json */
+  yajl_gen_map_open (handler);
+  ADD_STRING ("host");
+  ADD_STRING (ident->host);
+  ADD_STRING ("plugin");
+  ADD_STRING (ident->plugin);
+  ADD_STRING ("plugin_instance");
+  ADD_STRING (ident->plugin_instance);
+  ADD_STRING ("type");
+  ADD_STRING (ident->type);
+  ADD_STRING ("type_instance");
+  ADD_STRING (ident->type_instance);
+  yajl_gen_map_close (handler);
 
 #undef ADD_FIELD
+
+  return (0);
+} /* }}} char *ident_to_json */
 
 int ident_describe (const graph_ident_t *ident, /* {{{ */
     const graph_ident_t *selector,
