@@ -40,23 +40,11 @@
 #include <fcgiapp.h>
 #include <fcgi_stdio.h>
 
-static int write_buffer (char *buffer, size_t buffer_size) /* {{{ */
+static void write_callback (__attribute__((unused)) void *ctx, /* {{{ */
+    const char *str, unsigned int len)
 {
-  size_t status;
-
-  while (buffer_size > 0)
-  {
-    status = fwrite (buffer,  /* size = */ 1,
-        /* nmemb = */ buffer_size, stdout);
-    if (status == 0)
-      return (errno);
-
-    buffer += status;
-    buffer_size -= status;
-  }
-
-  return (0);
-} /* }}} int write_buffer */
+  fwrite ((void *) str, /* size = */ len, /* nmemb = */ 1, stdout);
+} /* }}} void write_callback */
 
 int action_show_graph_json (void) /* {{{ */
 {
@@ -64,9 +52,6 @@ int action_show_graph_json (void) /* {{{ */
 
   yajl_gen_config handler_config;
   yajl_gen handler;
-
-  const unsigned char *buffer;
-  unsigned int buffer_length;
 
   time_t now;
   char time_buffer[128];
@@ -80,8 +65,10 @@ int action_show_graph_json (void) /* {{{ */
   handler_config.beautify = 1;
   handler_config.indentString = "  ";
 
-  handler = yajl_gen_alloc (&handler_config,
-      /* alloc functions = */ NULL);
+  handler = yajl_gen_alloc2 (write_callback,
+      &handler_config,
+      /* alloc functions = */ NULL,
+      /* context = */ NULL);
   if (handler == NULL)
   {
     graph_destroy (cfg);
@@ -99,22 +86,11 @@ int action_show_graph_json (void) /* {{{ */
   printf ("\n");
 
   status = graph_to_json (cfg, handler);
-  if (status != 0)
-  {
-    graph_destroy (cfg);
-    yajl_gen_free (handler);
-    return (status);
-  }
-
-  buffer = NULL;
-  buffer_length = 0;
-  status = (int) yajl_gen_get_buf (handler, &buffer, &buffer_length);
-
-  write_buffer ((char *) buffer, (size_t) buffer_length);
 
   graph_destroy (cfg);
   yajl_gen_free (handler);
-  return (0);
+
+  return (status);
 } /* }}} int action_show_graph_json */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
