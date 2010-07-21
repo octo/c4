@@ -627,6 +627,9 @@ int graph_to_json (const graph_config_t *cfg,
       (unsigned char *) "select",
       (unsigned int) strlen ("select"));
   ident_to_json (cfg->select, handler);
+  yajl_gen_string (handler,
+      (unsigned char *) "instances",
+      (unsigned int) strlen ("instances"));
   yajl_gen_array_open (handler);
   for (i = 0; i < cfg->instances_num; i++)
     inst_to_json (cfg->instances[i], handler);

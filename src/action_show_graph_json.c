@@ -46,7 +46,8 @@ static int write_buffer (char *buffer, size_t buffer_size) /* {{{ */
 
   while (buffer_size > 0)
   {
-    status = fwrite (buffer, buffer_size, /* nmemb = */ 1, stdout);
+    status = fwrite (buffer,  /* size = */ 1,
+        /* nmemb = */ buffer_size, stdout);
     if (status == 0)
       return (errno);
 
