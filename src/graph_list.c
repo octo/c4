@@ -28,6 +28,11 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <assert.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#include <yajl/yajl_parse.h>
 
 #include "graph_list.h"
 #include "common.h"
@@ -36,6 +41,7 @@
 #include "graph_config.h"
 #include "graph_def.h"
 #include "graph_ident.h"
+#include "graph_instance.h"
 #include "utils_cgi.h"
 #include "utils_search.h"
 
@@ -46,6 +52,7 @@
  * Defines
  */
 #define UPDATE_INTERVAL 900
+#define CACHE_FILE "/tmp/collection4.json"
 
 /*
  * Global variables
@@ -239,7 +246,7 @@ static int gl_dump (void) /* {{{ */
   size_t i;
 
   /* FIXME: Lock the file */
-  fh = fopen ("/tmp/collection4.json", "w");
+  fh = fopen (CACHE_FILE, "w");
   if (fh == NULL)
     return (errno);
 
@@ -266,6 +273,307 @@ static int gl_dump (void) /* {{{ */
 
   return (0);
 } /* }}} int gl_dump */
+
+/*
+ * JSON parsing functions
+ */
+#define CTX_MASK                  0xff000000
+#define CTX_GRAPH                 0x01000000
+#define CTX_GRAPH_SELECT          0x02000000
+#define CTX_INST                  0x03000000
+#define CTX_INST_SELECT           0x04000000
+#define CTX_INST_FILE             0x05000000
+
+#define CTX_IDENT_MASK            0x00ff0000
+#define CTX_IDENT_HOST            0x00010000
+#define CTX_IDENT_PLUGIN          0x00020000
+#define CTX_IDENT_PLUGIN_INSTANCE 0x00030000
+#define CTX_IDENT_TYPE            0x00040000
+#define CTX_IDENT_TYPE_INSTANCE   0x00050000
+
+struct gl_json_context_s
+{
+  uint32_t          state;
+
+  graph_config_t   *cfg;
+  graph_instance_t *inst;
+  graph_ident_t    *ident;
+
+  _Bool             dynamic_graph;
+};
+typedef struct gl_json_context_s gl_json_context_t;
+
+static void set_state (gl_json_context_t *ctx, /* {{{ */
+    uint32_t new_state, uint32_t mask)
+{
+  uint32_t old_state = ctx->state;
+  ctx->state = (old_state & ~mask) | (new_state & mask);
+} /* }}} void set_state */
+
+static int gl_json_string (void *user_data, /* {{{ */
+    const unsigned char *str,
+    unsigned int str_length)
+{
+  gl_json_context_t *ctx = user_data;
+  char buffer[str_length + 1];
+
+  memcpy (buffer, str, str_length);
+  buffer[str_length] = 0;
+
+  if (((ctx->state & CTX_MASK) == CTX_GRAPH_SELECT)
+      || ((ctx->state & CTX_MASK) == CTX_INST_SELECT)
+      || ((ctx->state & CTX_MASK) == CTX_INST_FILE))
+  {
+    switch (ctx->state & CTX_IDENT_MASK)
+    {
+      case CTX_IDENT_HOST:
+        ident_set_host (ctx->ident, buffer);
+        break;
+      case CTX_IDENT_PLUGIN:
+        ident_set_plugin (ctx->ident, buffer);
+        break;
+      case CTX_IDENT_PLUGIN_INSTANCE:
+        ident_set_plugin_instance (ctx->ident, buffer);
+        break;
+      case CTX_IDENT_TYPE:
+        ident_set_type (ctx->ident, buffer);
+        break;
+      case CTX_IDENT_TYPE_INSTANCE:
+        ident_set_type_instance (ctx->ident, buffer);
+        break;
+    }
+  }
+
+  return (1);
+} /* }}} int gl_json_string */
+
+static int gl_json_end_map (void *user_data) /* {{{ */
+{
+  gl_json_context_t *ctx = user_data;
+
+  if ((ctx->state & CTX_MASK) == CTX_GRAPH_SELECT)
+  {
+    size_t i;
+
+    /* ctx->ident should now hold the valid selector */
+    assert (ctx->cfg == NULL);
+    assert (ctx->inst  == NULL);
+    assert (ctx->ident != NULL);
+
+    for (i = 0; i < gl_active_num; i++)
+    {
+      if (graph_compare (gl_active[i], ctx->ident) != 0)
+        continue;
+
+      ctx->cfg = gl_active[i];
+      ctx->dynamic_graph = 0;
+      break;
+    }
+
+    if (ctx->cfg == NULL)
+    {
+      ctx->cfg = graph_create (ctx->ident);
+      ctx->dynamic_graph = 1;
+    }
+
+    ident_destroy (ctx->ident);
+    ctx->ident = NULL;
+
+    set_state (ctx, CTX_GRAPH, CTX_MASK);
+  }
+  else if ((ctx->state & CTX_MASK) == CTX_INST_SELECT)
+  {
+    /* ctx->ident should now hold the valid selector */
+    assert (ctx->cfg   != NULL);
+    assert (ctx->inst  == NULL);
+    assert (ctx->ident != NULL);
+
+    ctx->inst = inst_create (ctx->cfg, ctx->ident);
+    ident_destroy (ctx->ident);
+    ctx->ident = NULL;
+
+    set_state (ctx, CTX_INST, CTX_MASK);
+  }
+  else if ((ctx->state & CTX_MASK) == CTX_INST_FILE)
+  {
+    /* ctx->ident should now hold the valid file */
+    assert (ctx->cfg   != NULL);
+    assert (ctx->inst  != NULL);
+    assert (ctx->ident != NULL);
+
+    inst_add_file (ctx->inst, ctx->ident);
+    ident_destroy (ctx->ident);
+    ctx->ident = NULL;
+
+    /* Don't reset the state here, files are in an array. */
+  }
+  else if ((ctx->state & CTX_MASK) == CTX_INST)
+  {
+    /* ctx->inst should now hold a complete instance */
+    assert (ctx->cfg   != NULL);
+    assert (ctx->inst  != NULL);
+    assert (ctx->ident == NULL);
+
+    graph_add_inst (ctx->cfg, ctx->inst);
+    /* don't destroy / free ctx->inst */
+    ctx->inst = NULL;
+
+    /* Don't reset the state here, instances are in an array. */
+  }
+  else if ((ctx->state & CTX_MASK) == CTX_GRAPH)
+  {
+    /* ctx->cfg should now hold a complete graph */
+    assert (ctx->cfg   != NULL);
+    assert (ctx->inst  == NULL);
+    assert (ctx->ident == NULL);
+
+    if (ctx->dynamic_graph)
+      gl_add_graph_internal (ctx->cfg, &gl_dynamic, &gl_dynamic_num);
+    /* else: already contained in gl_active */
+    ctx->cfg = NULL;
+
+    /* Don't reset the state here, graphs are in an array. */
+  }
+
+  return (1);
+} /* }}} int gl_json_end_map */
+
+static int gl_json_end_array (void *user_data) /* {{{ */
+{
+  gl_json_context_t *ctx = user_data;
+
+  if ((ctx->state & CTX_MASK) == CTX_INST_FILE)
+    set_state (ctx, CTX_INST, CTX_MASK);
+  else if ((ctx->state & CTX_MASK) == CTX_INST)
+    set_state (ctx, CTX_GRAPH, CTX_MASK);
+  else if ((ctx->state & CTX_MASK) == CTX_GRAPH)
+  {
+    /* We're done */
+  }
+
+  return (1);
+} /* }}} int gl_json_end_array */
+
+static int gl_json_key (void *user_data, /* {{{ */
+    const unsigned char *str,
+    unsigned int str_length)
+{
+  gl_json_context_t *ctx = user_data;
+  char buffer[str_length + 1];
+
+  memcpy (buffer, str, str_length);
+  buffer[str_length] = 0;
+
+  if ((ctx->state & CTX_MASK) == CTX_GRAPH)
+  {
+    if (strcasecmp ("select", buffer) == 0)
+      set_state (ctx, CTX_GRAPH_SELECT, CTX_MASK);
+    else if (strcasecmp ("instances", buffer) == 0)
+      set_state (ctx, CTX_INST, CTX_MASK);
+  }
+  else if ((ctx->state & CTX_MASK) == CTX_INST)
+  {
+    if (strcasecmp ("select", buffer) == 0)
+      set_state (ctx, CTX_INST_SELECT, CTX_MASK);
+    else if (strcasecmp ("files", buffer) == 0)
+      set_state (ctx, CTX_INST_FILE, CTX_MASK);
+  }
+  else if (((ctx->state & CTX_MASK) == CTX_GRAPH_SELECT)
+      || ((ctx->state & CTX_MASK) == CTX_INST_SELECT)
+      || ((ctx->state & CTX_MASK) == CTX_INST_FILE))
+  {
+    if (strcasecmp ("host", buffer) == 0)
+      set_state (ctx, CTX_IDENT_HOST, CTX_IDENT_MASK);
+    else if (strcasecmp ("plugin", buffer) == 0)
+      set_state (ctx, CTX_IDENT_PLUGIN, CTX_IDENT_MASK);
+    else if (strcasecmp ("plugin_instance", buffer) == 0)
+      set_state (ctx, CTX_IDENT_PLUGIN_INSTANCE, CTX_IDENT_MASK);
+    else if (strcasecmp ("type", buffer) == 0)
+      set_state (ctx, CTX_IDENT_TYPE, CTX_IDENT_MASK);
+    else if (strcasecmp ("type_instance", buffer) == 0)
+      set_state (ctx, CTX_IDENT_TYPE_INSTANCE, CTX_IDENT_MASK);
+  }
+
+  return (0);
+} /* }}} int gl_json_key */
+
+yajl_callbacks gl_json_callbacks =
+{
+  /*        null = */ NULL,
+  /*     boolean = */ NULL,
+  /*     integer = */ NULL,
+  /*      double = */ NULL,
+  /*      number = */ NULL,
+  /*      string = */ gl_json_string,
+  /*   start_map = */ NULL,
+  /*     map_key = */ gl_json_key,
+  /*     end_map = */ gl_json_end_map,
+  /* start_array = */ NULL,
+  /*   end_array = */ gl_json_end_array
+};
+
+static int gl_read_cache (_Bool block) /* {{{ */
+{
+  yajl_handle handle;
+  gl_json_context_t context;
+  yajl_parser_config handle_config = { /* comments = */ 0, /* check UTF-8 */ 0 };
+
+  int fd;
+  int cmd;
+  struct flock lock;
+  int status;
+
+  fd = open (CACHE_FILE, O_RDONLY);
+  if (fd < 0)
+  {
+    fprintf (stderr, "gl_read_cache: open(2) failed with status %i\n", errno);
+    return (errno);
+  }
+
+  if (block)
+    cmd = F_SETLKW;
+  else
+    cmd = F_SETLK;
+
+  memset (&lock, 0, sizeof (lock));
+  lock.l_type = F_RDLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0; /* lock everything */
+
+  while (42)
+  {
+    status = fcntl (fd, cmd, &lock);
+    if (status == 0)
+      break;
+
+    if (!block && ((errno == EACCES) || (errno == EAGAIN)))
+    {
+      close (fd);
+      return (0);
+    }
+
+    if (errno == EINTR)
+      continue;
+
+    fprintf (stderr, "gl_read_cache: fcntl(2) failed with status %i\n",
+        errno);
+    return (errno);
+  }
+
+  memset (&context, 0, sizeof (context));
+  context.cfg = NULL;
+  context.inst = NULL;
+  context.ident = NULL;
+
+  handle = yajl_alloc (&gl_json_callbacks,
+      &handle_config,
+      /* alloc funcs = */ NULL,
+      &context);
+
+  close (fd);
+
+} /* }}} int gl_read_cache */
 
 /*
  * Global functions
