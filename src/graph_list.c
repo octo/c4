@@ -31,6 +31,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <yajl/yajl_parse.h>
 
@@ -232,29 +234,68 @@ static int gl_clear_instances (void) /* {{{ */
 static void gl_dump_cb (void *ctx, /* {{{ */
     const char *str, unsigned int len)
 {
-  FILE *fh = ctx;
+  int fd = *((int *) ctx);
+  const char *buffer;
+  size_t buffer_size;
+  ssize_t status;
 
-  /* FIXME: Has everything been written? */
-  fwrite ((void *) str, /* size = */ 1, /* nmemb = */ len, fh);
+  buffer = str;
+  buffer_size = (size_t) len;
+  while (buffer_size > 0)
+  {
+    status = write (fd, buffer, buffer_size);
+    if (status < 0)
+    {
+      fprintf (stderr, "write(2) failed with status %i\n", errno);
+      return;
+    }
+
+    buffer += status;
+    buffer_size -= status;
+  }
 } /* }}} void gl_dump_cb */
 
 static int gl_dump (void) /* {{{ */
 {
-  FILE *fh;
+  int fd;
   yajl_gen handler;
   yajl_gen_config handler_config = { /* pretty = */ 1, /* indent = */ "  " };
+  struct flock lock;
+  int status;
   size_t i;
 
-  /* FIXME: Lock the file */
-  fh = fopen (CACHE_FILE, "w");
-  if (fh == NULL)
+  fd = open (CACHE_FILE, O_WRONLY | O_TRUNC | O_CREAT);
+  if (fd < 0)
+  {
+    fprintf (stderr, "gl_dump: open(2) failed with status %i\n", errno);
     return (errno);
+  }
+
+  memset (&lock, 0, sizeof (lock));
+  lock.l_type = F_WRLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0; /* lock everything */
+
+  while (42)
+  {
+    status = fcntl (fd, F_SETLKW, &lock);
+    if (status == 0)
+      break;
+
+    if (errno == EINTR)
+      continue;
+
+    fprintf (stderr, "gl_dump: fcntl(2) failed with status %i\n", errno);
+    close (fd);
+    return (errno);
+  }
 
   handler = yajl_gen_alloc2 (gl_dump_cb, &handler_config,
-      /* alloc funcs = */ NULL, /* ctx = */ fh);
+      /* alloc funcs = */ NULL, /* ctx = */ &fd);
   if (handler == NULL)
   {
-    fclose (fh);
+    close (fd);
     return (-1);
   }
 
@@ -269,10 +310,15 @@ static int gl_dump (void) /* {{{ */
   yajl_gen_array_close (handler);
 
   yajl_gen_free (handler);
-  fclose (fh);
+  close (fd);
 
   return (0);
 } /* }}} int gl_dump */
+
+static int gl_scan_directory (void)
+{
+  return (-1);
+} /* }}} int gl_scan_directory */
 
 /*
  * JSON parsing functions
@@ -346,6 +392,23 @@ static int gl_json_string (void *user_data, /* {{{ */
 
   return (1);
 } /* }}} int gl_json_string */
+
+static int gl_json_start_map (void *user_data) /* {{{ */
+{
+  gl_json_context_t *ctx = user_data;
+
+  if (((ctx->state & CTX_MASK) == CTX_GRAPH_SELECT)
+      || ((ctx->state & CTX_MASK) == CTX_INST_SELECT)
+      || ((ctx->state & CTX_MASK) == CTX_INST_FILE))
+  {
+      assert (ctx->ident == NULL);
+      ctx->ident = ident_create (ANY_TOKEN,
+          ANY_TOKEN, ANY_TOKEN,
+          ANY_TOKEN, ANY_TOKEN);
+  }
+
+  return (1);
+} /* }}} int gl_json_start_map */
 
 static int gl_json_end_map (void *user_data) /* {{{ */
 {
@@ -482,6 +545,8 @@ static int gl_json_key (void *user_data, /* {{{ */
       || ((ctx->state & CTX_MASK) == CTX_INST_SELECT)
       || ((ctx->state & CTX_MASK) == CTX_INST_FILE))
   {
+    assert (ctx->ident != NULL);
+
     if (strcasecmp ("host", buffer) == 0)
       set_state (ctx, CTX_IDENT_HOST, CTX_IDENT_MASK);
     else if (strcasecmp ("plugin", buffer) == 0)
@@ -494,7 +559,7 @@ static int gl_json_key (void *user_data, /* {{{ */
       set_state (ctx, CTX_IDENT_TYPE_INSTANCE, CTX_IDENT_MASK);
   }
 
-  return (0);
+  return (1);
 } /* }}} int gl_json_key */
 
 yajl_callbacks gl_json_callbacks =
@@ -505,7 +570,7 @@ yajl_callbacks gl_json_callbacks =
   /*      double = */ NULL,
   /*      number = */ NULL,
   /*      string = */ gl_json_string,
-  /*   start_map = */ NULL,
+  /*   start_map = */ gl_json_start_map,
   /*     map_key = */ gl_json_key,
   /*     end_map = */ gl_json_end_map,
   /* start_array = */ NULL,
@@ -520,8 +585,10 @@ static int gl_read_cache (_Bool block) /* {{{ */
 
   int fd;
   int cmd;
+  struct stat statbuf;
   struct flock lock;
   int status;
+  time_t now;
 
   fd = open (CACHE_FILE, O_RDONLY);
   if (fd < 0)
@@ -556,12 +623,44 @@ static int gl_read_cache (_Bool block) /* {{{ */
     if (errno == EINTR)
       continue;
 
+    status = errno;
     fprintf (stderr, "gl_read_cache: fcntl(2) failed with status %i\n",
-        errno);
-    return (errno);
+        status);
+    close (fd);
+    return (status);
+  }
+
+  fprintf (stderr, "gl_read_cache: Opening and locking "
+      "cache file successful\n");
+
+  memset (&statbuf, 0, sizeof (statbuf));
+  status = fstat (fd, &statbuf);
+  if (status != 0)
+  {
+    status = errno;
+    fprintf (stderr, "gl_read_cache: fstat(2) failed with status %i\n",
+        status);
+    close (fd);
+    return (status);
+  }
+
+  now = time (NULL);
+
+  if (statbuf.st_mtime <= gl_last_update)
+  {
+    /* Our current data is at least as new as the cache. Return. */
+    close (fd);
+    return (0);
+  }
+  else if ((statbuf.st_mtime + UPDATE_INTERVAL) < now)
+  {
+    /* We'll scan the directory anyway, so there is no need to parse the cache here. */
+    close (fd);
+    return (0);
   }
 
   memset (&context, 0, sizeof (context));
+  context.state = CTX_GRAPH;
   context.cfg = NULL;
   context.inst = NULL;
   context.ident = NULL;
@@ -571,8 +670,40 @@ static int gl_read_cache (_Bool block) /* {{{ */
       /* alloc funcs = */ NULL,
       &context);
 
+  while (42)
+  {
+    ssize_t rd_status;
+    char buffer[1024*1024];
+
+    rd_status = read (fd, buffer, sizeof (buffer));
+    if (rd_status < 0)
+    {
+      if ((errno == EINTR) || (errno == EAGAIN))
+        continue;
+
+      fprintf (stderr, "gl_read_cache: read(2) failed with status %i\n",
+          errno);
+      close (fd);
+      return (errno);
+    }
+    else if (rd_status == 0)
+    {
+      yajl_parse_complete (handle);
+      break;
+    }
+    else
+    {
+      yajl_parse (handle,
+          (unsigned char *) &buffer[0],
+          (unsigned int) rd_status);
+    }
+  }
+
+  fprintf (stderr, "gl_read_cache: Closing cache file and returning\n");
+  gl_last_update = statbuf.st_mtime;
   close (fd);
 
+  return (0);
 } /* }}} int gl_read_cache */
 
 /*
@@ -610,7 +741,7 @@ int gl_graph_get_all (graph_callback_t callback, /* {{{ */
   if (callback == NULL)
     return (EINVAL);
 
-  gl_update ();
+  gl_update (/* request served = */ 0);
 
   for (i = 0; i < gl_active_num; i++)
   {
@@ -650,7 +781,7 @@ graph_config_t *gl_graph_get_selected (void) /* {{{ */
 
   ident = ident_create (host, plugin, plugin_instance, type, type_instance);
 
-  gl_update ();
+  gl_update (/* request served = */ 0);
 
   for (i = 0; i < gl_active_num; i++)
   {
@@ -711,7 +842,7 @@ int gl_instance_get_all (graph_inst_callback_t callback, /* {{{ */
 {
   size_t i;
 
-  gl_update ();
+  gl_update (/* request served = */ 0);
 
   for (i = 0; i < gl_active_num; i++)
   {
@@ -871,15 +1002,14 @@ int gl_foreach_host (int (*callback) (const char *host, void *user_data), /* {{{
   return (0);
 } /* }}} int gl_foreach_host */
 
-int gl_update (void) /* {{{ */
+int gl_update (_Bool request_served) /* {{{ */
 {
   time_t now;
   int status;
   size_t i;
 
-  /*
-  printf ("Content-Type: text/plain\n\n");
-  */
+  if (!request_served && (gl_last_update > 0))
+    return (0);
 
   now = time (NULL);
 
@@ -893,7 +1023,14 @@ int gl_update (void) /* {{{ */
 
   graph_read_config ();
 
-  status = fs_scan (/* callback = */ gl_register_file, /* user data = */ NULL);
+  status = gl_read_cache (/* block = */ 1);
+
+  if ((status != 0)
+      || ((gl_last_update + UPDATE_INTERVAL) >= now))
+  {
+    status = fs_scan (/* callback = */ gl_register_file,
+        /* user data = */ NULL);
+  }
 
   if (host_list_len > 0)
     qsort (host_list, host_list_len, sizeof (*host_list),
