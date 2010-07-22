@@ -56,7 +56,7 @@ int gl_search_field (graph_ident_field_t field, const char *field_value,
 int gl_foreach_host (int (*callback) (const char *host, void *user_data),
     void *user_data);
 
-int gl_update (void);
+int gl_update (_Bool request_served);
 
 #endif /* GRAPH_LIST_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

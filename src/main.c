@@ -107,14 +107,22 @@ static int handle_request (void) /* {{{ */
   else
   {
     size_t i;
+    int status = ENOENT;
+
+    gl_update (/* request_served = */ 0);
 
     for (i = 0; i < actions_num; i++)
     {
       if (strcmp (action, actions[i].name) == 0)
-        return ((*actions[i].callback) ());
+        status = (*actions[i].callback) ();
     }
 
-    return (action_usage ());
+    if (i >= actions_num)
+      status = action_usage ();
+
+    gl_update (/* request_served = */ 1);
+
+    return (status);
   }
 } /* }}} int handle_request */
 
