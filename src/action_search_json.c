@@ -164,8 +164,6 @@ int action_search_json (void) /* {{{ */
   char *search;
   int status;
 
-  gl_update ();
-
   search = strtolower_copy (param ("q"));
 
   status = list_graphs_json (search);

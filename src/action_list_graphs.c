@@ -85,8 +85,6 @@ static int print_all_graphs (__attribute__((unused)) void *user_data) /* {{{ */
 
 int action_list_graphs (void) /* {{{ */
 {
-  gl_update ();
-
   page_callbacks_t pg_callbacks = PAGE_CALLBACKS_INIT;
   char title[512];
 

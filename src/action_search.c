@@ -265,8 +265,6 @@ int action_search (void) /* {{{ */
   page_data_t pg_data;
   int status;
 
-  gl_update ();
-
   pg_data.search_term = strtolower_copy (param ("q"));
   if ((pg_data.search_term != NULL) && (pg_data.search_term[0] == 0))
   {

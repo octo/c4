@@ -73,8 +73,6 @@ static int print_all_hosts (__attribute__((unused)) void *user_data) /* {{{ */
 
 int action_list_hosts (void) /* {{{ */
 {
-  gl_update ();
-
   page_callbacks_t pg_callbacks = PAGE_CALLBACKS_INIT;
   char title[512];
 
