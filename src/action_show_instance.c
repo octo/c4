@@ -146,17 +146,35 @@ static int left_menu (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
   char params[1024];
+  graph_ident_t *ident;
+  const char *host;
 
   memset (params, 0, sizeof (params));
   graph_get_params (data->cfg, params, sizeof (params));
   html_escape_buffer (params, sizeof (params));
 
+  ident = inst_get_selector (data->inst);
+  host = ident_get_host (ident);
+  if (IS_ANY (host))
+    host = NULL;
+
   printf ("\n<ul class=\"menu left\">\n"
       "  <li><a href=\"%s?action=show_graph;%s\">All instances</a></li>\n"
-      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n"
-      "</ul>\n",
+      "  <li><a href=\"%s?action=list_graphs\">All graphs</a></li>\n",
       script_name (), params,
       script_name ());
+  if (host != NULL)
+  {
+    char host_html[1024];
+    char host_uri[1024];
+
+    html_escape_copy (host_html, host, sizeof (host_html));
+    uri_escape_copy (host_uri, host, sizeof (host_uri));
+
+    printf ("  <li><a href=\"%s?action=search;q=host:%s\">Host &quot;%s&quot;</a></li>\n",
+        script_name (), host_uri, host_html);
+  }
+  printf ("</ul>\n");
 
   return (0);
 } /* }}} int left_menu */
