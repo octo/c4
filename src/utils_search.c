@@ -28,6 +28,7 @@
 #include <errno.h>
 
 #include "utils_search.h"
+#include "graph_ident.h"
 #include "graph_instance.h"
 #include "utils_array.h"
 
@@ -258,6 +259,38 @@ graph_ident_t *search_to_ident (search_info_t *si) /* {{{ */
         (si->type == NULL) ? ANY_TOKEN : si->type,
         (si->type_instance == NULL) ? ANY_TOKEN : si->type_instance));
 } /* }}} graph_ident_t *search_to_ident */
+
+search_info_t *search_from_ident (const graph_ident_t *ident) /* {{{ */
+{
+  search_info_t *si;
+
+  if (ident == NULL)
+    return (NULL);
+
+  si = malloc (sizeof (*si));
+  if (si == NULL)
+    return (NULL);
+  memset (si, 0, sizeof (*si));
+  si->terms = NULL;
+
+#define COPY_FIELD(f) do {                                                   \
+  const char *tmp = ident_get_##f (ident);                                   \
+  if (tmp == NULL)                                                           \
+    si->f = NULL;                                                            \
+  else                                                                       \
+    si->f = strdup (tmp);                                                    \
+} while (0)
+
+  COPY_FIELD(host);
+  COPY_FIELD(plugin);
+  COPY_FIELD(plugin_instance);
+  COPY_FIELD(type);
+  COPY_FIELD(type_instance);
+
+#undef COPY_FIELD
+
+  return (si);
+} /* }}} search_info_t *search_from_ident */
 
 _Bool search_graph_title_matches (search_info_t *si, /* {{{ */
     const char *title)

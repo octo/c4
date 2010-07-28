@@ -38,6 +38,7 @@ void search_destroy (search_info_t *si);
 _Bool search_has_selector (search_info_t *si);
 
 graph_ident_t *search_to_ident (search_info_t *si);
+search_info_t *search_from_ident (const graph_ident_t *ident);
 
 _Bool search_graph_title_matches (search_info_t *si, const char *title);
 
