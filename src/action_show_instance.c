@@ -180,7 +180,6 @@ static int left_menu (void *user_data) /* {{{ */
 
   host = NULL;
   ident_destroy (ident);
-  inst_destroy (inst);
 
   return (0);
 } /* }}} int left_menu */
