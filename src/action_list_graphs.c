@@ -88,6 +88,13 @@ static int print_all_graphs (__attribute__((unused)) void *user_data) /* {{{ */
   gl_graph_get_all (include_dynamic, print_one_graph, /* user_data = */ NULL);
   printf ("    </ul>\n");
 
+  if (!include_dynamic)
+  {
+    printf ("    <div><a href=\"%s?action=list_graphs;dynamic=true\">"
+        "List dynamic graphs, too."
+        "</a></div>\n", script_name ());
+  }
+
   return (0);
 } /* }}} int print_all_graphs */
 
