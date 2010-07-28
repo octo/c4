@@ -123,6 +123,9 @@ static int handle_request (void) /* {{{ */
     if (i >= actions_num)
       status = action_usage ();
 
+    fflush (stdout);
+    fclose (stdout);
+
     gl_update (/* request_served = */ 1);
 
     return (status);
