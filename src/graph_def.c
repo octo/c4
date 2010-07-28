@@ -194,7 +194,7 @@ graph_def_t *def_create (graph_config_t *cfg, graph_ident_t *ident, /* {{{ */
   ret->next = NULL;
 
   ret->select = ident_copy_with_selector (selector, ident,
-      IDENT_FLAG_REPLACE_ANY);
+      IDENT_FLAG_REPLACE_ALL);
   if (ret->select == NULL)
   {
     fprintf (stderr, "def_create: ident_copy_with_selector failed\n");
