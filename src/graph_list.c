@@ -270,15 +270,28 @@ static int gl_update_cache (void) /* {{{ */
   if (status == 0)
   {
     if (statbuf.st_mtime >= gl_last_update)
+    {
+      fprintf (stderr, "gl_update_cache: Not writing to cache because it's "
+          "at least as new as our internal data\n");
       return (0);
+    }
+  }
+  else
+  {
+    status = errno;
+    fprintf (stderr, "gl_update_cache: stat(2) failed with status %i\n",
+        status);
+    /* Continue writing the file if possible. */
   }
 
   fd = open (CACHE_FILE, O_WRONLY | O_TRUNC | O_CREAT,
       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
   if (fd < 0)
   {
-    fprintf (stderr, "gl_update_cache: open(2) failed with status %i\n", errno);
-    return (errno);
+    status = errno;
+    fprintf (stderr, "gl_update_cache: open(2) failed with status %i\n",
+        status);
+    return (status);
   }
 
   memset (&lock, 0, sizeof (lock));
@@ -309,6 +322,9 @@ static int gl_update_cache (void) /* {{{ */
     return (-1);
   }
 
+  fprintf (stderr, "gl_update_cache: Start writing data\n");
+  fflush (stderr);
+
   yajl_gen_array_open (handler);
 
   for (i = 0; i < gl_active_num; i++)
@@ -321,6 +337,9 @@ static int gl_update_cache (void) /* {{{ */
 
   yajl_gen_free (handler);
   close (fd);
+
+  fprintf (stderr, "gl_update_cache: Finished writing data\n");
+  fflush (stderr);
 
   return (0);
 } /* }}} int gl_update_cache */
@@ -656,15 +675,25 @@ static int gl_read_cache (_Bool block) /* {{{ */
 
   now = time (NULL);
 
-  if (statbuf.st_mtime <= gl_last_update)
+  if (block)
+  {
+    /* Read the file. No excuses. */
+  }
+  else if (statbuf.st_mtime <= gl_last_update)
   {
     /* Our current data is at least as new as the cache. Return. */
+    fprintf (stderr, "gl_read_cache: Not using cache because "
+        "the internal data is newer\n");
+    fflush (stderr);
     close (fd);
     return (0);
   }
   else if ((statbuf.st_mtime + UPDATE_INTERVAL) < now)
   {
-    /* We'll scan the directory anyway, so there is no need to parse the cache here. */
+    /* We'll scan the directory anyway, so there is no need to parse the cache
+     * here. */
+    fprintf (stderr, "gl_read_cache: Not using cache because it's too old\n");
+    fflush (stderr);
     close (fd);
     return (0);
   }
@@ -680,6 +709,9 @@ static int gl_read_cache (_Bool block) /* {{{ */
       /* alloc funcs = */ NULL,
       &context);
 
+  fprintf (stderr, "gl_read_cache: Start parsing data\n");
+  fflush (stderr);
+
   while (42)
   {
     ssize_t rd_status;
@@ -691,10 +723,11 @@ static int gl_read_cache (_Bool block) /* {{{ */
       if ((errno == EINTR) || (errno == EAGAIN))
         continue;
 
+      status = errno;
       fprintf (stderr, "gl_read_cache: read(2) failed with status %i\n",
-          errno);
+          status);
       close (fd);
-      return (errno);
+      return (status);
     }
     else if (rd_status == 0)
     {
@@ -709,9 +742,13 @@ static int gl_read_cache (_Bool block) /* {{{ */
     }
   }
 
-  fprintf (stderr, "gl_read_cache: Closing cache file and returning\n");
+  yajl_free (handle);
+
   gl_last_update = statbuf.st_mtime;
   close (fd);
+
+  fprintf (stderr, "gl_read_cache: Finished parsing data\n");
+  fflush (stderr);
 
   return (0);
 } /* }}} int gl_read_cache */
@@ -1039,6 +1076,10 @@ int gl_update (_Bool request_served) /* {{{ */
   graph_read_config ();
 
   status = gl_read_cache (/* block = */ 1);
+  /* We have *something* to work with. Even if it's outdated, just get on with
+   * handling the request and take care of re-reading data later on. */
+  if ((status == 0) && !request_served)
+    return (0);
 
   if ((status != 0)
       || ((gl_last_update + UPDATE_INTERVAL) < now))
