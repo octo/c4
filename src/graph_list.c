@@ -255,20 +255,29 @@ static void gl_dump_cb (void *ctx, /* {{{ */
   }
 } /* }}} void gl_dump_cb */
 
-static int gl_dump (void) /* {{{ */
+static int gl_update_cache (void) /* {{{ */
 {
   int fd;
   yajl_gen handler;
   yajl_gen_config handler_config = { /* pretty = */ 1, /* indent = */ "  " };
   struct flock lock;
+  struct stat statbuf;
   int status;
   size_t i;
+
+  memset (&statbuf, 0, sizeof (statbuf));
+  status = stat (CACHE_FILE, &statbuf);
+  if (status == 0)
+  {
+    if (statbuf.st_mtime >= gl_last_update)
+      return (0);
+  }
 
   fd = open (CACHE_FILE, O_WRONLY | O_TRUNC | O_CREAT,
       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
   if (fd < 0)
   {
-    fprintf (stderr, "gl_dump: open(2) failed with status %i\n", errno);
+    fprintf (stderr, "gl_update_cache: open(2) failed with status %i\n", errno);
     return (errno);
   }
 
@@ -287,7 +296,7 @@ static int gl_dump (void) /* {{{ */
     if (errno == EINTR)
       continue;
 
-    fprintf (stderr, "gl_dump: fcntl(2) failed with status %i\n", errno);
+    fprintf (stderr, "gl_update_cache: fcntl(2) failed with status %i\n", errno);
     close (fd);
     return (errno);
   }
@@ -314,7 +323,7 @@ static int gl_dump (void) /* {{{ */
   close (fd);
 
   return (0);
-} /* }}} int gl_dump */
+} /* }}} int gl_update_cache */
 
 static int gl_scan_directory (void)
 {
@@ -1015,7 +1024,12 @@ int gl_update (_Bool request_served) /* {{{ */
   now = time (NULL);
 
   if ((gl_last_update + UPDATE_INTERVAL) >= now)
+  {
+    /* Write data to cache if appropriate */
+    if (request_served)
+      gl_update_cache ();
     return (0);
+  }
 
   /* Clear state */
   gl_clear_instances ();
@@ -1027,22 +1041,22 @@ int gl_update (_Bool request_served) /* {{{ */
   status = gl_read_cache (/* block = */ 1);
 
   if ((status != 0)
-      || ((gl_last_update + UPDATE_INTERVAL) >= now))
+      || ((gl_last_update + UPDATE_INTERVAL) < now))
   {
     status = fs_scan (/* callback = */ gl_register_file,
         /* user data = */ NULL);
+    gl_last_update = now;
   }
 
   if (host_list_len > 0)
     qsort (host_list, host_list_len, sizeof (*host_list),
         gl_compare_hosts);
 
-  gl_last_update = now;
-
   for (i = 0; i < gl_active_num; i++)
     graph_sort_instances (gl_active[i]);
 
-  gl_dump ();
+  if (request_served)
+    gl_update_cache ();
 
   return (status);
 } /* }}} int gl_update */
