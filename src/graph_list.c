@@ -264,7 +264,8 @@ static int gl_dump (void) /* {{{ */
   int status;
   size_t i;
 
-  fd = open (CACHE_FILE, O_WRONLY | O_TRUNC | O_CREAT);
+  fd = open (CACHE_FILE, O_WRONLY | O_TRUNC | O_CREAT,
+      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
   if (fd < 0)
   {
     fprintf (stderr, "gl_dump: open(2) failed with status %i\n", errno);
