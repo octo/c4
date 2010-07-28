@@ -780,8 +780,8 @@ int gl_config_submit (void) /* {{{ */
   return (0);
 } /* }}} int graph_config_submit */
 
-int gl_graph_get_all (graph_callback_t callback, /* {{{ */
-    void *user_data)
+int gl_graph_get_all (_Bool include_dynamic, /* {{{ */
+    graph_callback_t callback, void *user_data)
 {
   size_t i;
 
@@ -798,6 +798,9 @@ int gl_graph_get_all (graph_callback_t callback, /* {{{ */
     if (status != 0)
       return (status);
   }
+
+  if (!include_dynamic)
+    return (0);
 
   for (i = 0; i < gl_dynamic_num; i++)
   {

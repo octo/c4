@@ -76,8 +76,16 @@ static int print_one_graph (graph_config_t *cfg, /* {{{ */
 
 static int print_all_graphs (__attribute__((unused)) void *user_data) /* {{{ */
 {
+  const char *dynamic;
+  _Bool include_dynamic = 0;
+
+  dynamic = param ("dynamic");
+  if ((dynamic != NULL)
+      && (strcmp ("true", dynamic) == 0))
+    include_dynamic = 1;
+
   printf ("    <ul class=\"graph_list\">\n");
-  gl_graph_get_all (print_one_graph, /* user_data = */ NULL);
+  gl_graph_get_all (include_dynamic, print_one_graph, /* user_data = */ NULL);
   printf ("    </ul>\n");
 
   return (0);

@@ -37,7 +37,8 @@ int gl_config_submit (void);
 
 graph_config_t *gl_graph_get_selected (void);
 
-int gl_graph_get_all (graph_callback_t callback, void *user_data);
+int gl_graph_get_all (_Bool include_dynamic,
+    graph_callback_t callback, void *user_data);
 
 int gl_graph_instance_get_all (graph_config_t *cfg, graph_inst_callback_t callback,
     void *user_data);
