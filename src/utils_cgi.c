@@ -433,10 +433,16 @@ char *uri_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
     }
     else if ((((unsigned char) src[in]) < 32)
         || (src[in] == ' ')
-        || (src[in] == '&')
-        || (src[in] == ';')
-        || (src[in] == '?')
-        || (src[in] == '/')
+        /* RFC 3986, gen-delims */
+        || (src[in] == ':') || (src[in] == '/') || (src[in] == '?')
+        || (src[in] == '#') || (src[in] == '[') || (src[in] == ']')
+        || (src[in] == '@')
+        /* RFC 3986, sub-delims */
+        || (src[in] == '!') || (src[in] == '$') || (src[in] == '&')
+        || (src[in] == '(') || (src[in] == ')') || (src[in] == '*')
+        || (src[in] == '+') || (src[in] == ',') || (src[in] == ';')
+        || (src[in] == '=') || (src[in] == '\'')
+        /* 8-bit data */
         || (((unsigned char) src[in]) >= 128))
     {
       char esc[4];
