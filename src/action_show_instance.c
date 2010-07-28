@@ -146,6 +146,7 @@ static int left_menu (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
   char params[1024];
+  graph_instance_t *inst;
   graph_ident_t *ident;
   const char *host;
 
@@ -153,7 +154,8 @@ static int left_menu (void *user_data) /* {{{ */
   graph_get_params (data->cfg, params, sizeof (params));
   html_escape_buffer (params, sizeof (params));
 
-  ident = inst_get_selector (data->inst);
+  inst = inst_get_selected (data->cfg);
+  ident = inst_get_selector (inst);
   host = ident_get_host (ident);
   if (IS_ANY (host))
     host = NULL;
@@ -175,6 +177,10 @@ static int left_menu (void *user_data) /* {{{ */
         script_name (), host_uri, host_html);
   }
   printf ("</ul>\n");
+
+  host = NULL;
+  ident_destroy (ident);
+  inst_destroy (inst);
 
   return (0);
 } /* }}} int left_menu */
