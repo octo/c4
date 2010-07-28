@@ -432,6 +432,7 @@ char *uri_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
       return (dest);
     }
     else if ((((unsigned char) src[in]) < 32)
+        || (src[in] == ' ')
         || (src[in] == '&')
         || (src[in] == ';')
         || (src[in] == '?')
@@ -461,6 +462,16 @@ char *uri_escape_copy (char *dest, const char *src, size_t n) /* {{{ */
 
   return (dest);
 } /* }}} char *uri_escape_copy */
+
+char *uri_escape_buffer (char *buffer, size_t buffer_size) /* {{{ */
+{
+  char temp[buffer_size];
+
+  uri_escape_copy (temp, buffer, buffer_size);
+  memcpy (buffer, temp, buffer_size);
+
+  return (&buffer[0]);
+} /* }}} char *uri_escape_buffer */
 
 char *uri_escape (const char *string) /* {{{ */
 {
