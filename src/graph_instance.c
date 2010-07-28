@@ -393,6 +393,12 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
 
   buffer[0] = 0;
 
+#define COPY_ESCAPE(str) do {                                   \
+  char tmp[1024];                                               \
+  uri_escape_copy (tmp, (str), sizeof (tmp));                   \
+  strlcat (buffer, tmp, buffer_size);                           \
+} while (0)                                                     \
+
 #define COPY_FIELD(field) do {                                  \
   const char *cfg_f  = ident_get_##field (cfg_select);          \
   const char *inst_f = ident_get_##field (inst->select);        \
@@ -400,19 +406,19 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
   {                                                             \
     strlcat (buffer, #field, buffer_size);                      \
     strlcat (buffer, "=", buffer_size);                         \
-    strlcat (buffer, cfg_f, buffer_size);                       \
+    COPY_ESCAPE (cfg_f);                                        \
   }                                                             \
   else                                                          \
   {                                                             \
     strlcat (buffer, "graph_", buffer_size);                    \
     strlcat (buffer, #field, buffer_size);                      \
     strlcat (buffer, "=", buffer_size);                         \
-    strlcat (buffer, cfg_f, buffer_size);                       \
+    COPY_ESCAPE (cfg_f);                                        \
     strlcat (buffer, ";", buffer_size);                         \
     strlcat (buffer, "inst_", buffer_size);                     \
     strlcat (buffer, #field, buffer_size);                      \
     strlcat (buffer, "=", buffer_size);                         \
-    strlcat (buffer, inst_f, buffer_size);                      \
+    COPY_ESCAPE (inst_f);                                       \
   }                                                             \
 } while (0)
 
@@ -427,6 +433,7 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
   COPY_FIELD(type_instance);
 
 #undef COPY_FIELD
+#undef COPY_ESCAPE
 
   ident_destroy (cfg_select);
 
