@@ -1087,6 +1087,11 @@ int gl_update (_Bool request_served) /* {{{ */
   if ((status != 0)
       || ((gl_last_update + UPDATE_INTERVAL) < now))
   {
+    /* Clear state */
+    gl_clear_instances ();
+    gl_clear_hosts ();
+    gl_destroy (&gl_dynamic, &gl_dynamic_num);
+
     status = fs_scan (/* callback = */ gl_register_file,
         /* user data = */ NULL);
     gl_last_update = now;
