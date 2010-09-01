@@ -47,8 +47,10 @@ struct fs_scan_dir_data_s /* {{{ */
 typedef struct fs_scan_dir_data_s fs_scan_dir_data_t;
 
 typedef int (*callback_type_t)   (const char *type,   void *user_data);
-typedef int (*callback_plugin_t) (const char *plugin, void *user_data);
-typedef int (*callback_host_t)   (const char *host,   void *user_data);
+typedef int (*callback_plugin_t) (const char *base_dir,
+    const char *plugin, void *user_data);
+typedef int (*callback_host_t)   (const char *base_dir,
+    const char *host,   void *user_data);
 
 /*
  * Directory and file walking functions
@@ -107,50 +109,6 @@ static int foreach_rrd_file (const char *dir, /* {{{ */
   return (status);
 } /* }}} int foreach_rrd_file */
 
-static int foreach_dir (const char *dir, /* {{{ */
-    int (*callback) (const char *, void *),
-    void *user_data)
-{
-  DIR *dh;
-  struct dirent *entry;
-  int status = 0;
-
-  if (callback == NULL)
-    return (EINVAL);
-
-  dh = opendir (dir);
-  if (dh == NULL)
-    return (errno);
-
-  while ((entry = readdir (dh)) != NULL)
-  {
-    struct stat statbuf;
-    char abspath[PATH_MAX + 1];
-
-    if (entry->d_name[0] == '.')
-      continue;
-
-    snprintf (abspath, sizeof (abspath), "%s/%s", dir, entry->d_name);
-    abspath[sizeof (abspath) - 1] = 0;
-
-    memset (&statbuf, 0, sizeof (statbuf));
-
-    status = stat (abspath, &statbuf);
-    if (status != 0)
-      continue;
-
-    if (!S_ISDIR (statbuf.st_mode))
-      continue;
-
-    status = (*callback) (entry->d_name, user_data);
-    if (status != 0)
-      break;
-  } /* while (readdir) */
-
-  closedir (dh);
-  return (status);
-} /* }}} int foreach_dir */
-
 static int foreach_type (const char *host, const char *plugin, /* {{{ */
     callback_type_t callback, void *user_data)
 {
@@ -177,13 +135,13 @@ static int foreach_plugin (const char *host, /* {{{ */
   snprintf (abspath, sizeof (abspath), "%s/%s", DATA_DIR, host);
   abspath[sizeof (abspath) - 1] = 0;
 
-  return (foreach_dir (abspath, callback, user_data));
+  return (fs_foreach_dir (abspath, callback, user_data));
 } /* }}} int foreach_plugin */
 
 static int foreach_host (callback_host_t callback, /* {{{ */
     void *user_data)
 {
-  return (foreach_dir (DATA_DIR, callback, user_data));
+  return (fs_foreach_dir (DATA_DIR, callback, user_data));
 } /* }}} int foreach_host */
 
 /*
@@ -237,7 +195,8 @@ static int scan_type (const char *type, void *user_data) /* {{{ */
   return (status);
 } /* }}} int scan_type */
 
-static int scan_plugin (const char *plugin, void *user_data) /* {{{ */
+static int scan_plugin (__attribute__((unused)) const char *base_dir, /* {{{ */
+    const char *plugin, void *user_data)
 {
   fs_scan_dir_data_t *data = user_data;
   int status;
@@ -272,7 +231,8 @@ static int scan_plugin (const char *plugin, void *user_data) /* {{{ */
   return (status);
 } /* }}} int scan_plugin */
 
-static int scan_host (const char *host, void *user_data) /* {{{ */
+static int scan_host (__attribute__((unused)) const char *base_dir, /* {{{ */
+    const char *host, void *user_data)
 {
   fs_scan_dir_data_t *data = user_data;
   int status;
@@ -298,6 +258,94 @@ static int scan_host (const char *host, void *user_data) /* {{{ */
 /*
  * Public function
  */
+int fs_foreach_dir (const char *base_dir, /* {{{ */
+    int (*callback) (const char *base_dir, const char *entry, void *),
+    void *user_data)
+{
+  DIR *dh;
+  struct dirent *entry;
+  int status = 0;
+
+  if (callback == NULL)
+    return (EINVAL);
+
+  dh = opendir (base_dir);
+  if (dh == NULL)
+    return (errno);
+
+  while ((entry = readdir (dh)) != NULL)
+  {
+    struct stat statbuf;
+    char abspath[PATH_MAX + 1];
+
+    if (entry->d_name[0] == '.')
+      continue;
+
+    snprintf (abspath, sizeof (abspath), "%s/%s", base_dir, entry->d_name);
+    abspath[sizeof (abspath) - 1] = 0;
+
+    memset (&statbuf, 0, sizeof (statbuf));
+
+    status = stat (abspath, &statbuf);
+    if (status != 0)
+      continue;
+
+    if (!S_ISDIR (statbuf.st_mode))
+      continue;
+
+    status = (*callback) (base_dir, entry->d_name, user_data);
+    if (status != 0)
+      break;
+  } /* while (readdir) */
+
+  closedir (dh);
+  return (status);
+} /* }}} int fs_foreach_dir */
+
+int fs_foreach_file (const char *base_dir, /* {{{ */
+    int (*callback) (const char *base_dir, const char *entry, void *),
+    void *user_data)
+{
+  DIR *dh;
+  struct dirent *entry;
+  int status = 0;
+
+  if (callback == NULL)
+    return (EINVAL);
+
+  dh = opendir (base_dir);
+  if (dh == NULL)
+    return (errno);
+
+  while ((entry = readdir (dh)) != NULL)
+  {
+    struct stat statbuf;
+    char abspath[PATH_MAX + 1];
+
+    if (entry->d_name[0] == '.')
+      continue;
+
+    snprintf (abspath, sizeof (abspath), "%s/%s", base_dir, entry->d_name);
+    abspath[sizeof (abspath) - 1] = 0;
+
+    memset (&statbuf, 0, sizeof (statbuf));
+
+    status = stat (abspath, &statbuf);
+    if (status != 0)
+      continue;
+
+    if (!S_ISREG (statbuf.st_mode))
+      continue;
+
+    status = (*callback) (base_dir, entry->d_name, user_data);
+    if (status != 0)
+      break;
+  } /* while (readdir) */
+
+  closedir (dh);
+  return (status);
+} /* }}} int fs_foreach_file */
+
 int fs_scan (fs_ident_cb_t callback, void *user_data) /* {{{ */
 {
   fs_scan_dir_data_t data;

@@ -30,6 +30,13 @@
 
 typedef int (*fs_ident_cb_t) (const graph_ident_t *ident, void *user_data);
 
+int fs_foreach_dir (const char *base_dir,
+    int (*callback) (const char *base_dir, const char *entry, void *),
+    void *user_data);
+int fs_foreach_file (const char *base_dir,
+    int (*callback) (const char *base_dir, const char *entry, void *),
+    void *user_data);
+
 int fs_scan (fs_ident_cb_t callback, void *user_data);
 
 #endif /* FILESYSTEM_G */
