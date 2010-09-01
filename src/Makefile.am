@@ -24,6 +24,7 @@ collection_fcgi_SOURCES = main.c \
 			  action_show_graph_json.c action_show_graph_json.h \
 			  action_show_instance.c action_show_instance.h \
 			  common.c common.h \
+			  dp_rrdtool.c \
 			  filesystem.c filesystem.h \
 			  graph_types.h \
 			  graph.c graph.h \
