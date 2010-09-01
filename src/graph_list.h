@@ -35,6 +35,8 @@ int gl_add_graph (graph_config_t *cfg);
 
 int gl_config_submit (void);
 
+int gl_register_ident (const char *provider, const graph_ident_t *ident);
+
 graph_config_t *gl_graph_get_selected (void);
 
 int gl_graph_get_all (_Bool include_dynamic,

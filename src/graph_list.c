@@ -780,6 +780,17 @@ int gl_config_submit (void) /* {{{ */
   return (0);
 } /* }}} int graph_config_submit */
 
+int gl_register_ident (const char *provider, const graph_ident_t *ident)
+{
+  char *ident_str = ident_to_string (ident);
+
+  fprintf (stderr, "gl_register_ident (provider = %s, ident = %s)\n",
+      provider, ident_str);
+
+  free (ident_str);
+  return (0);
+} /* }}} int gl_register_ident */
+
 int gl_graph_get_all (_Bool include_dynamic, /* {{{ */
     graph_callback_t callback, void *user_data)
 {
