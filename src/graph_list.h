@@ -27,6 +27,7 @@
 #include "graph_types.h"
 #include "graph_ident.h"
 #include "utils_search.h"
+#include "data_provider.h"
 
 /*
  * Functions
@@ -36,6 +37,7 @@ int gl_add_graph (graph_config_t *cfg);
 int gl_config_submit (void);
 
 int gl_register_ident (const char *provider, const graph_ident_t *ident);
+int gl_register_data_provider (const char *name, data_provider_t *p);
 
 graph_config_t *gl_graph_get_selected (void);
 

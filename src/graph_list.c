@@ -344,11 +344,6 @@ static int gl_update_cache (void) /* {{{ */
   return (0);
 } /* }}} int gl_update_cache */
 
-static int gl_scan_directory (void)
-{
-  return (-1);
-} /* }}} int gl_scan_directory */
-
 /*
  * JSON parsing functions
  */
@@ -780,7 +775,7 @@ int gl_config_submit (void) /* {{{ */
   return (0);
 } /* }}} int graph_config_submit */
 
-int gl_register_ident (const char *provider, const graph_ident_t *ident)
+int gl_register_ident (const char *provider, const graph_ident_t *ident) /* {{{ */
 {
   char *ident_str = ident_to_string (ident);
 
@@ -790,6 +785,14 @@ int gl_register_ident (const char *provider, const graph_ident_t *ident)
   free (ident_str);
   return (0);
 } /* }}} int gl_register_ident */
+
+int gl_register_data_provider (const char *name, data_provider_t *p) /* {{{ */
+{
+  fprintf (stderr, "gl_register_data_provider (name = %s, ptr = %p)\n",
+      name, (void *) p);
+
+  return (0);
+} /* }}} int gl_register_data_provider */
 
 int gl_graph_get_all (_Bool include_dynamic, /* {{{ */
     graph_callback_t callback, void *user_data)
