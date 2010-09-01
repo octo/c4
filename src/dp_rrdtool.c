@@ -27,12 +27,16 @@
 #include "data_provider.h"
 #include "filesystem.h"
 #include "oconfig.h"
+#include "common.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
+#include <assert.h>
+
+#include <rrd.h>
 
 struct dp_rrdtool_s
 {
@@ -130,6 +134,50 @@ static int scan_host_cb (const char *base_dir,
   return (fs_foreach_dir (abs_dir, scan_plugin_cb, data));
 } /* }}} int scan_host_cb */
 
+static int ident_to_rrdfile (const graph_ident_t *ident,
+    dp_rrdtool_t *config,
+    char *buffer, size_t buffer_size)
+{
+  const char *plugin_instance;
+  const char *type_instance;
+
+  plugin_instance = ident_get_plugin_instance (ident);
+  if ((plugin_instance != NULL) && (plugin_instance[0] == 0))
+    plugin_instance = NULL;
+
+  type_instance = ident_get_type_instance (ident);
+  if ((type_instance != NULL) && (type_instance[0] == 0))
+    type_instance = NULL;
+
+  buffer[0] = 0;
+
+  strlcat (buffer, config->data_dir, buffer_size);
+  strlcat (buffer, "/", buffer_size);
+
+  strlcat (buffer, ident_get_host (ident), buffer_size);
+  strlcat (buffer, "/", buffer_size);
+  strlcat (buffer, ident_get_plugin (ident), buffer_size);
+  if (plugin_instance != NULL)
+  {
+    strlcat (buffer, "-", buffer_size);
+    strlcat (buffer, plugin_instance, buffer_size);
+  }
+  strlcat (buffer, "/", buffer_size);
+  strlcat (buffer, ident_get_type (ident), buffer_size);
+  if (type_instance != NULL)
+  {
+    strlcat (buffer, "-", buffer_size);
+    strlcat (buffer, type_instance, buffer_size);
+  }
+
+  strlcat (buffer, ".rrd", buffer_size);
+
+  return (0);
+} /* }}} int ident_to_rrdfile */
+
+/*
+ * Callback functions
+ */
 static int get_idents (void *priv,
     dp_get_idents_callback cb, void *ud)
 { /* {{{ */
@@ -152,11 +200,68 @@ static int get_idents (void *priv,
 static int get_ident_ds_names (void *priv, graph_ident_t *ident,
     dp_list_get_ident_ds_names_callback cb, void *ud)
 { /* {{{ */
-  priv = NULL;
-  ident = NULL;
-  cb = NULL;
-  ud = NULL;
-  return (0);
+  dp_rrdtool_t *config = priv;
+  char file[PATH_MAX + 1];
+  int status;
+
+  char *rrd_argv[] = { "info", file, NULL };
+  int rrd_argc = (sizeof (rrd_argv) / sizeof (rrd_argv[0])) - 1;
+
+  rrd_info_t *info;
+  rrd_info_t *ptr;
+
+  memset (file, 0, sizeof (file));
+  status = ident_to_rrdfile (ident, config, file, sizeof (file));
+  if (status != 0)
+    return (status);
+
+  info = rrd_info (rrd_argc, rrd_argv);
+  if (info == NULL)
+  {
+    printf ("%s: rrd_info (%s) failed.\n", __func__, file);
+    return (-1);
+  }
+
+  for (ptr = info; ptr != NULL; ptr = ptr->next)
+  {
+    size_t keylen;
+    size_t dslen;
+    char *ds;
+
+    if (ptr->key[0] != 'd')
+      continue;
+
+    if (strncmp ("ds[", ptr->key, strlen ("ds[")) != 0)
+      continue;
+
+    keylen = strlen (ptr->key);
+    if (keylen < strlen ("ds[?].index"))
+      continue;
+
+    dslen = keylen - strlen ("ds[].index");
+    assert (dslen >= 1);
+
+    if (strcmp ("].index", ptr->key + (strlen ("ds[") + dslen)) != 0)
+      continue;
+
+    ds = malloc (dslen + 1);
+    if (ds == NULL)
+      continue;
+
+    memcpy (ds, ptr->key + strlen ("ds["), dslen);
+    ds[dslen] = 0;
+
+    status = (*cb) (ident, ds, ud);
+
+    free (ds);
+
+    if (status != 0)
+      break;
+  }
+
+  rrd_info_free (info);
+
+  return (status);
 } /* }}} int get_ident_ds_names */
 
 static int get_ident_data (void *priv,
