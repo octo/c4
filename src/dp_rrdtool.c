@@ -134,7 +134,7 @@ static int scan_host_cb (const char *base_dir,
   return (fs_foreach_dir (abs_dir, scan_plugin_cb, data));
 } /* }}} int scan_host_cb */
 
-static int ident_to_rrdfile (const graph_ident_t *ident,
+static int ident_to_rrdfile (const graph_ident_t *ident, /* {{{ */
     dp_rrdtool_t *config,
     char *buffer, size_t buffer_size)
 {
@@ -271,16 +271,74 @@ static int get_ident_data (void *priv,
 { /* {{{ */
   dp_rrdtool_t *config = priv;
 
-  ident = NULL;
-  ds_name = NULL;
-  begin.tv_sec = 0;
-  end.tv_sec = 0;
-  cb = NULL;
-  ud = NULL;
+  char filename[PATH_MAX + 1];
+  const char *cf = "AVERAGE"; /* FIXME */
+  time_t rrd_start;
+  time_t rrd_end;
+  unsigned long step;
+  unsigned long ds_count;
+  char **ds_namv;
+  rrd_value_t *data;
+  int status;
 
-  config = NULL;
+  unsigned long ds_index;
+  unsigned long data_index;
+  unsigned long data_length;
 
-  return (EINVAL);
+  status = ident_to_rrdfile (ident, config, filename, sizeof (filename));
+  if (status != 0)
+    return (status);
+
+  rrd_start = (time_t) begin.tv_sec;
+  rrd_end = (time_t) end.tv_sec;
+  step = 0;
+  ds_count = 0;
+  ds_namv = NULL;
+  data = NULL;
+
+  status = rrd_fetch_r (filename, cf,
+      &rrd_start, &rrd_end,
+      &step, &ds_count, &ds_namv,
+      &data);
+  if (status != 0)
+    return (status);
+
+#define BAIL_OUT(ret_status) do { \
+  unsigned long i;                \
+  for (i = 0; i < ds_count; i++)  \
+    free (ds_namv[i]);            \
+  free (ds_namv);                 \
+  free (data);                    \
+  return (ret_status);            \
+} while (0)
+
+  for (ds_index = 0; ds_index < ds_count; ds_index++)
+    if (strcmp (ds_name, ds_namv[ds_index]) == 0)
+      break;
+
+  if (ds_index >= ds_count)
+    BAIL_OUT (ENOENT);
+
+  /* Number of data points returned. */
+  data_length = (rrd_end - rrd_start) / step;
+
+  for (data_index = 0; data_index < data_length; data_index++)
+  {
+    dp_data_point_t dp;
+    unsigned long index = (ds_count * data_index) + ds_index;
+
+    memset (&dp, 0, sizeof (dp));
+    dp.time.tv_sec = rrd_start + (data_index * step);
+    dp.time.tv_nsec = 0;
+    dp.value = (double) data[index];
+
+    status = (*cb) (ident, ds_name, &dp, ud);
+    if (status != 0)
+      BAIL_OUT (status);
+  }
+
+  BAIL_OUT (0);
+#undef BAIL_OUT
 } /* }}} int get_ident_data */
 
 static int print_graph (void *priv,
