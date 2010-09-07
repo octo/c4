@@ -757,7 +757,7 @@ int html_print_logo (__attribute__((unused)) void *user_data) /* {{{ */
   printf ("<a href=\"%s?action=list_graphs\" id=\"logo-canvas\">\n"
       "  <h1>C<sub>4</sub></h1>\n"
       "  <div id=\"logo-subscript\">collection&nbsp;4</div>\n"
-      "</a>\n");
+      "</a>\n", script_name ());
 
   return (0);
 } /* }}} int html_print_search_box */
