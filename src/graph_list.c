@@ -75,6 +75,9 @@ static size_t host_list_len = 0;
 
 static time_t gl_last_update = 0;
 
+/* TODO: Turn this into an array for multiple data providers. */
+static data_provider_t *data_provider = NULL;
+
 /*
  * Private functions
  */
@@ -208,6 +211,14 @@ static int gl_register_file (const graph_ident_t *file, /* {{{ */
 
   return (0);
 } /* }}} int gl_register_file */
+
+static int gl_register_ident (const graph_ident_t *ident, /* {{{ */
+    __attribute__((unused)) void *user_data)
+{
+  /* TODO: Check for duplicates if multiple data providers are used. */
+
+  return (gl_register_file (ident, user_data));
+} /* }}} int gl_register_ident */
 
 static const char *get_part_from_param (const char *prim_key, /* {{{ */
     const char *sec_key)
@@ -775,21 +786,17 @@ int gl_config_submit (void) /* {{{ */
   return (0);
 } /* }}} int graph_config_submit */
 
-int gl_register_ident (const char *provider, const graph_ident_t *ident) /* {{{ */
-{
-  char *ident_str = ident_to_string (ident);
-
-  fprintf (stderr, "gl_register_ident (provider = %s, ident = %s)\n",
-      provider, ident_str);
-
-  free (ident_str);
-  return (0);
-} /* }}} int gl_register_ident */
-
 int gl_register_data_provider (const char *name, data_provider_t *p) /* {{{ */
 {
   fprintf (stderr, "gl_register_data_provider (name = %s, ptr = %p)\n",
       name, (void *) p);
+
+  if (data_provider == NULL)
+    data_provider = malloc (sizeof (*data_provider));
+  if (data_provider == NULL)
+    return (ENOMEM);
+
+  *data_provider = *p;
 
   return (0);
 } /* }}} int gl_register_data_provider */
@@ -1101,13 +1108,21 @@ int gl_update (_Bool request_served) /* {{{ */
   if ((status != 0)
       || ((gl_last_update + UPDATE_INTERVAL) < now))
   {
+    if (data_provider == NULL)
+    {
+      fprintf (stderr, "No data provider has been registered\n");
+      return (ENOENT);
+    }
+
     /* Clear state */
     gl_clear_instances ();
     gl_clear_hosts ();
     gl_destroy (&gl_dynamic, &gl_dynamic_num);
 
-    status = fs_scan (/* callback = */ gl_register_file,
-        /* user data = */ NULL);
+    /* TODO: Iterate over all data providers */
+    data_provider->get_idents (data_provider->private_data,
+        gl_register_ident, /* user data = */ NULL);
+
     gl_last_update = now;
   }
 
