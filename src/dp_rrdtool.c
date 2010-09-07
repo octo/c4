@@ -351,7 +351,7 @@ static int print_graph (void *priv,
   return (-1);
 } /* }}} int print_graph */
 
-int dp_rrdtool_config (oconfig_item_t *ci)
+int dp_rrdtool_config (const oconfig_item_t *ci)
 { /* {{{ */
   dp_rrdtool_t *conf;
 

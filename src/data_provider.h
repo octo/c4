@@ -25,6 +25,7 @@
 #define DATA_PROVIDER_H 1
 
 #include "graph_types.h"
+#include "oconfig.h"
 
 #include <time.h>
 
@@ -62,6 +63,8 @@ struct data_provider_s
   void *private_data;
 };
 typedef struct data_provider_s data_provider_t;
+
+int data_provider_config (const oconfig_item_t *ci);
 
 #endif /* DATA_PROVIDER_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

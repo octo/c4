@@ -34,6 +34,7 @@
 #include "graph_list.h"
 #include "oconfig.h"
 #include "common.h"
+#include "data_provider.h"
 
 #ifndef CONFIGFILE
 # define CONFIGFILE "/etc/collection.conf"
@@ -52,6 +53,8 @@ static int dispatch_config (const oconfig_item_t *ci) /* {{{ */
     child = ci->children + i;
     if (strcasecmp ("Graph", child->key) == 0)
       graph_config_add (child);
+    else if (strcasecmp ("DataProvider", child->key) == 0)
+      data_provider_config (child);
     else
     {
       DEBUG ("Unknown config option: %s", child->key);
