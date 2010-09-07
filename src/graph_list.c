@@ -281,11 +281,8 @@ static int gl_update_cache (void) /* {{{ */
   if (status == 0)
   {
     if (statbuf.st_mtime >= gl_last_update)
-    {
-      fprintf (stderr, "gl_update_cache: Not writing to cache because it's "
-          "at least as new as our internal data\n");
+      /* Not writing to cache because it's at least as new as our internal data */
       return (0);
-    }
   }
   else
   {
