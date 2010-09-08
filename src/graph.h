@@ -112,6 +112,7 @@ int graph_inst_search_field (graph_config_t *cfg,
 int graph_compare (graph_config_t *cfg, const graph_ident_t *ident);
 
 int graph_to_json (const graph_config_t *cfg, yajl_gen handler);
+int graph_def_to_json (const graph_config_t *cfg, yajl_gen handler);
 
 size_t graph_num_instances (graph_config_t *cfg);
 

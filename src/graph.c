@@ -649,6 +649,35 @@ int graph_to_json (const graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int graph_to_json */
 
+int graph_def_to_json (const graph_config_t *cfg, /* {{{ */
+    yajl_gen handler)
+{
+#define yajl_gen_string_cast(h,p,l) \
+  yajl_gen_string (h, (unsigned char *) p, (unsigned int) l)
+
+  if ((cfg == NULL) || (handler == NULL))
+    return (EINVAL);
+
+  yajl_gen_map_open (handler);
+
+  yajl_gen_string_cast (handler, "select", strlen ("select"));
+  ident_to_json (cfg->select, handler);
+  yajl_gen_string_cast (handler, "title", strlen ("title"));
+  yajl_gen_string_cast (handler, cfg->title, strlen (cfg->title));
+  yajl_gen_string_cast (handler, "vertical_label", strlen ("vertical_label"));
+  yajl_gen_string_cast (handler, cfg->vertical_label, strlen (cfg->vertical_label));
+  yajl_gen_string_cast (handler, "show_zero", strlen ("show_zero"));
+  yajl_gen_bool (handler, cfg->show_zero);
+
+  yajl_gen_string_cast (handler, "defs", strlen ("defs"));
+  def_to_json (cfg->defs, handler);
+
+  yajl_gen_map_close (handler);
+
+  return (0);
+#undef yajl_gen_string_cast
+} /* }}} int graph_def_to_json */
+
 static int graph_sort_instances_cb (const void *v0, const void *v1) /* {{{ */
 {
   return (inst_compare (*(graph_instance_t * const *) v0,
