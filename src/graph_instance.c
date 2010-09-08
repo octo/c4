@@ -567,6 +567,20 @@ int inst_to_json (const graph_instance_t *inst, /* {{{ */
   return (0);
 } /* }}} int inst_to_json */
 
+int inst_data_to_json (const graph_instance_t *inst, /* {{{ */
+    dp_time_t begin, dp_time_t end,
+    yajl_gen handler)
+{
+  size_t i;
+
+  yajl_gen_array_open (handler);
+  for (i = 0; i < inst->files_num; i++)
+    ident_data_to_json (inst->files[i], begin, end, handler);
+  yajl_gen_array_close (handler);
+
+  return (0);
+} /* }}} int inst_data_to_json */
+
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst, /* {{{ */
     char *buffer, size_t buffer_size)
 {

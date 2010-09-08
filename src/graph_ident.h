@@ -29,6 +29,7 @@
 #include <yajl/yajl_gen.h>
 
 #include "graph_types.h"
+#include "data_provider.h"
 
 #define ANY_TOKEN "/any/"
 #define ALL_TOKEN "/all/"
