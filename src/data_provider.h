@@ -47,7 +47,8 @@ typedef int (*dp_list_get_ident_ds_names_callback) (const graph_ident_t *,
 
 /* Callback passed to the "get_ident_data" function. */
 typedef int (*dp_get_ident_data_callback) (graph_ident_t *, const char *ds_name,
-    const dp_data_point_t *, void *);
+    const dp_data_point_t *dp, size_t dp_num,
+    void *);
 
 struct data_provider_s
 {
@@ -68,6 +69,8 @@ int data_provider_config (const oconfig_item_t *ci);
 
 int data_provider_register (const char *name, data_provider_t *p);
 int data_provider_get_idents (dp_get_idents_callback callback, void *user_data);
+int data_provider_get_ident_ds_names (graph_ident_t *ident,
+    dp_list_get_ident_ds_names_callback callback, void *user_data);
 int data_provider_get_ident_data (graph_ident_t *ident,
     const char *ds_name,
     dp_time_t begin, dp_time_t end,

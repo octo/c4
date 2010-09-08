@@ -69,6 +69,16 @@ int data_provider_get_idents (dp_get_idents_callback callback, /* {{{ */
   return (status);
 } /* }}} int data_provider_get_idents */
 
+int data_provider_get_ident_ds_names (graph_ident_t *ident, /* {{{ */
+    dp_list_get_ident_ds_names_callback callback, void *user_data)
+{
+  if (data_provider == NULL)
+    return (EINVAL);
+
+  return (data_provider->get_ident_ds_names (data_provider->private_data,
+        ident, callback, user_data));
+} /* }}} int data_provider_get_ident_ds_names */
+
 int data_provider_get_ident_data (graph_ident_t *ident, /* {{{ */
     const char *ds_name,
     dp_time_t begin, dp_time_t end,
