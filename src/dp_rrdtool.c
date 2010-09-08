@@ -284,6 +284,9 @@ static int get_ident_data (void *priv,
   unsigned long data_index;
   unsigned long data_length;
 
+  dp_data_point_t *dp = NULL;
+  size_t dp_num = 0;
+
   status = ident_to_rrdfile (ident, config, filename, sizeof (filename));
   if (status != 0)
     return (status);
@@ -308,6 +311,7 @@ static int get_ident_data (void *priv,
     free (ds_namv[i]);            \
   free (ds_namv);                 \
   free (data);                    \
+  free (dp);                      \
   return (ret_status);            \
 } while (0)
 
@@ -321,20 +325,23 @@ static int get_ident_data (void *priv,
   /* Number of data points returned. */
   data_length = (rrd_end - rrd_start) / step;
 
+  dp_num = (size_t) data_length;
+  dp = calloc (dp_num, sizeof (*dp));
+  if (dp == NULL)
+    BAIL_OUT (ENOMEM);
+
   for (data_index = 0; data_index < data_length; data_index++)
   {
-    dp_data_point_t dp;
     unsigned long index = (ds_count * data_index) + ds_index;
 
-    memset (&dp, 0, sizeof (dp));
-    dp.time.tv_sec = rrd_start + (data_index * step);
-    dp.time.tv_nsec = 0;
-    dp.value = (double) data[index];
-
-    status = (*cb) (ident, ds_name, &dp, ud);
-    if (status != 0)
-      BAIL_OUT (status);
+    dp[data_index].time.tv_sec = rrd_start + (data_index * step);
+    dp[data_index].time.tv_nsec = 0;
+    dp[data_index].value = (double) data[index];
   }
+
+  status = (*cb) (ident, ds_name, dp, dp_num, ud);
+  if (status != 0)
+    BAIL_OUT (status);
 
   BAIL_OUT (0);
 #undef BAIL_OUT
