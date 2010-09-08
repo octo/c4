@@ -156,7 +156,7 @@ static int def_to_json_recursive (const graph_def_t *def, /* {{{ */
   if (def == NULL)
     return (0);
 
-  snprintf (color, sizeof (color), "%06"PRIx32, def->color);
+  snprintf (color, sizeof (color), "#%06"PRIx32, def->color);
   color[sizeof (color) - 1] = 0;
 
   yajl_gen_map_open (handler);
@@ -182,6 +182,7 @@ static int def_to_json_recursive (const graph_def_t *def, /* {{{ */
   yajl_gen_map_close (handler);
 
   return (def_to_json_recursive (def->next, handler));
+#undef yajl_gen_string_cast
 } /* }}} int def_to_json_recursive */
 
 /*
