@@ -24,6 +24,8 @@
 #ifndef GRAPH_DEF_H
 #define GRAPH_DEF_H 1
 
+#include <yajl/yajl_gen.h>
+
 #include "graph_types.h"
 #include "utils_array.h"
 #include "oconfig.h"
@@ -47,6 +49,8 @@ int def_foreach (graph_def_t *def, def_callback_t callback, void *user_data);
 
 int def_get_rrdargs (graph_def_t *def, graph_ident_t *ident,
     rrd_args_t *args);
+
+int def_to_json (const graph_def_t *def, yajl_gen handler);
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
 #endif
