@@ -68,6 +68,10 @@ int data_provider_config (const oconfig_item_t *ci);
 
 int data_provider_register (const char *name, data_provider_t *p);
 int data_provider_get_idents (dp_get_idents_callback callback, void *user_data);
+int data_provider_get_ident_data (graph_ident_t *ident,
+    const char *ds_name,
+    dp_time_t begin, dp_time_t end,
+    dp_get_ident_data_callback callback, void *user_data);
 
 #endif /* DATA_PROVIDER_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
