@@ -38,6 +38,7 @@
 
 #include "graph_list.h"
 #include "common.h"
+#include "data_provider.h"
 #include "filesystem.h"
 #include "graph.h"
 #include "graph_config.h"
@@ -74,9 +75,6 @@ static char **host_list = NULL;
 static size_t host_list_len = 0;
 
 static time_t gl_last_update = 0;
-
-/* TODO: Turn this into an array for multiple data providers. */
-static data_provider_t *data_provider = NULL;
 
 /*
  * Private functions
@@ -783,21 +781,6 @@ int gl_config_submit (void) /* {{{ */
   return (0);
 } /* }}} int graph_config_submit */
 
-int gl_register_data_provider (const char *name, data_provider_t *p) /* {{{ */
-{
-  fprintf (stderr, "gl_register_data_provider (name = %s, ptr = %p)\n",
-      name, (void *) p);
-
-  if (data_provider == NULL)
-    data_provider = malloc (sizeof (*data_provider));
-  if (data_provider == NULL)
-    return (ENOMEM);
-
-  *data_provider = *p;
-
-  return (0);
-} /* }}} int gl_register_data_provider */
-
 int gl_graph_get_all (_Bool include_dynamic, /* {{{ */
     graph_callback_t callback, void *user_data)
 {
@@ -1105,20 +1088,12 @@ int gl_update (_Bool request_served) /* {{{ */
   if ((status != 0)
       || ((gl_last_update + UPDATE_INTERVAL) < now))
   {
-    if (data_provider == NULL)
-    {
-      fprintf (stderr, "No data provider has been registered\n");
-      return (ENOENT);
-    }
-
     /* Clear state */
     gl_clear_instances ();
     gl_clear_hosts ();
     gl_destroy (&gl_dynamic, &gl_dynamic_num);
 
-    /* TODO: Iterate over all data providers */
-    data_provider->get_idents (data_provider->private_data,
-        gl_register_ident, /* user data = */ NULL);
+    data_provider_get_idents (gl_register_ident, /* user data = */ NULL);
 
     gl_last_update = now;
   }

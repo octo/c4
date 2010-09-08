@@ -23,7 +23,6 @@
 
 #include "graph_types.h"
 #include "graph_ident.h"
-#include "graph_list.h"
 #include "data_provider.h"
 #include "filesystem.h"
 #include "oconfig.h"
@@ -371,7 +370,7 @@ int dp_rrdtool_config (const oconfig_item_t *ci)
 
   dp.private_data = conf;
 
-  gl_register_data_provider ("rrdtool", &dp);
+  data_provider_register ("rrdtool", &dp);
 
   return (0);
 } /* }}} int dp_rrdtool_config */

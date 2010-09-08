@@ -66,5 +66,8 @@ typedef struct data_provider_s data_provider_t;
 
 int data_provider_config (const oconfig_item_t *ci);
 
+int data_provider_register (const char *name, data_provider_t *p);
+int data_provider_get_idents (dp_get_idents_callback callback, void *user_data);
+
 #endif /* DATA_PROVIDER_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */
