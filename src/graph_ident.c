@@ -33,6 +33,7 @@
 
 #include "graph_ident.h"
 #include "common.h"
+#include "data_provider.h"
 #include "filesystem.h"
 #include "utils_cgi.h"
 
@@ -535,6 +536,82 @@ int ident_to_json (const graph_ident_t *ident, /* {{{ */
 
   return (0);
 } /* }}} char *ident_to_json */
+
+/* {{{ ident_data_to_json */
+struct ident_data_to_json__data_s
+{
+  dp_time_t begin;
+  dp_time_t end;
+  yajl_gen handler;
+};
+typedef struct ident_data_to_json__data_s ident_data_to_json__data_t;
+
+#define yajl_gen_string_cast(h,s,l) \
+  yajl_gen_string (h, (unsigned char *) s, (unsigned int) l)
+
+static int ident_data_to_json__get_ident_data (
+    __attribute__((unused)) graph_ident_t *ident, /* {{{ */
+    __attribute__((unused)) const char *ds_name,
+    const dp_data_point_t *dp, size_t dp_num,
+    void *user_data)
+{
+  ident_data_to_json__data_t *data = user_data;
+  size_t i;
+
+  yajl_gen_map_open (data->handler);
+
+  for (i = 0; i < dp_num; i++)
+  {
+    yajl_gen_map_open (data->handler);
+    yajl_gen_integer (data->handler, (long) dp[i].time.tv_sec);
+    yajl_gen_double (data->handler, dp[i].value);
+    yajl_gen_map_close (data->handler);
+  }
+
+  yajl_gen_map_close (data->handler);
+} /* }}} int ident_data_to_json__get_ident_data */
+
+/* Called for each DS name */
+static int ident_data_to_json__get_ds_name (const graph_ident_t *ident, /* {{{ */
+    const char *ds_name, void *user_data)
+{
+  ident_data_to_json__data_t *data = user_data;
+  int status;
+
+  yajl_gen_map_open (data->handler);
+
+  yajl_gen_string_cast (data->handler, "ds_name", strlen ("ds_name"));
+  yajl_gen_string_cast (data->handler, ds_name, strlen (ds_name));
+
+  yajl_gen_string_cast (data->handler, "data", strlen ("data"));
+  yajl_gen_array_open (data->handler);
+
+  status = data_provider_get_ident_data (ident, ds_name,
+      data->begin, data->end,
+      ident_data_to_json__get_ident_data,
+      data);
+
+  yajl_gen_array_close (data->handler);
+  yajl_gen_map_close (data->handler);
+
+  return (status);
+} /* }}} int ident_data_to_json__get_ds_name */
+
+int ident_data_to_json (const graph_ident_t *ident, /* {{{ */
+    dp_time_t begin, dp_time_t end,
+    yajl_gen handler)
+{
+  ident_data_to_json__data_t data;
+
+  data.begin = begin;
+  data.end = end;
+  data.handler = handler;
+
+  /* Iterate over all DS names */
+  return (data_provider_get_ident_ds_names (ident,
+        ident_data_to_json__get_ds_name, &data));
+} /* }}} int ident_data_to_json */
+/* }}} ident_data_to_json */
 
 int ident_describe (const graph_ident_t *ident, /* {{{ */
     const graph_ident_t *selector,
