@@ -37,6 +37,7 @@
 #include "utils_cgi.h"
 
 #include "action_graph.h"
+#include "action_graph_def_json.h"
 #include "action_list_graphs.h"
 #include "action_list_hosts.h"
 #include "action_search.h"
@@ -62,6 +63,7 @@ static int action_usage (void);
 static const action_t actions[] =
 {
   { "graph",       action_graph },
+  { "graph_def_json", action_graph_def_json },
   { "list_graphs", action_list_graphs },
   { "list_hosts",  action_list_hosts },
   { "search",      action_search },
