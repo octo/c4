@@ -569,6 +569,8 @@ static int ident_data_to_json__get_ident_data (
   }
 
   yajl_gen_map_close (data->handler);
+
+  return (0);
 } /* }}} int ident_data_to_json__get_ident_data */
 
 /* Called for each DS name */
@@ -602,14 +604,20 @@ int ident_data_to_json (const graph_ident_t *ident, /* {{{ */
     yajl_gen handler)
 {
   ident_data_to_json__data_t data;
+  int status;
 
   data.begin = begin;
   data.end = end;
   data.handler = handler;
 
   /* Iterate over all DS names */
-  return (data_provider_get_ident_ds_names (ident,
-        ident_data_to_json__get_ds_name, &data));
+  status = data_provider_get_ident_ds_names (ident,
+      ident_data_to_json__get_ds_name, &data);
+  if (status != 0)
+    fprintf (stderr, "ident_data_to_json: data_provider_get_ident_ds_names "
+        "failed with status %i\n", status);
+
+  return (status);
 } /* }}} int ident_data_to_json */
 /* }}} ident_data_to_json */
 
