@@ -21,12 +21,7 @@
  *   Florian octo Forster <ff at octo.it>
  **/
 
-#include "graph_types.h"
-#include "graph_ident.h"
-#include "data_provider.h"
-#include "filesystem.h"
-#include "oconfig.h"
-#include "common.h"
+#include "config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,6 +31,16 @@
 #include <assert.h>
 
 #include <rrd.h>
+
+#include "graph_types.h"
+#include "graph_ident.h"
+#include "data_provider.h"
+#include "filesystem.h"
+#include "oconfig.h"
+#include "common.h"
+
+#include <fcgiapp.h>
+#include <fcgi_stdio.h>
 
 struct dp_rrdtool_s
 {
@@ -52,23 +57,27 @@ struct dp_get_idents_data_s
 typedef struct dp_get_idents_data_s dp_get_idents_data_t;
 
 static int scan_type_cb (__attribute__((unused)) const char *base_dir,
-    const char *sub_dir, void *ud)
+    const char *file, void *ud)
 { /* {{{ */
   dp_get_idents_data_t *data = ud;
-  size_t sub_dir_len;
+  size_t file_len;
   char type_copy[1024];
+  size_t type_copy_len;
   char *type_inst;
 
-  sub_dir_len = strlen (sub_dir);
-  if (sub_dir_len < 5)
+  file_len = strlen (file);
+  if (file_len < 5)
     return (0);
 
   /* Ignore files that don't end in ".rrd". */
-  if (strcasecmp (".rrd", sub_dir + (sub_dir_len - 4)) != 0)
+  if (strcasecmp (".rrd", file + (file_len - 4)) != 0)
     return (0);
 
-  strncpy (type_copy, sub_dir, sizeof (type_copy));
-  type_copy[sub_dir_len - 4] = 0;
+  strncpy (type_copy, file, sizeof (type_copy));
+  type_copy_len = file_len - 4;
+  if (type_copy_len > (sizeof (type_copy) - 1))
+    type_copy_len = sizeof (type_copy) - 1;
+  type_copy[type_copy_len] = 0;
 
   type_inst = strchr (type_copy, '-');
   if (type_inst != NULL)
@@ -217,7 +226,8 @@ static int get_ident_ds_names (void *priv, graph_ident_t *ident,
   info = rrd_info (rrd_argc, rrd_argv);
   if (info == NULL)
   {
-    printf ("%s: rrd_info (%s) failed.\n", __func__, file);
+    fprintf (stderr, "%s: rrd_info (%s) failed.\n", __func__, file);
+    fflush (stderr);
     return (-1);
   }
 
