@@ -150,13 +150,20 @@ static int gl_instance_get_rrdargs_cb (graph_def_t *def, void *user_data) /* {{{
   rrd_args_t *args = data->args;
 
   size_t i;
+  int status;
 
   for (i = 0; i < inst->files_num; i++)
   {
     if (!def_matches (def, inst->files[i]))
       continue;
 
-    def_get_rrdargs (def, inst->files[i], args);
+    status = def_get_rrdargs (def, inst->files[i], args);
+    if (status != 0)
+    {
+      fprintf (stderr, "gl_instance_get_rrdargs_cb: def_get_rrdargs failed with status %i\n",
+          status);
+      fflush (stderr);
+    }
   }
 
   return (0);
