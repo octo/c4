@@ -101,13 +101,13 @@ int ds_list_from_rrd_file (char *file, /* {{{ */
       continue;
 
     keylen = strlen (ptr->key);
-    if (keylen < strlen ("ds[?].index"))
+    if (keylen < strlen ("ds[?].type"))
       continue;
 
-    dslen = keylen - strlen ("ds[].index");
+    dslen = keylen - strlen ("ds[].type");
     assert (dslen >= 1);
 
-    if (strcmp ("].index", ptr->key + (strlen ("ds[") + dslen)) != 0)
+    if (strcmp ("].type", ptr->key + (strlen ("ds[") + dslen)) != 0)
       continue;
 
     ds = malloc (dslen + 1);
