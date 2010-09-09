@@ -227,9 +227,14 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
   show_breadcrump (cfg, inst);
 
   if (data->graph_count < MAX_SHOW_GRAPHS)
+  {
     printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s%s\" "
         "title=\"%s / %s\" /></div>\n",
         script_name (), params, time_params, title, descr);
+    printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_data_json;%s%s\">"
+        "Get graph data as JSON</a></div>\n",
+        script_name (), params, time_params);
+  }
   else
     printf ("<a href=\"%s?action=show_instance;%s\">Show graph "
         "&quot;%s / %s&quot;</a>\n",
@@ -243,6 +248,7 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
 static int show_instance (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
+  char params[1024];
   int status;
 
   status = inst_get_all_selected (data->cfg,
@@ -250,6 +256,14 @@ static int show_instance (void *user_data) /* {{{ */
   if (status != 0)
     fprintf (stderr, "show_instance: inst_get_all_selected failed "
         "with status %i\n", status);
+
+  memset (params, 0, sizeof (params));
+  graph_get_params (data->cfg, params, sizeof (params));
+  html_escape_buffer (params, sizeof (params));
+
+  printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_def_json;%s\">"
+      "Get graph definition as JSON</a></div>\n",
+      script_name (), params);
 
   return (0);
 } /* }}} int show_instance */
