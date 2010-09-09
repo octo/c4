@@ -33,6 +33,7 @@
 #include <rrd.h>
 
 #include "graph_types.h"
+#include "graph_config.h"
 #include "graph_ident.h"
 #include "data_provider.h"
 #include "filesystem.h"
@@ -370,6 +371,7 @@ static int print_graph (void *priv,
 int dp_rrdtool_config (const oconfig_item_t *ci)
 { /* {{{ */
   dp_rrdtool_t *conf;
+  int i;
 
   data_provider_t dp =
   {
@@ -380,10 +382,33 @@ int dp_rrdtool_config (const oconfig_item_t *ci)
     /* private_data = */ NULL
   };
 
-  /* FIXME: Actuelly do config parsing here. */
-  ci = NULL; /* FIXME */
-  conf = malloc (sizeof (dp_rrdtool_t));
-  conf->data_dir = strdup ("/var/lib/collectd/rrd");
+  conf = malloc (sizeof (*conf));
+  if (conf == NULL)
+    return (ENOMEM);
+  memset (conf, 0, sizeof (*conf));
+  conf->data_dir = NULL;
+
+  for (i = 0; i < ci->children_num; i++)
+  {
+    oconfig_item_t *child = ci->children + i;
+
+    if (strcasecmp ("DataDir", child->key) == 0)
+      graph_config_get_string (child, &conf->data_dir);
+    else
+    {
+      fprintf (stderr, "dp_rrdtool_config: Ignoring unknown config option "
+          "\"%s\"\n", child->key);
+      fflush (stderr);
+    }
+  }
+
+  if (conf->data_dir == NULL)
+    conf->data_dir = strdup ("/var/lib/collectd/rrd");
+  if (conf->data_dir == NULL)
+  {
+    free (conf);
+    return (ENOMEM);
+  }
 
   dp.private_data = conf;
 
