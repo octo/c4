@@ -16,6 +16,7 @@ bin_PROGRAMS = collection.fcgi
 collection_fcgi_SOURCES = main.c \
 			  oconfig.c oconfig.h aux_types.h scanner.l parser.y \
 			  action_graph.c action_graph.h \
+			  action_graph_data_json.c action_graph_data_json.h \
 			  action_graph_def_json.c action_graph_def_json.h \
 			  action_list_graphs.c action_list_graphs.h \
 			  action_list_hosts.c action_list_hosts.h \
