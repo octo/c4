@@ -156,7 +156,10 @@ static int def_to_json_recursive (const graph_def_t *def, /* {{{ */
   if (def == NULL)
     return (0);
 
-  snprintf (color, sizeof (color), "#%06"PRIx32, def->color);
+  if (def->color < 0x00ffffff)
+    snprintf (color, sizeof (color), "#%06"PRIx32, def->color);
+  else
+    strncpy (color, "random", sizeof (color));
   color[sizeof (color) - 1] = 0;
 
   yajl_gen_map_open (handler);
@@ -166,18 +169,27 @@ static int def_to_json_recursive (const graph_def_t *def, /* {{{ */
 
   yajl_gen_string_cast (handler, "select", strlen ("select"));
   ident_to_json (def->select, handler);
-  yajl_gen_string_cast (handler, "ds_name", strlen ("ds_name"));
-  yajl_gen_string_cast (handler, def->ds_name, strlen (def->ds_name));
-  yajl_gen_string_cast (handler, "legend", strlen ("legend"));
-  yajl_gen_string_cast (handler, def->legend, strlen (def->legend));
+  if (def->ds_name != NULL)
+  {
+    yajl_gen_string_cast (handler, "ds_name", strlen ("ds_name"));
+    yajl_gen_string_cast (handler, def->ds_name, strlen (def->ds_name));
+  }
+  if (def->legend != NULL)
+  {
+    yajl_gen_string_cast (handler, "legend", strlen ("legend"));
+    yajl_gen_string_cast (handler, def->legend, strlen (def->legend));
+  }
   yajl_gen_string_cast (handler, "color", strlen ("color"));
   yajl_gen_string_cast (handler, color, strlen (color));
   yajl_gen_string_cast (handler, "stack", strlen ("stack"));
   yajl_gen_bool   (handler, def->stack);
   yajl_gen_string_cast (handler, "area", strlen ("area"));
   yajl_gen_bool   (handler, def->area);
-  yajl_gen_string_cast (handler, "format", strlen ("format"));
-  yajl_gen_string_cast (handler, def->format, strlen (def->format));
+  if (def->format != NULL)
+  {
+    yajl_gen_string_cast (handler, "format", strlen ("format"));
+    yajl_gen_string_cast (handler, def->format, strlen (def->format));
+  }
 
   yajl_gen_map_close (handler);
 
