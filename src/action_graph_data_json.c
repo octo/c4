@@ -95,10 +95,7 @@ int action_graph_data_json (void) /* {{{ */
       /* alloc functions = */ NULL,
       /* context = */ NULL);
   if (handler == NULL)
-  {
-    graph_destroy (cfg);
     return (-1);
-  }
 
   printf ("Content-Type: application/json\n");
 
@@ -119,7 +116,6 @@ int action_graph_data_json (void) /* {{{ */
   status = inst_data_to_json (inst,
       dp_begin, dp_end, handler);
 
-  graph_destroy (cfg);
   yajl_gen_free (handler);
 
   return (status);
