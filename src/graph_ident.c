@@ -21,6 +21,8 @@
  *   Florian octo Forster <ff at octo.it>
  **/
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -30,6 +32,7 @@
 #include <limits.h> /* PATH_MAX */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <math.h>
 
 #include "graph_ident.h"
 #include "common.h"
@@ -558,17 +561,20 @@ static int ident_data_to_json__get_ident_data (
   ident_data_to_json__data_t *data = user_data;
   size_t i;
 
-  yajl_gen_map_open (data->handler);
+  yajl_gen_array_open (data->handler);
 
   for (i = 0; i < dp_num; i++)
   {
-    yajl_gen_map_open (data->handler);
+    yajl_gen_array_open (data->handler);
     yajl_gen_integer (data->handler, (long) dp[i].time.tv_sec);
-    yajl_gen_double (data->handler, dp[i].value);
-    yajl_gen_map_close (data->handler);
+    if (isnan (dp[i].value))
+      yajl_gen_null (data->handler);
+    else
+      yajl_gen_double (data->handler, dp[i].value);
+    yajl_gen_array_close (data->handler);
   }
 
-  yajl_gen_map_close (data->handler);
+  yajl_gen_array_close (data->handler);
 
   return (0);
 } /* }}} int ident_data_to_json__get_ident_data */
