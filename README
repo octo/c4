@@ -53,6 +53,25 @@ Concepts
   solution integrated in the C code (creating rendered graphics) and / or a
   JavaScript-based solution which renders graphs in the browser.
 
+  In the future it shall be possible to use multiple data providers in
+  parallel. The vision is to have multiple servers running RRDCacheD. Data is
+  distributed to those servers using the "Hashed" match of collectd and then a
+  unified interface is provided via collection 4.
+
+
+Bugs
+----
+
+  * Sending a FLUSH command to the collectd process is not yet possible.
+  * "*_get_rrdargs" functions and other RRDtool specific cruft is still all
+    over the code-base.
+  * The JSON-based interface is unstable.
+  * Currently it's not possible to display more than one graph at a time.
+    (With a very limited and undocumented exception.)
+  * Speaking of which: There is no documentation.
+  * No default page. -> Redirect to "list_graphs" action.
+  * ... (to be added)
+
 
 License
 -------
