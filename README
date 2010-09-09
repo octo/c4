@@ -12,6 +12,8 @@ About
 Concepts
 --------
 
+  Graphs
+  ------
   c4 lets you configure "graphs" in its config file. Each graph has a selector
   which determines which files will be used to draw the graph. The selector
   uses the host/plugin[-instance]/type[-instance] layout known from collectd.
@@ -32,6 +34,32 @@ Concepts
   containing the RRD files. Each file is added to all matching graphs, either
   by adding it to the appropriate instance or by creating a new instance. I.e.
   each file may be used in multiple graphs.
+
+  If a file does not match any graph, a "dynamic graph" matching only that file
+  will be created. This allows the front-end to display all files even when
+  there is no explicit graph definition for them.
+
+  Data providers
+  --------------
+  The idea is to encapsulate all the functions specific to one write plugin of
+  collectd using an interface for querying data. This allows to program the
+  rest of the front-end in a way that doesn't rely on one specific storage
+  back-end.
+
+  Currently, the only data provider scans a directory for RRD files and uses
+  the librrd to fetch data. The whole concept is still a bit of a work in
+  progress and currently the code-base is still cluttered with "*_get_rrdargs"
+  functions. The RRDtool generated graphs will likely be replaced by a graphing
+  solution integrated in the C code (creating rendered graphics) and / or a
+  JavaScript-based solution which renders graphs in the browser.
+
+
+License
+-------
+
+  collection 4 is licensed under the GNU Lesser General Public License (LGPL),
+  version 2.1. The exact license terms are available in the file "COPYING" in
+  the top source directory.
 
 
 Author
