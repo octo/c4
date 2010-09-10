@@ -48,11 +48,15 @@
 
 #define MAX_SHOW_GRAPHS 10
 
+#define SGD_FORMAT_JSON 0
+#define SGD_FORMAT_RRD  1
+
 struct show_graph_data_s
 {
   graph_config_t *cfg;
   graph_instance_t *inst;
   int graph_count;
+  int format;
 };
 typedef struct show_graph_data_s show_graph_data_t;
 
@@ -266,19 +270,14 @@ static int show_instance_json (graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int show_instance_json */
 
-static int show_instance_cb (graph_config_t *cfg, /* {{{ */
+static int show_instance_rrdtool (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
-    void *user_data)
+    long begin, long end, int index)
 {
-  show_graph_data_t *data = user_data;
   char title[128];
   char descr[128];
   char params[1024];
-
-  long begin;
-  long end;
   char time_params[128];
-  int status;
 
   memset (title, 0, sizeof (title));
   graph_get_title (cfg, title, sizeof (title));
@@ -292,23 +291,11 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
   inst_get_params (cfg, inst, params, sizeof (params));
   html_escape_buffer (params, sizeof (params));
 
-  time_params[0] = 0;
-  begin = 0;
-  end = 0;
+  snprintf (time_params, sizeof (time_params), ";begin=%li;end=%li",
+      begin, end);
+  time_params[sizeof (time_params) - 1] = 0;
 
-  status = get_time_args (&begin, &end, /* now = */ NULL);
-  if (status == 0)
-  {
-    snprintf (time_params, sizeof (time_params), ";begin=%li;end=%li",
-        begin, end);
-    time_params[sizeof (time_params) - 1] = 0;
-  }
-
-  printf ("<h2>Instance &quot;%s&quot;</h2>\n", descr);
-
-  show_breadcrump (cfg, inst);
-
-  if (data->graph_count < MAX_SHOW_GRAPHS)
+  if (index < MAX_SHOW_GRAPHS)
     printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s%s\" "
         "title=\"%s / %s\" /></div>\n",
         script_name (), params, time_params, title, descr);
@@ -317,11 +304,45 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
         "&quot;%s / %s&quot;</a>\n",
         script_name (), params, title, descr);
 
-  show_instance_json (cfg, inst, begin, end, data->graph_count);
-
-  printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_data_json;%s%s\">"
+#if 0
+  printf ("<div><a href=\"%s?action=graph_data_json;%s%s\">"
       "Get graph data as JSON</a></div>\n",
       script_name (), params, time_params);
+#endif
+
+  return (0);
+} /* }}} int show_instance_rrdtool */
+
+static int show_instance_cb (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    void *user_data)
+{
+  show_graph_data_t *data = user_data;
+  char descr[128];
+
+  long begin;
+  long end;
+  int status;
+
+  memset (descr, 0, sizeof (descr));
+  inst_describe (cfg, inst, descr, sizeof (descr));
+  html_escape_buffer (descr, sizeof (descr));
+
+  begin = 0;
+  end = 0;
+
+  status = get_time_args (&begin, &end, /* now = */ NULL);
+  if (status != 0)
+    return (status);
+
+  printf ("<h2>Instance &quot;%s&quot;</h2>\n", descr);
+
+  show_breadcrump (cfg, inst);
+
+  if (data->format == SGD_FORMAT_RRD)
+    show_instance_rrdtool (cfg, inst, begin, end, data->graph_count);
+  else
+    show_instance_json (cfg, inst, begin, end, data->graph_count);
 
   data->graph_count++;
 
@@ -331,7 +352,7 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
 static int show_instance (void *user_data) /* {{{ */
 {
   show_graph_data_t *data = user_data;
-  char params[1024];
+  /* char params[1024]; */
   int status;
 
   status = inst_get_all_selected (data->cfg,
@@ -340,6 +361,7 @@ static int show_instance (void *user_data) /* {{{ */
     fprintf (stderr, "show_instance: inst_get_all_selected failed "
         "with status %i\n", status);
 
+#if 0
   memset (params, 0, sizeof (params));
   graph_get_params (data->cfg, params, sizeof (params));
   html_escape_buffer (params, sizeof (params));
@@ -347,6 +369,7 @@ static int show_instance (void *user_data) /* {{{ */
   printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_def_json;%s\">"
       "Get graph definition as JSON</a></div>\n",
       script_name (), params);
+#endif
 
   return (0);
 } /* }}} int show_instance */
@@ -358,6 +381,7 @@ int action_show_instance (void) /* {{{ */
 
   char tmp[128];
   char title[128];
+  char *format;
 
   memset (&pg_data, 0, sizeof (pg_data));
   pg_data.cfg = gl_graph_get_selected ();
@@ -368,6 +392,12 @@ int action_show_instance (void) /* {{{ */
   graph_get_title (pg_data.cfg, tmp, sizeof (tmp));
   snprintf (title, sizeof (title), "Graph \"%s\"", tmp);
   title[sizeof (title) - 1] = 0;
+
+  format = param ("format");
+  if ((format != NULL) && (strcasecmp ("RRD", format) == 0))
+    pg_data.format = SGD_FORMAT_RRD;
+  else
+    pg_data.format = SGD_FORMAT_JSON;
 
   pg_callbacks.top_right = html_print_search_box;
   pg_callbacks.middle_center = show_instance;
