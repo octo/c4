@@ -59,6 +59,25 @@ Concepts
   unified interface is provided via collection 4.
 
 
+Dependencies
+------------
+
+  collection 4 currently requires the following libraries:
+
+  * libfcgi
+    <http://www.fastcgi.com/>
+
+  * librrd_th (thread-safe version of librrd)
+    <http://oss.oetiker.ch/rrdtool/>
+
+  * libyajl
+    <http://lloyd.github.com/yajl/>
+
+  The "configure" script is currently kept minimal. It may therefore be
+  necessary to set the CPP- and LD-flags manually. In case of libyajl, which is
+  not built with libtool, you may need to set the rpath, too.
+
+
 Bugs
 ----
 
