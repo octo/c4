@@ -88,7 +88,6 @@ Bugs
   * Currently it's not possible to display more than one graph at a time.
     (With a very limited and undocumented exception.)
   * Speaking of which: There is no documentation.
-  * No default page. -> Redirect to "list_graphs" action.
   * ... (to be added)
 
 
