@@ -66,7 +66,7 @@ static int print_one_graph (graph_config_t *cfg, /* {{{ */
   html_escape_buffer (params, sizeof (params));
 
   printf ("      <li class=\"graph\"><a href=\"%s?action=show_graph;%s\">"
-      "%s</a> <span class=\"num_instances\">(%lu %s)</span></li>\n",
+      "%s</a> <span class=\"num_instances\">(%lu&nbsp;%s)</span></li>\n",
       script_name (), params, title,
       (unsigned long) num_instances,
       (num_instances == 1) ? "instance" : "instances");
