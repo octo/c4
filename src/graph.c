@@ -662,10 +662,16 @@ int graph_def_to_json (const graph_config_t *cfg, /* {{{ */
 
   yajl_gen_string_cast (handler, "select", strlen ("select"));
   ident_to_json (cfg->select, handler);
-  yajl_gen_string_cast (handler, "title", strlen ("title"));
-  yajl_gen_string_cast (handler, cfg->title, strlen (cfg->title));
-  yajl_gen_string_cast (handler, "vertical_label", strlen ("vertical_label"));
-  yajl_gen_string_cast (handler, cfg->vertical_label, strlen (cfg->vertical_label));
+  if (cfg->title != NULL)
+  {
+    yajl_gen_string_cast (handler, "title", strlen ("title"));
+    yajl_gen_string_cast (handler, cfg->title, strlen (cfg->title));
+  }
+  if (cfg->vertical_label != NULL)
+  {
+    yajl_gen_string_cast (handler, "vertical_label", strlen ("vertical_label"));
+    yajl_gen_string_cast (handler, cfg->vertical_label, strlen (cfg->vertical_label));
+  }
   yajl_gen_string_cast (handler, "show_zero", strlen ("show_zero"));
   yajl_gen_bool (handler, cfg->show_zero);
 
