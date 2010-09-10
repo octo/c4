@@ -56,13 +56,13 @@ Concepts
   In the future it shall be possible to use multiple data providers in
   parallel. The vision is to have multiple servers running RRDCacheD. Data is
   distributed to those servers using the "Hashed" match of collectd and then a
-  unified interface is provided via collection 4.
+  unified interface is provided via c4.
 
 
 Dependencies
 ------------
 
-  collection 4 currently requires the following libraries:
+  c4 currently requires the following libraries:
 
   * libfcgi
     <http://www.fastcgi.com/>
@@ -98,6 +98,15 @@ License
   collection 4 is licensed under the GNU Lesser General Public License (LGPL),
   version 2.1. The exact license terms are available in the file "COPYING" in
   the top source directory.
+
+  c4 includes the JavaScript library "jQuery" which is dual-licensed under the
+  MIT license and the GPL. The file "share/jquery-1.4.2.min.js" includes a
+  license header which points you to more detailed information.
+
+  c4 includes the JavaScript libraries "Raphaël" and "gRaphaël" which are
+  licensed under the MIT license. The files "share/raphael-min.js",
+  "share/g.raphael-min.js", and "share/g.line-min.js" each include a license
+  header which points you to more detailed information.
 
 
 Author
