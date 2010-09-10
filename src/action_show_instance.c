@@ -186,7 +186,7 @@ static int left_menu (void *user_data) /* {{{ */
 
 static int show_instance_json (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
-    time_t begin, time_t end, int index)
+    long begin, long end, int index)
 {
   yajl_gen_config handler_config;
   yajl_gen handler;
@@ -239,12 +239,12 @@ static int show_instance_json (graph_config_t *cfg, /* {{{ */
   yajl_gen_string (handler,
       (unsigned char *) "begin",
       (unsigned int) strlen ("begin"));
-  yajl_gen_integer (handler, (long int) begin);
+  yajl_gen_integer (handler, begin);
 
   yajl_gen_string (handler,
       (unsigned char *) "end",
       (unsigned int) strlen ("end"));
-  yajl_gen_integer (handler, (long int) end);
+  yajl_gen_integer (handler, end);
 
   yajl_gen_map_close (handler);
 
