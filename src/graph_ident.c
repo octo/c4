@@ -580,7 +580,7 @@ static int ident_data_to_json__get_ident_data (
 } /* }}} int ident_data_to_json__get_ident_data */
 
 /* Called for each DS name */
-static int ident_data_to_json__get_ds_name (const graph_ident_t *ident, /* {{{ */
+static int ident_data_to_json__get_ds_name (graph_ident_t *ident, /* {{{ */
     const char *ds_name, void *user_data)
 {
   ident_data_to_json__data_t *data = user_data;
@@ -605,7 +605,7 @@ static int ident_data_to_json__get_ds_name (const graph_ident_t *ident, /* {{{ *
   return (status);
 } /* }}} int ident_data_to_json__get_ds_name */
 
-int ident_data_to_json (const graph_ident_t *ident, /* {{{ */
+int ident_data_to_json (graph_ident_t *ident, /* {{{ */
     dp_time_t begin, dp_time_t end,
     yajl_gen handler)
 {

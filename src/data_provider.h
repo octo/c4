@@ -39,10 +39,10 @@ struct dp_data_point_s
 typedef struct dp_data_point_s dp_data_point_t;
 
 /* Callback passed to the "get_idents" function. */
-typedef int (*dp_get_idents_callback) (const graph_ident_t *, void *);
+typedef int (*dp_get_idents_callback) (graph_ident_t *, void *);
 
 /* Callback passed to the "get_ident_ds_names" function. */
-typedef int (*dp_list_get_ident_ds_names_callback) (const graph_ident_t *,
+typedef int (*dp_list_get_ident_ds_names_callback) (graph_ident_t *,
     const char *ds_name, void *);
 
 /* Callback passed to the "get_ident_data" function. */

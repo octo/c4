@@ -210,7 +210,7 @@ static int gl_register_file (const graph_ident_t *file, /* {{{ */
   return (0);
 } /* }}} int gl_register_file */
 
-static int gl_register_ident (const graph_ident_t *ident, /* {{{ */
+static int gl_register_ident (graph_ident_t *ident, /* {{{ */
     __attribute__((unused)) void *user_data)
 {
   /* TODO: Check for duplicates if multiple data providers are used. */

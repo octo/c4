@@ -92,7 +92,7 @@ char *ident_to_string (const graph_ident_t *ident);
 char *ident_to_file (const graph_ident_t *ident);
 int ident_to_json (const graph_ident_t *ident,
     yajl_gen handler);
-int ident_data_to_json (const graph_ident_t *ident,
+int ident_data_to_json (graph_ident_t *ident,
     dp_time_t begin, dp_time_t end,
     yajl_gen handler);
 
