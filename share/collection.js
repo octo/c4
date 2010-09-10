@@ -1,9 +1,32 @@
+/**
+ * collection4 - collection.js
+ * Copyright (C) 2010  Florian octo Forster
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA  02110-1301  USA
+ *
+ * Authors:
+ *   Florian octo Forster <ff at octo.it>
+ **/
+
 var c4 =
 {
   instances: []
 };
 
-function graph_get_params (graph)
+function instance_get_params (graph) /* {{{ */
 {
   var graph_selector = graph.graph_selector;
   var inst_selector = graph.instance_selector;
@@ -60,9 +83,9 @@ function graph_get_params (graph)
   }
 
   return (selector);
-} /* graph_get_params */
+} /* }}} instance_get_params */
 
-function ident_clone (ident)
+function ident_clone (ident) /* {{{ */
 {
   var ret = {};
 
@@ -73,9 +96,9 @@ function ident_clone (ident)
   ret.type_instance = ident.type_instance;
 
   return (ret);
-} /* ident_clone */
+} /* }}} ident_clone */
 
-function json_graph_get_def (graph)
+function graph_get_defs (graph)
 {
   if (!graph.def)
   {
@@ -99,73 +122,73 @@ function json_graph_get_def (graph)
   if (graph.def)
     return (graph.def);
   return;
-} /* json_graph_get_def */
+} /* graph_get_defs */
+
+function instance_draw (inst, def, data)
+{
+  var x_data = [];
+  var y_data = [];
+  var i;
+
+  if (!inst || !def || !data)
+    return;
+
+  for (i = 0; i < data.length; i++)
+  {
+    var ds = data[i];
+
+    var j;
+    var x = [];
+    var y = [];
+
+    for (j = 0; j < ds.data.length; j++)
+    {
+      var dp = ds.data[j];
+      var t = dp[0];
+      var v = dp[1];
+
+      x.push (t);
+      y.push (v);
+    }
+
+    x_data.push (x);
+    y_data.push (y);
+  }
+
+  inst.raphael.clear ();
+  if (def.title)
+    inst.raphael.g.text (250, 15, def.title);
+  if (def.vertical_label)
+    inst.raphael.g.text (5, 100, def.vertical_label).rotate (270);
+  inst.raphael.g.linechart(50, 25, 500, 150, x_data, y_data, {axis: "0 0 1 1"});
+}
 
 function json_graph_update (index)
 {
-  var graph;
+  var inst;
   var def;
   var params;
 
-  graph = c4.instances[index];
-  if (!graph)
+  inst = c4.instances[index];
+  if (!inst)
     return;
 
-  def = json_graph_get_def (graph);
+  def = graph_get_defs (inst);
   if (!def)
     return;
 
-  if (!graph.raphael)
-  {
-    graph.raphael = Raphael ("c4-graph" + index);
-  }
+  if (!inst.raphael)
+    inst.raphael = Raphael ("c4-graph" + index);
 
-  params = graph_get_params (graph);
+  params = instance_get_params (inst);
   params.action = "graph_data_json";
-  params.begin = graph.begin;
-  params.end = graph.end;
+  params.begin = inst.begin;
+  params.end = inst.end;
 
   $.getJSON ("collection.fcgi", params,
       function (data)
       {
-        var x_data = [];
-        var y_data = [];
-        var i;
-
-        if (!data)
-          return;
-
-        for (i = 0; i < data.length; i++)
-        {
-          var ds = data[i];
-
-          var j;
-          var x = [];
-          var y = [];
-
-          for (j = 0; j < ds.data.length; j++)
-          {
-            var dp = ds.data[j];
-            var t = dp[0];
-            var v = dp[1];
-
-            if (v == null)
-              continue;
-
-            x.push (t);
-            y.push (v);
-          }
-
-          x_data.push (x);
-          y_data.push (y);
-        }
-
-        graph.raphael.clear ();
-        if (def.title)
-          graph.raphael.g.text (250, 15, def.title);
-        if (def.vertical_label)
-          graph.raphael.g.text (5, 100, def.vertical_label).rotate (270);
-        graph.raphael.g.linechart(50, 25, 500, 150, x_data, y_data, {axis: "0 0 1 1"});
+        instance_draw (inst, def, data);
       }); /* getJSON */
 } /* json_graph_update */
 
