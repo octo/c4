@@ -381,7 +381,7 @@ int action_show_instance (void) /* {{{ */
 
   char tmp[128];
   char title[128];
-  char *format;
+  const char *format;
 
   memset (&pg_data, 0, sizeof (pg_data));
   pg_data.cfg = gl_graph_get_selected ();
