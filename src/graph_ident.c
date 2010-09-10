@@ -588,7 +588,10 @@ static int ident_data_to_json__get_ds_name (const graph_ident_t *ident, /* {{{ *
 
   yajl_gen_map_open (data->handler);
 
-  yajl_gen_string_cast (data->handler, "ds_name", strlen ("ds_name"));
+  yajl_gen_string_cast (data->handler, "file", strlen ("file"));
+  ident_to_json (ident, data->handler);
+
+  yajl_gen_string_cast (data->handler, "data_source", strlen ("data_source"));
   yajl_gen_string_cast (data->handler, ds_name, strlen (ds_name));
 
   yajl_gen_string_cast (data->handler, "data", strlen ("data"));
