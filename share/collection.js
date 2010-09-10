@@ -1,3 +1,92 @@
+var c4 =
+{
+  graphs: []
+};
+
+function json_graph_get_def (graph)
+{
+  if (!graph.def)
+  {
+    $.ajax({
+      url: "collection.fcgi?action=graph_def_json;" + graph.params,
+      async: false,
+      dataType: 'json',
+      success: function (data)
+      {
+        if (!data)
+          return;
+
+        graph.def = data;
+      }});
+  }
+
+  if (graph.def)
+    return (graph.def);
+  return;
+} /* json_graph_get_def */
+
+function json_graph_update(index)
+{
+  var graph;
+  var def;
+
+  graph = c4.graphs[index];
+  if (!graph)
+    return;
+
+  def = json_graph_get_def (graph);
+  if (!def)
+    return;
+
+  if (!graph.raphael)
+  {
+    graph.raphael = Raphael ("c4-graph" + index);
+  }
+
+  $.getJSON ("collection.fcgi?action=graph_data_json;" + graph.params + ";begin=-3600;end=0",
+      function (data)
+      {
+        var x_data = [];
+        var y_data = [];
+        var i;
+
+        if (!data)
+          return;
+
+        for (i = 0; i < data.length; i++)
+        {
+          var ds = data[i];
+
+          var j;
+          var x = [];
+          var y = [];
+
+          for (j = 0; j < ds.data.length; j++)
+          {
+            var dp = ds.data[j];
+            var t = dp[0];
+            var v = dp[1];
+
+            if (v == null)
+              continue;
+
+            x.push (t);
+            y.push (v);
+          }
+
+          x_data.push (x);
+          y_data.push (y);
+        }
+
+        graph.raphael.clear ();
+        if (def.title)
+          graph.raphael.g.text (250, 15, def.title);
+        if (def.vertical_label)
+          graph.raphael.g.text (5, 100, def.vertical_label).rotate (270);
+        graph.raphael.g.linechart(50, 25, 500, 150, x_data, y_data, {axis: "0 0 1 1"});
+      }); /* getJSON */
+} /* json_graph_update */
+
 function format_instance(inst)
 {
   return ("<li class=\"instance\"><a href=\"" + location.pathname
@@ -246,6 +335,12 @@ $(document).ready(function() {
         + "</div>"
         );
     });
+
+    var i;
+    for (i = 0; i < c4.graphs.length; i++)
+    {
+      json_graph_update (i);
+    }
 });
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

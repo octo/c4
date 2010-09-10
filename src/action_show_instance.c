@@ -227,18 +227,21 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
   show_breadcrump (cfg, inst);
 
   if (data->graph_count < MAX_SHOW_GRAPHS)
-  {
     printf ("<div class=\"graph-img\"><img src=\"%s?action=graph;%s%s\" "
         "title=\"%s / %s\" /></div>\n",
         script_name (), params, time_params, title, descr);
-    printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_data_json;%s%s\">"
-        "Get graph data as JSON</a></div>\n",
-        script_name (), params, time_params);
-  }
   else
     printf ("<a href=\"%s?action=show_instance;%s\">Show graph "
         "&quot;%s / %s&quot;</a>\n",
         script_name (), params, title, descr);
+
+  printf ("<div id=\"c4-graph%i\" class=\"graph-json\"></div>\n", data->graph_count);
+  printf ("<script type=\"text/javascript\">c4.graphs[%i] = { \"params\": \"%s\", \"begin\": %li, \"end\": %li };</script>\n",
+      data->graph_count, params, (long) begin, (long) end);
+
+  printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_data_json;%s%s\">"
+      "Get graph data as JSON</a></div>\n",
+      script_name (), params, time_params);
 
   data->graph_count++;
 

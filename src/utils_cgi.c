@@ -690,6 +690,12 @@ int html_print_page (const char *title, /* {{{ */
       "    <link rel=\"stylesheet\" type=\"text/css\" href=\"../share/style.css\" />\n"
       "    <script type=\"text/javascript\" src=\"../share/jquery-1.4.2.min.js\">\n"
       "    </script>\n"
+      "    <script type=\"text/javascript\" src=\"../share/raphael-min.js\">\n"
+      "    </script>\n"
+      "    <script type=\"text/javascript\" src=\"../share/g.raphael-min.js\">\n"
+      "    </script>\n"
+      "    <script type=\"text/javascript\" src=\"../share/g.line-min.js\">\n"
+      "    </script>\n"
       "    <script type=\"text/javascript\" src=\"../share/collection.js\">\n"
       "    </script>\n"
       "  </head>\n",
