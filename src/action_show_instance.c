@@ -184,6 +184,88 @@ static int left_menu (void *user_data) /* {{{ */
   return (0);
 } /* }}} int left_menu */
 
+static int show_instance_json (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
+    time_t begin, time_t end, int index)
+{
+  yajl_gen_config handler_config;
+  yajl_gen handler;
+  const unsigned char *json_buffer;
+  unsigned int json_buffer_length;
+
+  graph_ident_t *graph_selector;
+  graph_ident_t *inst_selector;
+
+  graph_selector = graph_get_selector (cfg);
+  if (graph_selector == NULL)
+    return (ENOMEM);
+
+  inst_selector = inst_get_selector (inst);
+  if (inst_selector == NULL)
+  {
+    ident_destroy (inst_selector);
+    return (ENOMEM);
+  }
+
+  memset (&handler_config, 0, sizeof (handler_config));
+  handler_config.beautify = 1;
+  handler_config.indentString = "  ";
+
+  handler = yajl_gen_alloc2 (/* callback = */ NULL,
+      &handler_config,
+      /* alloc functions = */ NULL,
+      /* context = */ NULL);
+  if (handler == NULL)
+  {
+    ident_destroy (inst_selector);
+    ident_destroy (graph_selector);
+    return (-1);
+  }
+
+  yajl_gen_map_open (handler);
+
+  yajl_gen_string (handler,
+      (unsigned char *) "graph_selector",
+      (unsigned int) strlen ("graph_selector"));
+  ident_to_json (graph_selector, handler);
+  ident_destroy (graph_selector);
+
+  yajl_gen_string (handler,
+      (unsigned char *) "instance_selector",
+      (unsigned int) strlen ("instance_selector"));
+  ident_to_json (inst_selector, handler);
+  ident_destroy (inst_selector);
+
+  yajl_gen_string (handler,
+      (unsigned char *) "begin",
+      (unsigned int) strlen ("begin"));
+  yajl_gen_integer (handler, (long int) begin);
+
+  yajl_gen_string (handler,
+      (unsigned char *) "end",
+      (unsigned int) strlen ("end"));
+  yajl_gen_integer (handler, (long int) end);
+
+  yajl_gen_map_close (handler);
+
+  json_buffer = NULL;
+  json_buffer_length = 0;
+  yajl_gen_get_buf (handler, &json_buffer, &json_buffer_length);
+
+  if (json_buffer == NULL)
+  {
+    yajl_gen_free (handler);
+    return (EINVAL);
+  }
+
+  printf ("<div id=\"c4-graph%i\" class=\"graph-json\"></div>\n", index);
+  printf ("<script type=\"text/javascript\">c4.instances[%i] = %s;</script>\n",
+      index, (const char *) json_buffer);
+
+  yajl_gen_free (handler);
+  return (0);
+} /* }}} int show_instance_json */
+
 static int show_instance_cb (graph_config_t *cfg, /* {{{ */
     graph_instance_t *inst,
     void *user_data)
@@ -235,9 +317,7 @@ static int show_instance_cb (graph_config_t *cfg, /* {{{ */
         "&quot;%s / %s&quot;</a>\n",
         script_name (), params, title, descr);
 
-  printf ("<div id=\"c4-graph%i\" class=\"graph-json\"></div>\n", data->graph_count);
-  printf ("<script type=\"text/javascript\">c4.graphs[%i] = { \"params\": \"%s\", \"begin\": %li, \"end\": %li };</script>\n",
-      data->graph_count, params, (long) begin, (long) end);
+  show_instance_json (cfg, inst, begin, end, data->graph_count);
 
   printf ("<div style=\"clear: both;\"><a href=\"%s?action=graph_data_json;%s%s\">"
       "Get graph data as JSON</a></div>\n",

@@ -1,16 +1,92 @@
 var c4 =
 {
-  graphs: []
+  instances: []
 };
+
+function graph_get_params (graph)
+{
+  var graph_selector = graph.graph_selector;
+  var inst_selector = graph.instance_selector;
+  var selector = {};
+
+  if (graph_selector.host == inst_selector.host)
+  {
+    selector.host = graph_selector.host;
+  }
+  else
+  {
+    selector.graph_host = graph_selector.host;
+    selector.inst_host = inst_selector.host;
+  }
+
+  if (graph_selector.plugin == inst_selector.plugin)
+  {
+    selector.plugin = graph_selector.plugin;
+  }
+  else
+  {
+    selector.graph_plugin = graph_selector.plugin;
+    selector.inst_plugin = inst_selector.plugin;
+  }
+
+  if (graph_selector.plugin_instance == inst_selector.plugin_instance)
+  {
+    selector.plugin_instance = graph_selector.plugin_instance;
+  }
+  else
+  {
+    selector.graph_plugin_instance = graph_selector.plugin_instance;
+    selector.inst_plugin_instance = inst_selector.plugin_instance;
+  }
+
+  if (graph_selector.type == inst_selector.type)
+  {
+    selector.type = graph_selector.type;
+  }
+  else
+  {
+    selector.graph_type = graph_selector.type;
+    selector.inst_type = inst_selector.type;
+  }
+
+  if (graph_selector.type_instance == inst_selector.type_instance)
+  {
+    selector.type_instance = graph_selector.type_instance;
+  }
+  else
+  {
+    selector.graph_type_instance = graph_selector.type_instance;
+    selector.inst_type_instance = inst_selector.type_instance;
+  }
+
+  return (selector);
+} /* graph_get_params */
+
+function ident_clone (ident)
+{
+  var ret = {};
+
+  ret.host = ident.host;
+  ret.plugin = ident.plugin;
+  ret.plugin_instance = ident.plugin_instance;
+  ret.type = ident.type;
+  ret.type_instance = ident.type_instance;
+
+  return (ret);
+} /* ident_clone */
 
 function json_graph_get_def (graph)
 {
   if (!graph.def)
   {
+    var params = ident_clone (graph.graph_selector);
+    params.action = "graph_def_json";
+
     $.ajax({
-      url: "collection.fcgi?action=graph_def_json;" + graph.params,
+      url: "collection.fcgi",
       async: false,
       dataType: 'json',
+      data: params,
       success: function (data)
       {
         if (!data)
@@ -25,12 +101,13 @@ function json_graph_get_def (graph)
   return;
 } /* json_graph_get_def */
 
-function json_graph_update(index)
+function json_graph_update (index)
 {
   var graph;
   var def;
+  var params;
 
-  graph = c4.graphs[index];
+  graph = c4.instances[index];
   if (!graph)
     return;
 
@@ -43,7 +120,12 @@ function json_graph_update(index)
     graph.raphael = Raphael ("c4-graph" + index);
   }
 
-  $.getJSON ("collection.fcgi?action=graph_data_json;" + graph.params + ";begin=-3600;end=0",
+  params = graph_get_params (graph);
+  params.action = "graph_data_json";
+  params.begin = graph.begin;
+  params.end = graph.end;
+
+  $.getJSON ("collection.fcgi", params,
       function (data)
       {
         var x_data = [];
@@ -337,7 +419,7 @@ $(document).ready(function() {
     });
 
     var i;
-    for (i = 0; i < c4.graphs.length; i++)
+    for (i = 0; i < c4.instances.length; i++)
     {
       json_graph_update (i);
     }
