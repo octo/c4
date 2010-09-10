@@ -106,7 +106,7 @@ static int handle_request (void) /* {{{ */
   action = param ("action");
   if (action == NULL)
   {
-    return (action_usage ());
+    return (action_list_graphs ());
   }
   else
   {
