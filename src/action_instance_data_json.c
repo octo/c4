@@ -1,5 +1,5 @@
 /**
- * collection4 - action_graph_data_json.c
+ * collection4 - action_instance_data_json.c
  * Copyright (C) 2010  Florian octo Forster
  * 
  * This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@
 #include <inttypes.h>
 #include <assert.h>
 
-#include "action_graph_data_json.h"
+#include "action_instance_data_json.h"
 #include "common.h"
 #include "graph.h"
 #include "graph_instance.h"
@@ -48,7 +48,7 @@ static void write_callback (__attribute__((unused)) void *ctx, /* {{{ */
   fwrite ((void *) str, /* size = */ len, /* nmemb = */ 1, stdout);
 } /* }}} void write_callback */
 
-int action_graph_data_json (void) /* {{{ */
+int action_instance_data_json (void) /* {{{ */
 {
   graph_config_t *cfg;
   graph_instance_t *inst;
@@ -119,6 +119,6 @@ int action_graph_data_json (void) /* {{{ */
   yajl_gen_free (handler);
 
   return (status);
-} /* }}} int action_graph_data_json */
+} /* }}} int action_instance_data_json */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */

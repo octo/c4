@@ -181,7 +181,7 @@ function json_graph_update (index)
     inst.raphael = Raphael ("c4-graph" + index);
 
   params = instance_get_params (inst);
-  params.action = "graph_data_json";
+  params.action = "instance_data_json";
   params.begin = inst.begin;
   params.end = inst.end;
 

@@ -1,5 +1,5 @@
 /**
- * collection4 - action_graph_data_json.h
+ * collection4 - action_instance_data_json.h
  * Copyright (C) 2010  Florian octo Forster
  * 
  * This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
 #ifndef ACTION_GRAPH_DATA_JSON_H
 #define ACTION_GRAPH_DATA_JSON_H 1
 
-int action_graph_data_json (void);
+int action_instance_data_json (void);
 
 #endif /* ACTION_GRAPH_DATA_JSON_H */
 /* vim: set sw=2 sts=2 et fdm=marker : */

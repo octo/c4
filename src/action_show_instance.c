@@ -309,7 +309,7 @@ static int show_instance_rrdtool (graph_config_t *cfg, /* {{{ */
         script_name (), params, title, descr);
 
 #if 0
-  printf ("<div><a href=\"%s?action=graph_data_json;%s%s\">"
+  printf ("<div><a href=\"%s?action=instance_data_json;%s%s\">"
       "Get graph data as JSON</a></div>\n",
       script_name (), params, time_params);
 #endif
