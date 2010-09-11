@@ -750,7 +750,7 @@ int html_print_page (const char *title, /* {{{ */
   printf ("</td>\n"
       "      </tr>\n"
       "    </table>\n"
-      "    <div class=\"footer\">"PACKAGE_STRING"</div>\n"
+      "    <div class=\"footer\"><a href=\"http://octo.it/c4/\">"PACKAGE_STRING"</a></div>\n"
       "  </body>\n"
       "</html>\n");
 
