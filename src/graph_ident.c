@@ -561,16 +561,42 @@ static int ident_data_to_json__get_ident_data (
   ident_data_to_json__data_t *data = user_data;
   size_t i;
 
+  /* TODO: Make points_num_limit configurable. */
+  /* points_num_limit: The number of data-points to send at least. */
+  size_t points_num_limit = 400;
+  size_t points_consolidate;
+
+  if (dp_num <= points_num_limit)
+    points_consolidate = 1;
+  else
+    points_consolidate = dp_num / points_num_limit;
+
   yajl_gen_array_open (data->handler);
 
-  for (i = 0; i < dp_num; i++)
+  for (i = (dp_num % points_consolidate); i < dp_num; i += points_consolidate)
   {
+    size_t j;
+
+    double sum = 0.0;
+    long num = 0;
+
     yajl_gen_array_open (data->handler);
     yajl_gen_integer (data->handler, (long) dp[i].time.tv_sec);
-    if (isnan (dp[i].value))
+
+    for (j = 0; j < points_consolidate; j++)
+    {
+      if (isnan (dp[i+j].value))
+        continue;
+
+      sum += dp[i+j].value;
+      num++;
+    }
+
+    if (num == 0)
       yajl_gen_null (data->handler);
     else
-      yajl_gen_double (data->handler, dp[i].value);
+      yajl_gen_double (data->handler, sum / ((double) num));
+
     yajl_gen_array_close (data->handler);
   }
 
