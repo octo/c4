@@ -198,6 +198,9 @@ search_info_t *search_parse (const char *search) /* {{{ */
   char *token;
   search_info_t *si;
 
+  if (search == NULL)
+    return (NULL);
+
   si = malloc (sizeof (*si));
   if (si == NULL)
     return (NULL);
