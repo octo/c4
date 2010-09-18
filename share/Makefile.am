@@ -1,6 +1,6 @@
 dist_sysconf_DATA = collection.conf
 
-dist_data_DATA = style.css \
+dist_pkgdata_DATA = style.css \
 		 collection.js \
 		 g.line-min.js \
 		 g.raphael-min.js \
