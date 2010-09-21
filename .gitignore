@@ -1,11 +1,19 @@
+aclocal.m4
+autom4te.cache
+install-sh
+missing
 *.o
 Makefile
 Makefile.in
+ylwrap
 
 /configure
 /config.log
 /config.status
+src/collection.fcgi
+src/config.h.in
 src/config.h
 src/scanner.c
 src/parser.c
 src/parser.h
+src/stamp-h1
