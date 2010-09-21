@@ -78,6 +78,12 @@ Dependencies
   necessary to set the CPP- and LD-flags manually. In case of libyajl, which is
   not built with libtool, you may need to set the rpath, too.
 
+  When building from the Git repository, you'll need to have flex and bison (or
+  possibly lex and yacc) installed. These two programs are used to generate the
+  code for parsing the config file. If you are building from a tarball, the
+  generated .c and .h files are included and you don't need to have these
+  programs installed.
+
 
 Bugs
 ----
