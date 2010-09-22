@@ -268,7 +268,7 @@ static int gl_update_cache (void) /* {{{ */
   int fd;
   yajl_gen handler;
   yajl_gen_config handler_config = { /* pretty = */ 1, /* indent = */ "  " };
-  const char *cache_file = graph_config_get_cachefile ();
+  const char *cache_file = graph_config_get_cache_file ();
   struct flock lock;
   struct stat statbuf;
   int status;
@@ -620,7 +620,7 @@ static int gl_read_cache (_Bool block) /* {{{ */
   int status;
   time_t now;
 
-  fd = open (graph_config_get_cachefile (), O_RDONLY);
+  fd = open (graph_config_get_cache_file (), O_RDONLY);
   if (fd < 0)
   {
     fprintf (stderr, "gl_read_cache: open(2) failed with status %i\n", errno);
