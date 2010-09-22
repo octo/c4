@@ -55,7 +55,6 @@
  * Defines
  */
 #define UPDATE_INTERVAL 900
-#define CACHE_FILE "/tmp/collection4.json"
 
 /*
  * Global variables
@@ -269,13 +268,14 @@ static int gl_update_cache (void) /* {{{ */
   int fd;
   yajl_gen handler;
   yajl_gen_config handler_config = { /* pretty = */ 1, /* indent = */ "  " };
+  const char *cache_file = graph_config_get_cachefile ();
   struct flock lock;
   struct stat statbuf;
   int status;
   size_t i;
 
   memset (&statbuf, 0, sizeof (statbuf));
-  status = stat (CACHE_FILE, &statbuf);
+  status = stat (cache_file, &statbuf);
   if (status == 0)
   {
     if (statbuf.st_mtime >= gl_last_update)
@@ -290,7 +290,7 @@ static int gl_update_cache (void) /* {{{ */
     /* Continue writing the file if possible. */
   }
 
-  fd = open (CACHE_FILE, O_WRONLY | O_TRUNC | O_CREAT,
+  fd = open (cache_file, O_WRONLY | O_TRUNC | O_CREAT,
       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
   if (fd < 0)
   {
@@ -620,7 +620,7 @@ static int gl_read_cache (_Bool block) /* {{{ */
   int status;
   time_t now;
 
-  fd = open (CACHE_FILE, O_RDONLY);
+  fd = open (graph_config_get_cachefile (), O_RDONLY);
   if (fd < 0)
   {
     fprintf (stderr, "gl_read_cache: open(2) failed with status %i\n", errno);
