@@ -40,7 +40,13 @@
 # define CONFIGFILE "/etc/collection.conf"
 #endif
 
-time_t last_read_mtime = 0;
+#ifndef CACHEFILE
+# define CACHEFILE "/tmp/collection4.json"
+#endif
+
+static time_t last_read_mtime = 0;
+
+static char *cache_file = NULL;
 
 static int dispatch_config (const oconfig_item_t *ci) /* {{{ */
 {
@@ -55,6 +61,8 @@ static int dispatch_config (const oconfig_item_t *ci) /* {{{ */
       graph_config_add (child);
     else if (strcasecmp ("DataProvider", child->key) == 0)
       data_provider_config (child);
+    else if (strcasecmp ("CacheFile", child->key) == 0)
+      graph_config_get_string (child, &cache_file);
     else
     {
       DEBUG ("Unknown config option: %s", child->key);
@@ -141,5 +149,12 @@ int graph_config_get_bool (const oconfig_item_t *ci, /* {{{ */
 
   return (0);
 } /* }}} int graph_config_get_bool */
+
+const char *graph_config_get_cache_file (void) /* {{{ */
+{
+  if (cache_file == NULL)
+    return (CACHEFILE);
+  return (cache_file);
+} /* }}} char graph_config_get_cache_file */
 
 /* vim: set sw=2 sts=2 et fdm=marker : */
