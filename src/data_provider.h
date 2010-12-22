@@ -47,7 +47,8 @@ typedef int (*dp_list_get_ident_ds_names_callback) (graph_ident_t *,
 
 /* Callback passed to the "get_ident_data" function. */
 typedef int (*dp_get_ident_data_callback) (graph_ident_t *, const char *ds_name,
-    const dp_data_point_t *dp, size_t dp_num,
+    dp_time_t first_value_time, dp_time_t interval,
+    size_t data_points_num, double *data_points,
     void *);
 
 struct data_provider_s

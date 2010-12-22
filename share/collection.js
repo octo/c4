@@ -140,15 +140,18 @@ function instance_draw (inst, def, data)
     var j;
     var x = [];
     var y = [];
+    var x_val;
+
+    x_val = ds.first_value_time;
 
     for (j = 0; j < ds.data.length; j++)
     {
-      var dp = ds.data[j];
-      var t = dp[0];
-      var v = dp[1];
+      var y_val = ds.data[j];
 
-      x.push (t);
-      y.push (v);
+      x.push (x_val);
+      y.push (y_val);
+
+      x_val += ds.interval;
     }
 
     x_data.push (x);

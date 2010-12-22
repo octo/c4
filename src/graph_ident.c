@@ -555,40 +555,65 @@ typedef struct ident_data_to_json__data_s ident_data_to_json__data_t;
 static int ident_data_to_json__get_ident_data (
     __attribute__((unused)) graph_ident_t *ident, /* {{{ */
     __attribute__((unused)) const char *ds_name,
-    const dp_data_point_t *dp, size_t dp_num,
+    dp_time_t first_value_time, dp_time_t interval,
+    size_t data_points_num, double *data_points,
     void *user_data)
 {
   ident_data_to_json__data_t *data = user_data;
   size_t i;
+
+  double first_value_time_double;
+  double interval_double;
 
   /* TODO: Make points_num_limit configurable. */
   /* points_num_limit: The number of data-points to send at least. */
   size_t points_num_limit = 400;
   size_t points_consolidate;
 
-  if (dp_num <= points_num_limit)
+  first_value_time_double = ((double) first_value_time.tv_sec)
+    + (((double) first_value_time.tv_nsec) / 1000000000.0);
+  interval_double = ((double) interval.tv_sec)
+    + (((double) interval.tv_nsec) / 1000000000.0);
+
+  if (data_points_num <= points_num_limit)
     points_consolidate = 1;
   else
-    points_consolidate = dp_num / points_num_limit;
+    points_consolidate = data_points_num / points_num_limit;
 
+  if (points_consolidate > 1)
+  {
+    size_t offset = data_points_num % points_consolidate;
+
+    first_value_time_double += ((double) offset) * interval_double;
+    interval_double *= ((double) points_consolidate);
+  }
+
+  yajl_gen_map_open (data->handler);
+
+  yajl_gen_string_cast (data->handler, "first_value_time", strlen ("first_value_time"));
+  yajl_gen_double (data->handler, first_value_time_double);
+
+  yajl_gen_string_cast (data->handler, "interval", strlen ("interval"));
+  yajl_gen_double (data->handler, interval_double);
+
+  yajl_gen_string_cast (data->handler, "data", strlen ("data"));
   yajl_gen_array_open (data->handler);
 
-  for (i = (dp_num % points_consolidate); i < dp_num; i += points_consolidate)
+  for (i = (data_points_num % points_consolidate);
+      i < data_points_num;
+      i += points_consolidate)
   {
     size_t j;
 
     double sum = 0.0;
     long num = 0;
 
-    yajl_gen_array_open (data->handler);
-    yajl_gen_integer (data->handler, (long) dp[i].time.tv_sec);
-
     for (j = 0; j < points_consolidate; j++)
     {
-      if (isnan (dp[i+j].value))
+      if (isnan (data_points[i+j]))
         continue;
 
-      sum += dp[i+j].value;
+      sum += data_points[i+j];
       num++;
     }
 
@@ -596,8 +621,6 @@ static int ident_data_to_json__get_ident_data (
       yajl_gen_null (data->handler);
     else
       yajl_gen_double (data->handler, sum / ((double) num));
-
-    yajl_gen_array_close (data->handler);
   }
 
   yajl_gen_array_close (data->handler);
@@ -620,7 +643,6 @@ static int ident_data_to_json__get_ds_name (graph_ident_t *ident, /* {{{ */
   yajl_gen_string_cast (data->handler, "data_source", strlen ("data_source"));
   yajl_gen_string_cast (data->handler, ds_name, strlen (ds_name));
 
-  yajl_gen_string_cast (data->handler, "data", strlen ("data"));
   status = data_provider_get_ident_data (ident, ds_name,
       data->begin, data->end,
       ident_data_to_json__get_ident_data,

@@ -291,12 +291,13 @@ static int get_ident_data (void *priv,
   rrd_value_t *data;
   int status;
 
-  unsigned long ds_index;
-  unsigned long data_index;
-  unsigned long data_length;
+  dp_time_t first_value_time;
+  dp_time_t interval;
+  size_t data_points_num;
+  double *data_points = NULL;
 
-  dp_data_point_t *dp = NULL;
-  size_t dp_num = 0;
+  unsigned long ds_index;
+  size_t i;
 
   status = ident_to_rrdfile (ident, config, filename, sizeof (filename));
   if (status != 0)
@@ -322,7 +323,7 @@ static int get_ident_data (void *priv,
     free (ds_namv[i]);            \
   free (ds_namv);                 \
   free (data);                    \
-  free (dp);                      \
+  free (data_points);             \
   return (ret_status);            \
 } while (0)
 
@@ -333,24 +334,23 @@ static int get_ident_data (void *priv,
   if (ds_index >= ds_count)
     BAIL_OUT (ENOENT);
 
-  /* Number of data points returned. */
-  data_length = (rrd_end - rrd_start) / step;
-
-  dp_num = (size_t) data_length;
-  dp = calloc (dp_num, sizeof (*dp));
-  if (dp == NULL)
+  memset (&first_value_time, 0, sizeof (first_value_time));
+  first_value_time.tv_sec = rrd_start;
+  memset (&interval, 0, sizeof (interval));
+  interval.tv_sec = (time_t) step;
+  data_points_num = (size_t) ((rrd_end - rrd_start) / step);
+  data_points = calloc (data_points_num, sizeof (*data_points));
+  if (data_points == NULL)
     BAIL_OUT (ENOMEM);
 
-  for (data_index = 0; data_index < data_length; data_index++)
+  for (i = 0; i < data_points_num; i++)
   {
-    unsigned long index = (ds_count * data_index) + ds_index;
-
-    dp[data_index].time.tv_sec = rrd_start + (data_index * step);
-    dp[data_index].time.tv_nsec = 0;
-    dp[data_index].value = (double) data[index];
+    unsigned long index = (ds_count * ((unsigned long) i)) + ds_index;
+    data_points[i] = (double) data[index];
   }
 
-  status = (*cb) (ident, ds_name, dp, dp_num, ud);
+  status = (*cb) (ident, ds_name, first_value_time, interval,
+      data_points_num, data_points, ud);
   if (status != 0)
     BAIL_OUT (status);
 
