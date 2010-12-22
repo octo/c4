@@ -299,6 +299,51 @@ function instance_draw (inst, def, data_list) /* {{{ */
     },
     endOnTick: false
   };
+  chart_opts.legend =
+  {
+    labelFormatter: function ()
+    {
+      var series = this;
+      var min = Number.MAX_VALUE;
+      var max = Number.NEGATIVE_INFINITY;
+      var num = 0;
+      var sum = 0;
+      var avg;
+      var i;
+
+      for (i = 0; i < this.data.length; i++)
+      {
+        var v;
+
+        v = this.data[i].y;
+        if (v == null)
+          continue;
+
+        if (min > v)
+          min = v;
+        if (max < v)
+          max = v;
+
+        sum += v;
+        num++;
+      }
+
+      if (num == 0)
+      {
+        min = null;
+        max = null;
+        avg = null;
+      }
+      else
+      {
+        avg = sum / num;
+      }
+
+      return (this.name + " (" + value_to_string (min) + " min, "
+          + value_to_string (avg) + " avg, "
+          + value_to_string (max) + " max)");
+    }
+  };
   chart_opts.series = new Array ();
 
   if (def.title)
