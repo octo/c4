@@ -54,10 +54,10 @@ function value_to_string (value) /* {{{ */
   }
 } /* }}} function value_to_string */
 
-function instance_get_params (graph) /* {{{ */
+function instance_get_params (inst) /* {{{ */
 {
-  var graph_selector = graph.graph_selector;
-  var inst_selector = graph.instance_selector;
+  var graph_selector = inst.graph_selector;
+  var inst_selector = inst.instance_selector;
   var selector = {};
 
   if (graph_selector.host == inst_selector.host)
@@ -126,11 +126,11 @@ function ident_clone (ident) /* {{{ */
   return (ret);
 } /* }}} ident_clone */
 
-function graph_get_defs (graph) /* {{{ */
+function inst_get_defs (inst) /* {{{ */
 {
-  if (!graph.def)
+  if (!inst.def)
   {
-    var params = ident_clone (graph.graph_selector);
+    var params = instance_get_params (inst);
     params.action = "graph_def_json";
 
     $.ajax({
@@ -143,14 +143,14 @@ function graph_get_defs (graph) /* {{{ */
         if (!data)
           return;
 
-        graph.def = data;
+        inst.def = data;
       }});
   }
 
-  if (graph.def)
-    return (graph.def);
+  if (inst.def)
+    return (inst.def);
   return;
-} /* }}} graph_get_defs */
+} /* }}} inst_get_defs */
 
 function ident_matches (selector, ident) /* {{{ */
 {
@@ -307,7 +307,7 @@ function json_graph_update (index) /* {{{ */
   if (!inst)
     return;
 
-  def = graph_get_defs (inst);
+  def = inst_get_defs (inst);
   if (!def)
     return;
 
