@@ -28,29 +28,41 @@ var c4 =
 
 function value_to_string (value) /* {{{ */
 {
-  var abs_value = Math.abs (value);
+  var abs_value;
+  var v2s = function (value)
+  {
+    var tmp = Math.round (100.0 * value) / 100.0;
+    return ("" + tmp);
+  }
+
+  if (value == null)
+    return ('NaN');
+  else if (value == 0)
+    return ('0');
+
+  abs_value = Math.abs (value);
 
   if ((abs_value < 10000) && (abs_value >= 0.1))
-    return ("" + value);
+    return (v2s (value));
   else if (abs_value > 1)
   {
     if (abs_value < 10000000)
-      return ("" + (value / 1000) + "k");
+      return (v2s (value / 1000) + "k");
     else if (abs_value < 10000000000)
-      return ("" + (value / 1000000) + "M");
+      return (v2s (value / 1000000) + "M");
     else if (abs_value < 10000000000000)
-      return ("" + (value / 1000000000) + "G");
+      return (v2s (value / 1000000000) + "G");
     else
-      return ("" + (value / 1000000000000) + "T");
+      return (v2s (value / 1000000000000) + "T");
   }
   else
   {
     if (abs_value >= 0.001)
-      return ("" + (value * 1000) + "m");
+      return (v2s (value * 1000) + "m");
     else if (abs_value >= 0.000001)
-      return ("" + (value * 1000000) + "u");
+      return (v2s (value * 1000000) + "u");
     else
-      return ("" + (value * 1000000000) + "n");
+      return (v2s (value * 1000000000) + "n");
   }
 } /* }}} function value_to_string */
 
