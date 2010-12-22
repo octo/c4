@@ -109,10 +109,12 @@ License
   MIT license and the GPL. The file "share/jquery-1.4.2.min.js" includes a
   license header which points you to more detailed information.
 
-  c4 includes the JavaScript libraries "Raphaël" and "gRaphaël" which are
-  licensed under the MIT license. The files "share/raphael-min.js",
-  "share/g.raphael-min.js", and "share/g.line-min.js" each include a license
-  header which points you to more detailed information.
+  c4 includes the JavaScript library "Highcharts" which is licensed under the
+  Creative Commons Attribution-NonCommercial 3.0 License (CC-by-nc 3.0). This
+  means that the library is free of charge for non-commercial use. The file
+  "share/highcharts.js" includes a license header which points you to more
+  detailed information. More information on Highcharts and licensing options is
+  available from <http://www.highcharts.com/>.
 
 
 Author
