@@ -5,4 +5,5 @@ dist_pkgdata_DATA = style.css \
 		 g.line-min.js \
 		 g.raphael-min.js \
 		 jquery-1.4.2.min.js \
-		 raphael-min.js
+		 raphael-min.js \
+		 highcharts.js
