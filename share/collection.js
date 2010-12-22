@@ -218,13 +218,17 @@ function def_draw_one (def, data, chart_opts) /* {{{ */
   var chart_series = new Object ();
 
   chart_series.type = 'line';
-  chart_series.name = def.legend || def.data_source;
   chart_series.pointInterval = data.interval * 1000;
   chart_series.pointStart = data.first_value_time * 1000;
   chart_series.data = data.data;
   chart_series.lineWidth = 1;
   chart_series.shadow = false;
   chart_series.marker = { enabled: false };
+
+  if (def.legend)
+    chart_series.name = def.legend;
+  else if (def.ds_name)
+    chart_series.name = def.ds_name;
 
   if (def.area)
     chart_series.type = 'area';
