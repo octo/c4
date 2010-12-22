@@ -138,7 +138,7 @@ static int show_time_selector (__attribute__((unused)) void *user_data) /* {{{ *
       "    <option value=\"-31622400\">Year</option>\n"
       "  </select><br />\n");
   printf ("  <input id=\"format-json\" type=\"radio\" name=\"format\" value=\"JSON\" checked=\"checked\" />"
-      "<label for=\"format-json\">&nbsp;JSON (gRapha&euml;l)</label><br />\n"
+      "<label for=\"format-json\">&nbsp;JavaScript</label><br />\n"
       "  <input id=\"format-rrd\" type=\"radio\" name=\"format\" value=\"RRD\" />"
       "<label for=\"format-rrd\">&nbsp;RRDtool</label>\n<br />");
   printf ("  <input type=\"submit\" name=\"button\" value=\"Go\" />\n");

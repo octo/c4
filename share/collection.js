@@ -26,6 +26,34 @@ var c4 =
   instances: []
 };
 
+function value_to_string (value) /* {{{ */
+{
+  var abs_value = Math.abs (value);
+
+  if ((abs_value < 10000) && (abs_value >= 0.1))
+    return ("" + value);
+  else if (abs_value > 1)
+  {
+    if (abs_value < 10000000)
+      return ("" + (value / 1000) + "k");
+    else if (abs_value < 10000000000)
+      return ("" + (value / 1000000) + "M");
+    else if (abs_value < 10000000000000)
+      return ("" + (value / 1000000000) + "G");
+    else
+      return ("" + (value / 1000000000000) + "T");
+  }
+  else
+  {
+    if (abs_value >= 0.001)
+      return ("" + (value * 1000) + "m");
+    else if (abs_value >= 0.000001)
+      return ("" + (value * 1000000) + "u");
+    else
+      return ("" + (value * 1000000000) + "n");
+  }
+} /* }}} function value_to_string */
+
 function instance_get_params (graph) /* {{{ */
 {
   var graph_selector = graph.graph_selector;
@@ -98,7 +126,7 @@ function ident_clone (ident) /* {{{ */
   return (ret);
 } /* }}} ident_clone */
 
-function graph_get_defs (graph)
+function graph_get_defs (graph) /* {{{ */
 {
   if (!graph.def)
   {
@@ -122,51 +150,154 @@ function graph_get_defs (graph)
   if (graph.def)
     return (graph.def);
   return;
-} /* graph_get_defs */
+} /* }}} graph_get_defs */
 
-function instance_draw (inst, def, data)
+function ident_matches (selector, ident) /* {{{ */
+{
+  var part_matches = function (s,p)
+  {
+    if (s == null)
+      return (false);
+
+    if ((s == "/any/") || (s == "/all/"))
+      return (true);
+
+    if (p == null)
+      return (false);
+
+    if (s == p)
+      return (true);
+
+    return (false);
+  };
+
+  if (!part_matches (selector.host, ident.host))
+    return (false);
+
+  if (!part_matches (selector.plugin, ident.plugin))
+    return (false);
+
+  if (!part_matches (selector.plugin_instance, ident.plugin_instance))
+    return (false);
+
+  if (!part_matches (selector.type, ident.type))
+    return (false);
+
+  if (!part_matches (selector.type_instance, ident.type_instance))
+    return (false);
+
+  return (true);
+} /* }}} function ident_matches */
+
+function ident_describe (ident, selector) /* {{{ */
+{
+  var ret = "";
+  var check_field = function (field)
+  {
+    if (ident[field].toLowerCase () != selector[field].toLowerCase ())
+    {
+      if (ret != "")
+        ret += "/";
+      ret += ident[field];
+    }
+  };
+
+  check_field ("host");
+  check_field ("plugin");
+  check_field ("plugin_instance");
+  check_field ("type");
+  check_field ("type_instance");
+
+  if (ret == "")
+    return (null);
+  return (ret);
+} /* }}} function ident_describe */
+
+function def_draw_one (def, data, chart_opts) /* {{{ */
+{
+  var chart_series = new Object ();
+
+  chart_series.type = 'line';
+  chart_series.name = def.legend || def.data_source;
+  chart_series.pointInterval = data.interval * 1000;
+  chart_series.pointStart = data.first_value_time * 1000;
+  chart_series.data = data.data;
+  chart_series.lineWidth = 1;
+  chart_series.shadow = false;
+  chart_series.marker = { enabled: false };
+
+  if (def.area)
+    chart_series.type = 'area';
+
+  if (def.stack)
+    chart_series.stacking = 'normal';
+
+  if ((def.color) && (def.color != 'random'))
+    chart_series.color = def.color;
+
+  chart_opts.series.push (chart_series);
+} /* }}} function def_draw_one */
+
+function def_draw (def, data_list, chart_opts) /* {{{ */
+{
+  var i;
+
+  for (i = 0; i < data_list.length; i++)
+  {
+    if ((def.ds_name) && (def.ds_name != data_list[i].data_source))
+      continue;
+    if (!ident_matches (def.select, data_list[i].file))
+      continue;
+
+    def_draw_one (def, data_list[i], chart_opts);
+  }
+} /* }}} function def_draw */
+
+function instance_draw (inst, def, data_list) /* {{{ */
 {
   var x_data = [];
   var y_data = [];
   var i;
 
-  if (!inst || !def || !data)
+  var chart_opts = new Object ();
+
+  if (!inst || !def || !data_list)
     return;
 
-  for (i = 0; i < data.length; i++)
+  chart_opts.chart =
   {
-    var ds = data[i];
-
-    var j;
-    var x = [];
-    var y = [];
-    var x_val;
-
-    x_val = ds.first_value_time;
-
-    for (j = 0; j < ds.data.length; j++)
+    renderTo: inst.container,
+    zoomType: 'x'
+  };
+  chart_opts.xAxis =
+  {
+    type: 'datetime',
+    maxZoom: 300, // five minutes
+    title: { text: null }
+  };
+  chart_opts.yAxis =
+  {
+    labels:
     {
-      var y_val = ds.data[j];
+      formatter: function () { return (value_to_string (this.value)); }
+    },
+    endOnTick: false
+  };
+  chart_opts.series = new Array ();
 
-      x.push (x_val);
-      y.push (y_val);
-
-      x_val += ds.interval;
-    }
-
-    x_data.push (x);
-    y_data.push (y);
-  }
-
-  inst.raphael.clear ();
   if (def.title)
-    inst.raphael.g.text (250, 15, def.title);
-  if (def.vertical_label)
-    inst.raphael.g.text (5, 100, def.vertical_label).rotate (270);
-  inst.raphael.g.linechart(50, 25, 500, 150, x_data, y_data, {axis: "0 0 1 1"});
-}
+    chart_opts.title = { text: def.title };
 
-function json_graph_update (index)
+  for (i = def.defs.length - 1; i >= 0; i--)
+    def_draw (def.defs[i], data_list, chart_opts);
+
+//  if ((def.defs.length == 0) && (data_list.length == 1))
+//    def_draw_one (null, data_list[0], chart_opts);
+
+  inst.chart = new Highcharts.Chart (chart_opts);
+} /* }}} function instance_draw */
+
+function json_graph_update (index) /* {{{ */
 {
   var inst;
   var def;
@@ -180,8 +311,8 @@ function json_graph_update (index)
   if (!def)
     return;
 
-  if (!inst.raphael)
-    inst.raphael = Raphael ("c4-graph" + index);
+  if (!inst.container)
+    inst.container = "c4-graph" + index;
 
   params = instance_get_params (inst);
   params.action = "instance_data_json";
@@ -193,7 +324,7 @@ function json_graph_update (index)
       {
         instance_draw (inst, def, data);
       }); /* getJSON */
-} /* json_graph_update */
+} /* }}} json_graph_update */
 
 function format_instance(inst)
 {
