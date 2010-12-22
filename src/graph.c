@@ -649,7 +649,8 @@ int graph_to_json (const graph_config_t *cfg, /* {{{ */
   return (0);
 } /* }}} int graph_to_json */
 
-int graph_def_to_json (const graph_config_t *cfg, /* {{{ */
+int graph_def_to_json (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst,
     yajl_gen handler)
 {
 #define yajl_gen_string_cast(h,p,l) \
@@ -676,7 +677,18 @@ int graph_def_to_json (const graph_config_t *cfg, /* {{{ */
   yajl_gen_bool (handler, cfg->show_zero);
 
   yajl_gen_string_cast (handler, "defs", strlen ("defs"));
-  def_to_json (cfg->defs, handler);
+  if (cfg->defs == NULL)
+  {
+    graph_def_t *defs;
+
+    defs = inst_get_default_defs (cfg, inst);
+    def_to_json (defs, handler);
+    def_destroy (defs);
+  }
+  else
+  {
+    def_to_json (cfg->defs, handler);
+  }
 
   yajl_gen_map_close (handler);
 

@@ -55,6 +55,9 @@ int inst_get_params (graph_config_t *cfg, graph_instance_t *inst,
 int inst_get_rrdargs (graph_config_t *cfg, graph_instance_t *inst,
     rrd_args_t *args);
 
+graph_def_t *inst_get_default_defs (graph_config_t *cfg,
+    graph_instance_t *inst);
+
 /* Returns a copy of the selector which must be freed by the caller. */
 graph_ident_t *inst_get_selector (graph_instance_t *inst);
 

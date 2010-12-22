@@ -56,6 +56,33 @@ typedef struct def_callback_data_s def_callback_data_t;
 /*
  * Private functions
  */
+struct ident_get_default_defs__data_s
+{
+  char **dses;
+  size_t dses_num;
+};
+typedef struct ident_get_default_defs__data_s ident_get_default_defs__data_t;
+
+static int ident_get_default_defs__callback (__attribute__((unused))
+    graph_ident_t *ident,
+    const char *ds_name, void *user_data)
+{
+  ident_get_default_defs__data_t *data = user_data;
+  char **tmp;
+
+  tmp = realloc (data->dses, (data->dses_num + 1) * sizeof (data->dses));
+  if (tmp == NULL)
+    return (ENOMEM);
+  data->dses = tmp;
+
+  data->dses[data->dses_num] = strdup (ds_name);
+  if (data->dses[data->dses_num] == NULL)
+    return (ENOMEM);
+
+  data->dses_num++;
+  return (0);
+} /* }}} int ident_get_default_defs__callback */
+
 /* Create one DEF for each data source in the file. Called by
  * "inst_get_default_defs" for each file. */
 static graph_def_t *ident_get_default_defs (graph_config_t *cfg, /* {{{ */
@@ -63,10 +90,12 @@ static graph_def_t *ident_get_default_defs (graph_config_t *cfg, /* {{{ */
 {
   graph_def_t *defs = NULL;
   char *file;
-  char **dses = NULL;
-  size_t dses_num = 0;
+  ident_get_default_defs__data_t ds_data;
   int status;
   size_t i;
+
+  ds_data.dses = NULL;
+  ds_data.dses_num = 0;
 
   if ((cfg == NULL) || (ident == NULL))
     return (def_head);
@@ -78,22 +107,23 @@ static graph_def_t *ident_get_default_defs (graph_config_t *cfg, /* {{{ */
     return (def_head);
   }
 
-  status = ds_list_from_rrd_file (file, &dses_num, &dses);
+  status = data_provider_get_ident_ds_names (ident,
+      ident_get_default_defs__callback, &ds_data);
   if (status != 0)
   {
     free (file);
     return (def_head);
   }
 
-  for (i = 0; i < dses_num; i++)
+  for (i = 0; i < ds_data.dses_num; i++)
   {
     graph_def_t *def;
 
-    def = def_search (def_head, ident, dses[i]);
+    def = def_search (def_head, ident, ds_data.dses[i]);
     if (def != NULL)
       continue;
 
-    def = def_create (cfg, ident, dses[i]);
+    def = def_create (cfg, ident, ds_data.dses[i]);
     if (def == NULL)
       continue;
 
@@ -102,44 +132,14 @@ static graph_def_t *ident_get_default_defs (graph_config_t *cfg, /* {{{ */
     else
       def_append (defs, def);
 
-    free (dses[i]);
+    free (ds_data.dses[i]);
   }
 
-  free (dses);
+  free (ds_data.dses);
   free (file);
 
   return (defs);
 } /* }}} int ident_get_default_defs */
-
-/* Create one or more DEFs for each file in the graph instance. The number
- * depends on the number of data sources in each of the files. Called from
- * "inst_get_rrdargs" if no DEFs are available from the configuration.
- * */
-static graph_def_t *inst_get_default_defs (graph_config_t *cfg, /* {{{ */
-    graph_instance_t *inst)
-{
-  graph_def_t *defs = NULL;
-  size_t i;
-
-  if ((cfg == NULL) || (inst == NULL))
-    return (NULL);
-
-  for (i = 0; i < inst->files_num; i++)
-  {
-    graph_def_t *def;
-
-    def = ident_get_default_defs (cfg, inst->files[i], defs);
-    if (def == NULL)
-      continue;
-
-    if (defs == NULL)
-      defs = def;
-    else
-      def_append (defs, def);
-  }
-
-  return (defs);
-} /* }}} graph_def_t *inst_get_default_defs */
 
 /* Called with each DEF in turn. Calls "def_get_rrdargs" with every appropriate
  * file / DEF pair. */
@@ -373,6 +373,36 @@ int inst_get_rrdargs (graph_config_t *cfg, /* {{{ */
 
   return (status);
 } /* }}} int inst_get_rrdargs */
+
+/* Create one or more DEFs for each file in the graph instance. The number
+ * depends on the number of data sources in each of the files. Called from
+ * "inst_get_rrdargs" if no DEFs are available from the configuration.
+ * */
+graph_def_t *inst_get_default_defs (graph_config_t *cfg, /* {{{ */
+    graph_instance_t *inst)
+{
+  graph_def_t *defs = NULL;
+  size_t i;
+
+  if ((cfg == NULL) || (inst == NULL))
+    return (NULL);
+
+  for (i = 0; i < inst->files_num; i++)
+  {
+    graph_def_t *def;
+
+    def = ident_get_default_defs (cfg, inst->files[i], defs);
+    if (def == NULL)
+      continue;
+
+    if (defs == NULL)
+      defs = def;
+    else
+      def_append (defs, def);
+  }
+
+  return (defs);
+} /* }}} graph_def_t *inst_get_default_defs */
 
 graph_ident_t *inst_get_selector (graph_instance_t *inst) /* {{{ */
 {

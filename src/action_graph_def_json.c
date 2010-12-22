@@ -32,6 +32,7 @@
 #include "action_graph_def_json.h"
 #include "common.h"
 #include "graph.h"
+#include "graph_instance.h"
 #include "graph_list.h"
 #include "utils_cgi.h"
 
@@ -50,6 +51,7 @@ static void write_callback (__attribute__((unused)) void *ctx, /* {{{ */
 int action_graph_def_json (void) /* {{{ */
 {
   graph_config_t *cfg;
+  graph_instance_t *inst;
 
   yajl_gen_config handler_config;
   yajl_gen handler;
@@ -61,6 +63,10 @@ int action_graph_def_json (void) /* {{{ */
   cfg = gl_graph_get_selected ();
   if (cfg == NULL)
     return (ENOMEM);
+
+  inst = inst_get_selected (cfg);
+  if (inst == NULL)
+    return (EINVAL);
 
   memset (&handler_config, 0, sizeof (handler_config));
   handler_config.beautify = 1;
@@ -83,7 +89,7 @@ int action_graph_def_json (void) /* {{{ */
         time_buffer);
   printf ("\n");
 
-  status = graph_def_to_json (cfg, handler);
+  status = graph_def_to_json (cfg, inst, handler);
 
   yajl_gen_free (handler);
 
