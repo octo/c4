@@ -225,13 +225,13 @@ function ident_describe (ident, selector) /* {{{ */
   return (ret);
 } /* }}} function ident_describe */
 
-function def_draw_one (def, data, chart_opts) /* {{{ */
+function def_draw_one (def, data, series_array) /* {{{ */
 {
   var chart_series = new Object ();
 
   chart_series.type = 'line';
-  chart_series.pointInterval = data.interval * 1000;
-  chart_series.pointStart = data.first_value_time * 1000;
+  chart_series.pointInterval = data.interval * 1000.0;
+  chart_series.pointStart = data.first_value_time * 1000.0;
   chart_series.data = data.data;
   chart_series.lineWidth = 1;
   chart_series.shadow = false;
@@ -251,10 +251,10 @@ function def_draw_one (def, data, chart_opts) /* {{{ */
   if ((def.color) && (def.color != 'random'))
     chart_series.color = def.color;
 
-  chart_opts.series.push (chart_series);
+  series_array.push (chart_series);
 } /* }}} function def_draw_one */
 
-function def_draw (def, data_list, chart_opts) /* {{{ */
+function def_draw (def, data_list, series_array) /* {{{ */
 {
   var i;
 
@@ -265,20 +265,13 @@ function def_draw (def, data_list, chart_opts) /* {{{ */
     if (!ident_matches (def.select, data_list[i].file))
       continue;
 
-    def_draw_one (def, data_list[i], chart_opts);
+    def_draw_one (def, data_list[i], series_array);
   }
 } /* }}} function def_draw */
 
-function instance_draw (inst, def, data_list) /* {{{ */
+function inst_get_chart_opts (inst, def) /* {{{ */
 {
-  var x_data = [];
-  var y_data = [];
-  var i;
-
   var chart_opts = new Object ();
-
-  if (!inst || !def || !data_list)
-    return;
 
   chart_opts.chart =
   {
@@ -289,7 +282,22 @@ function instance_draw (inst, def, data_list) /* {{{ */
   {
     type: 'datetime',
     maxZoom: 300, // five minutes
-    title: { text: null }
+    title: { text: null },
+    events:
+    {
+      setExtremes: function (event)
+      {
+        var begin = null;
+        var end   = null;
+
+        if ((event.min) && (event.max))
+        {
+          begin = event.min / 1000.0;
+          end   = event.max / 1000.0;
+        }
+        inst_fetch_data (inst, begin, end);
+      }
+    }
   };
   chart_opts.yAxis =
   {
@@ -297,6 +305,7 @@ function instance_draw (inst, def, data_list) /* {{{ */
     {
       formatter: function () { return (value_to_string (this.value)); }
     },
+    startOnTick: false,
     endOnTick: false
   };
   chart_opts.legend =
@@ -349,42 +358,85 @@ function instance_draw (inst, def, data_list) /* {{{ */
   if (def.title)
     chart_opts.title = { text: def.title };
 
-  for (i = def.defs.length - 1; i >= 0; i--)
-    def_draw (def.defs[i], data_list, chart_opts);
+  return (chart_opts);
+} /* }}} function chart_opts_get */
 
-//  if ((def.defs.length == 0) && (data_list.length == 1))
-//    def_draw_one (null, data_list[0], chart_opts);
+function inst_draw (inst, def, data_list) /* {{{ */
+{
+  var chart_opts;
+  var i;
+
+  if (!inst || !def || !data_list)
+    return;
+
+  chart_opts = inst_get_chart_opts (inst, def);
+
+  for (i = def.defs.length - 1; i >= 0; i--)
+    def_draw (def.defs[i], data_list, chart_opts.series);
 
   inst.chart = new Highcharts.Chart (chart_opts);
-} /* }}} function instance_draw */
+} /* }}} function inst_draw */
 
-function json_graph_update (index) /* {{{ */
+function inst_redraw (inst, def, data_list) /* {{{ */
 {
-  var inst;
+  var series_array;
+  var i;
+
+  if (!inst.chart)
+    return (inst_draw (inst, def, data_list));
+
+  series_array = new Array ();
+  for (i = def.defs.length - 1; i >= 0; i--)
+    def_draw (def.defs[i], data_list, series_array);
+
+  if (inst.chart.series.length != series_array.length)
+  {
+    alert ("inst.chart.series.length != series_array.length");
+    return;
+  }
+
+  for (i = inst.chart.series.length - 1; i >= 0; i--)
+    inst.chart.series[i].remove (/* redraw = */ false);
+
+  for (i = 0; i < series_array.length; i++)
+    inst.chart.addSeries (series_array[i], /* redraw = */ false);
+
+  inst.chart.redraw ();
+} /* }}} function inst_redraw */
+
+function inst_fetch_data (inst, begin, end) /* {{{ */
+{
   var def;
   var params;
-
-  inst = c4.instances[index];
-  if (!inst)
-    return;
 
   def = inst_get_defs (inst);
   if (!def)
     return;
 
-  if (!inst.container)
-    inst.container = "c4-graph" + index;
-
   params = instance_get_params (inst);
   params.action = "instance_data_json";
-  params.begin = inst.begin;
-  params.end = inst.end;
+  params.begin = begin || inst.begin;
+  params.end = end || inst.end;
 
   $.getJSON ("collection.fcgi", params,
       function (data)
       {
-        instance_draw (inst, def, data);
+        inst_redraw (inst, def, data);
       }); /* getJSON */
+} /* }}} inst_fetch_data */
+
+function json_graph_update (index) /* {{{ */
+{
+  var inst;
+
+  inst = c4.instances[index];
+  if (!inst)
+    return;
+
+  if (!inst.container)
+    inst.container = "c4-graph" + index;
+
+  inst_fetch_data (inst);
 } /* }}} json_graph_update */
 
 function format_instance(inst)
