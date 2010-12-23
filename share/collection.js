@@ -399,7 +399,10 @@ function inst_redraw (inst, def, data_list) /* {{{ */
   }
 
   for (i = inst.chart.series.length - 1; i >= 0; i--)
+  {
+    series_array[i].visible = inst.chart.series[i].visible;
     inst.chart.series[i].remove (/* redraw = */ false);
+  }
 
   for (i = 0; i < series_array.length; i++)
     inst.chart.addSeries (series_array[i], /* redraw = */ false);
