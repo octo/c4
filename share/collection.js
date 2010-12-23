@@ -358,6 +358,9 @@ function inst_get_chart_opts (inst, def) /* {{{ */
   if (def.title)
     chart_opts.title = { text: def.title };
 
+  if (def.vertical_label)
+    chart_opts.yAxis.title = { text: def.vertical_label };
+
   return (chart_opts);
 } /* }}} function chart_opts_get */
 
