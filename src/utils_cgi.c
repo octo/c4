@@ -688,7 +688,7 @@ int html_print_page (const char *title, /* {{{ */
       "  <head>\n"
       "    <title>%s</title>\n"
       "    <link rel=\"stylesheet\" type=\"text/css\" href=\"../../share/"PACKAGE"/style.css\" />\n"
-      "    <script type=\"text/javascript\" src=\"../../share/"PACKAGE"/jquery-1.4.2.min.js\">\n"
+      "    <script type=\"text/javascript\" src=\"../../share/"PACKAGE"/jquery-1.4.4.min.js\">\n"
       "    </script>\n"
       "    <script type=\"text/javascript\" src=\"../../share/"PACKAGE"/highcharts.js\">\n"
       "    </script>\n"

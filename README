@@ -106,7 +106,7 @@ License
   the top source directory.
 
   c4 includes the JavaScript library "jQuery" which is dual-licensed under the
-  MIT license and the GPL. The file "share/jquery-1.4.2.min.js" includes a
+  MIT license and the GPL. The file "share/jquery-1.4.4.min.js" includes a
   license header which points you to more detailed information.
 
   c4 includes the JavaScript library "Highcharts" which is licensed under the
