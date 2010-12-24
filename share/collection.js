@@ -23,7 +23,12 @@
 
 var c4 =
 {
-  instances: []
+  instances: new Array (),
+  config:
+  {
+    width: 324,
+    height: 200
+  }
 };
 
 function value_to_string (value) /* {{{ */
@@ -423,6 +428,7 @@ function inst_fetch_data (inst, begin, end) /* {{{ */
   params.action = "instance_data_json";
   params.begin = begin || inst.begin;
   params.end = end || inst.end;
+  params.resolution = Math.round ((params.end - params.begin) / c4.config.width);
 
   $.getJSON ("collection.fcgi", params,
       function (data)
@@ -630,6 +636,26 @@ function zoom_out (graph_id) /* {{{ */
   return (zoom_relative (graph_id, (-1.0 / 3.0), (1.0 / 3.0)));
 } /* }}} function zoom_earlier */
 
+function graph_recalc_width () /* {{{ */
+{
+  var tmp;
+
+  tmp = $("#layout-middle-center").width ();
+  if (!tmp)
+    return;
+
+  if (tmp < 324)
+    tmp = 324;
+
+  c4.config.width = tmp;
+  c4.config.height = Math.round (tmp / 1.61803398874989484820);
+  $(".graph-json").each (function ()
+  {
+    $(this).width  (c4.config.width);
+    $(this).height (c4.config.height);
+  });
+} /* }}} function graph_recalc_width */
+
 $(document).ready(function() {
     /* $("#layout-middle-right").html ("<ul id=\"search-suggest\" class=\"graph_list\"></ul>"); */
     $("#search-form").append ("<ul id=\"search-suggest\" class=\"graph_list\"></ul>");
@@ -693,6 +719,8 @@ $(document).ready(function() {
         + "</div>"
         );
     });
+
+    graph_recalc_width ();
 
     var i;
     for (i = 0; i < c4.instances.length; i++)
