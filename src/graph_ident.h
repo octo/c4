@@ -93,7 +93,7 @@ char *ident_to_file (const graph_ident_t *ident);
 int ident_to_json (const graph_ident_t *ident,
     yajl_gen handler);
 int ident_data_to_json (graph_ident_t *ident,
-    dp_time_t begin, dp_time_t end,
+    dp_time_t begin, dp_time_t end, dp_time_t interval,
     yajl_gen handler);
 
 int ident_describe (const graph_ident_t *ident, const graph_ident_t *selector,

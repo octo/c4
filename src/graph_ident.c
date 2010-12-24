@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <math.h>
+#include <assert.h>
 
 #include "graph_ident.h"
 #include "common.h"
@@ -545,6 +546,7 @@ struct ident_data_to_json__data_s
 {
   dp_time_t begin;
   dp_time_t end;
+  dp_time_t interval;
   yajl_gen handler;
 };
 typedef struct ident_data_to_json__data_s ident_data_to_json__data_t;
@@ -564,21 +566,21 @@ static int ident_data_to_json__get_ident_data (
 
   double first_value_time_double;
   double interval_double;
-
-  /* TODO: Make points_num_limit configurable. */
-  /* points_num_limit: The number of data-points to send at least. */
-  size_t points_num_limit = 400;
+  double interval_requested;
   size_t points_consolidate;
 
   first_value_time_double = ((double) first_value_time.tv_sec)
     + (((double) first_value_time.tv_nsec) / 1000000000.0);
   interval_double = ((double) interval.tv_sec)
     + (((double) interval.tv_nsec) / 1000000000.0);
+  interval_requested = ((double) data->interval.tv_sec)
+    + (((double) data->interval.tv_nsec) / 1000000000.0);
 
-  if (data_points_num <= points_num_limit)
+  if (interval_requested < (2.0 * interval_double))
     points_consolidate = 1;
   else
-    points_consolidate = data_points_num / points_num_limit;
+    points_consolidate = (size_t) (interval_requested / interval_double);
+  assert (points_consolidate >= 1);
 
   if (points_consolidate > 1)
   {
@@ -654,7 +656,7 @@ static int ident_data_to_json__get_ds_name (graph_ident_t *ident, /* {{{ */
 } /* }}} int ident_data_to_json__get_ds_name */
 
 int ident_data_to_json (graph_ident_t *ident, /* {{{ */
-    dp_time_t begin, dp_time_t end,
+    dp_time_t begin, dp_time_t end, dp_time_t res,
     yajl_gen handler)
 {
   ident_data_to_json__data_t data;
@@ -662,6 +664,7 @@ int ident_data_to_json (graph_ident_t *ident, /* {{{ */
 
   data.begin = begin;
   data.end = end;
+  data.interval = res;
   data.handler = handler;
 
   /* Iterate over all DS names */

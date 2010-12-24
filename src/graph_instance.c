@@ -605,14 +605,14 @@ int inst_to_json (const graph_instance_t *inst, /* {{{ */
 } /* }}} int inst_to_json */
 
 int inst_data_to_json (const graph_instance_t *inst, /* {{{ */
-    dp_time_t begin, dp_time_t end,
+    dp_time_t begin, dp_time_t end, dp_time_t res,
     yajl_gen handler)
 {
   size_t i;
 
   yajl_gen_array_open (handler);
   for (i = 0; i < inst->files_num; i++)
-    ident_data_to_json (inst->files[i], begin, end, handler);
+    ident_data_to_json (inst->files[i], begin, end, res, handler);
   yajl_gen_array_close (handler);
 
   return (0);

@@ -48,6 +48,29 @@ static void write_callback (__attribute__((unused)) void *ctx, /* {{{ */
   fwrite ((void *) str, /* size = */ len, /* nmemb = */ 1, stdout);
 } /* }}} void write_callback */
 
+static int param_get_resolution (dp_time_t *resolution) /* {{{ */
+{
+  const char *tmp;
+  char *endptr;
+  double value;
+
+  tmp = param ("resolution");
+  if (tmp == NULL)
+    return (ENOENT);
+
+  errno = 0;
+  endptr = NULL;
+  value = strtod (tmp, &endptr);
+  if (errno != 0)
+    return (errno);
+  else if ((value <= 0.0) || (endptr == tmp))
+    return (EINVAL);
+
+  resolution->tv_sec = (time_t) value;
+  resolution->tv_nsec = (long) ((value - ((double) resolution->tv_sec)) * 1000000000.0);
+  return (0);
+} /* }}} int param_get_resolution */
+
 int action_instance_data_json (void) /* {{{ */
 {
   graph_config_t *cfg;
@@ -59,6 +82,7 @@ int action_instance_data_json (void) /* {{{ */
 
   dp_time_t dp_begin = { 0, 0 };
   dp_time_t dp_end = { 0, 0 };
+  dp_time_t dp_resolution = { 0, 0 };
 
   yajl_gen_config handler_config;
   yajl_gen handler;
@@ -85,6 +109,9 @@ int action_instance_data_json (void) /* {{{ */
   dp_begin.tv_nsec = 0;
   dp_end.tv_sec = tt_end;
   dp_end.tv_nsec = 0;
+
+  dp_resolution.tv_sec = (tt_end - tt_begin) / 324;
+  param_get_resolution (&dp_resolution);
 
   memset (&handler_config, 0, sizeof (handler_config));
   handler_config.beautify = 0;
@@ -114,7 +141,7 @@ int action_instance_data_json (void) /* {{{ */
   printf ("\n");
 
   status = inst_data_to_json (inst,
-      dp_begin, dp_end, handler);
+      dp_begin, dp_end, dp_resolution, handler);
 
   yajl_gen_free (handler);
 

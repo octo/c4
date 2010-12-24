@@ -86,7 +86,7 @@ _Bool inst_matches_field (graph_instance_t *inst,
 
 int inst_to_json (const graph_instance_t *inst, yajl_gen handler);
 int inst_data_to_json (const graph_instance_t *inst,
-    dp_time_t begin, dp_time_t end,
+    dp_time_t begin, dp_time_t end, dp_time_t res,
     yajl_gen handler);
 
 int inst_describe (graph_config_t *cfg, graph_instance_t *inst,

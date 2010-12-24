@@ -428,7 +428,7 @@ function inst_fetch_data (inst, begin, end) /* {{{ */
   params.action = "instance_data_json";
   params.begin = begin || inst.begin;
   params.end = end || inst.end;
-  params.resolution = Math.round ((params.end - params.begin) / c4.config.width);
+  params.resolution = (params.end - params.begin) / c4.config.width;
 
   $.getJSON ("collection.fcgi", params,
       function (data)
