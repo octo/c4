@@ -456,6 +456,9 @@ char *ident_to_string (const graph_ident_t *ident) /* {{{ */
 {
   char buffer[PATH_MAX];
 
+  if (ident == NULL)
+    return (NULL);
+
   buffer[0] = 0;
 
   strlcat (buffer, ident->host, sizeof (buffer));
