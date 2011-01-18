@@ -127,8 +127,9 @@ static int handle_request (void) /* {{{ */
     if (i >= actions_num)
       status = action_usage ();
 
-    fflush (stdout);
-    fclose (stdout);
+    /* Call finish before updating the graph list, so clients don't wait for
+     * the update to finish. */
+    FCGI_Finish ();
 
     gl_update (/* request_served = */ 1);
 
