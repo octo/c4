@@ -14,6 +14,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LEX
 AC_PROG_YACC
+PKG_PROG_PKG_CONFIG
 AM_CONDITIONAL(COMPILER_IS_GCC, test "x$GCC" = "xyes")
 
 #
@@ -31,5 +32,9 @@ AC_CHECK_LIB(rrd_th, rrd_graph_v, [],
 	     [AC_MSG_ERROR(cannot find librrd_th.)], [-lm])
 AC_CHECK_LIB(yajl, yajl_gen_alloc, [],
 	     [AC_MSG_ERROR(cannot find libyajl.)])
+
+PKG_CHECK_MODULES([libcollectdclient], [libcollectdclient],
+		  [with_libcollectdclient="yes"],
+		  [with_libcollectdclient="no"])
 
 AC_OUTPUT(Makefile share/Makefile src/Makefile)

@@ -40,3 +40,5 @@ collection_fcgi_SOURCES = main.c \
 			  utils_array.c utils_array.h \
 			  utils_cgi.c utils_cgi.h \
 			  utils_search.c utils_search.h
+collection_fcgi_CFLAGS = $(AM_CFLAGS) $(libcollectdclient_CFLAGS)
+collection_fcgi_LDADD = $(libcollectdclient_LIBS)
