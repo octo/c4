@@ -19,6 +19,7 @@ collection_fcgi_SOURCES = main.c \
 			  action_instance_data_json.c action_instance_data_json.h \
 			  action_graph_def_json.c action_graph_def_json.h \
 			  action_list_graphs.c action_list_graphs.h \
+			  action_list_graphs_json.c action_list_graphs_json.h \
 			  action_list_hosts.c action_list_hosts.h \
 			  action_search.c action_search.h \
 			  action_search_json.c action_search_json.h \

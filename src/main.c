@@ -40,6 +40,7 @@
 #include "action_instance_data_json.h"
 #include "action_graph_def_json.h"
 #include "action_list_graphs.h"
+#include "action_list_graphs_json.h"
 #include "action_list_hosts.h"
 #include "action_search.h"
 #include "action_search_json.h"
@@ -67,6 +68,7 @@ static const action_t actions[] =
   { "instance_data_json", action_instance_data_json },
   { "graph_def_json", action_graph_def_json },
   { "list_graphs", action_list_graphs },
+  { "list_graphs_json", action_list_graphs_json },
   { "list_hosts",  action_list_hosts },
   { "search",      action_search },
   { "search_json", action_search_json },
