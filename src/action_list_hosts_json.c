@@ -46,9 +46,16 @@ static int print_one_host (const char *host, /* {{{ */
 {
   yajl_gen handler = user_data;
 
+  yajl_gen_map_open (handler);
+
+  yajl_gen_string (handler,
+      (unsigned char *) "host",
+      (unsigned int) strlen ("host"));
   yajl_gen_string (handler,
       (unsigned char *) host,
       (unsigned int) strlen (host));
+
+  yajl_gen_map_close (handler);
 
   return (0);
 } /* }}} int print_one_host */
@@ -64,8 +71,6 @@ static int print_all_hosts (yajl_gen handler) /* {{{ */
 
 int action_list_hosts_json (void) /* {{{ */
 {
-  graph_config_t *cfg;
-
   yajl_gen_config handler_config;
   yajl_gen handler;
 
