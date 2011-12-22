@@ -44,9 +44,9 @@ static void write_callback (__attribute__((unused)) void *ctx, /* {{{ */
 static int print_one_graph (graph_config_t *cfg, /* {{{ */
     void *user_data)
 {
-  char params[1024];
   char title[1024];
   size_t num_instances;
+  graph_ident_t *selector;
 
   yajl_gen handler = user_data;
 
@@ -54,13 +54,17 @@ static int print_one_graph (graph_config_t *cfg, /* {{{ */
   if (num_instances < 1)
     return (0);
 
+  selector = graph_get_selector (cfg);
+  if (selector == NULL)
+  {
+    /* TODO: Print error. */
+    return (0);
+  }
+
   yajl_gen_map_open (handler);
 
   memset (title, 0, sizeof (title));
   graph_get_title (cfg, title, sizeof (title));
-
-  memset (params, 0, sizeof (params));
-  graph_get_params (cfg, params, sizeof (params));
 
   yajl_gen_string (handler,
       (unsigned char *) "title",
@@ -70,11 +74,9 @@ static int print_one_graph (graph_config_t *cfg, /* {{{ */
       (unsigned int) strlen (title));
 
   yajl_gen_string (handler,
-      (unsigned char *) "params",
-      (unsigned int) strlen ("params"));
-  yajl_gen_string (handler,
-      (unsigned char *) params,
-      (unsigned int) strlen (params));
+      (unsigned char *) "selector",
+      (unsigned int) strlen ("selector"));
+  ident_to_json (selector, handler);
 
   yajl_gen_string (handler,
       (unsigned char *) "num_instances",
@@ -82,6 +84,8 @@ static int print_one_graph (graph_config_t *cfg, /* {{{ */
   yajl_gen_integer (handler, (long int) num_instances);
 
   yajl_gen_map_close (handler);
+
+  ident_destroy (selector);
 
   return (0);
 } /* }}} int print_one_graph */
