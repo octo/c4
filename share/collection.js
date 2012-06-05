@@ -712,10 +712,10 @@ $(document).ready(function() {
         + "<div class=\"graph-button\" onClick=\"zoom_reference ('"+id+"');\">!</div>"
         + "</div>"
         + "<div class=\"graph-buttons navigation\">"
-        + "<div class=\"graph-button\" onClick=\"zoom_earlier ('"+id+"');\">←</div>"
-        + "<div class=\"graph-button\" onClick=\"zoom_out     ('"+id+"');\">−</div>"
+        + "<div class=\"graph-button\" onClick=\"zoom_earlier ('"+id+"');\">\u2190</div>"
+        + "<div class=\"graph-button\" onClick=\"zoom_out     ('"+id+"');\">\u2212</div>"
         + "<div class=\"graph-button\" onClick=\"zoom_in      ('"+id+"');\">+</div>"
-        + "<div class=\"graph-button\" onClick=\"zoom_later   ('"+id+"');\">→</div>"
+        + "<div class=\"graph-button\" onClick=\"zoom_later   ('"+id+"');\">\u2192</div>"
         + "</div>"
         );
     });
